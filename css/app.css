@@ -1308,6 +1308,12 @@ body.dark-theme .theme-toggle-slider:before {
   box-shadow: var(--shadow-lg);
 }
 
+.library-book-card.dimmed {
+  opacity: 0.3;
+  filter: grayscale(50%);
+  transition: opacity 0.2s, filter 0.2s;
+}
+
 .book-info-compact {
   flex: 1;
   display: flex;

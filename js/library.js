@@ -7,13 +7,9 @@ const LIBRARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1tarzoeTPmF7At
 
 let libraryBooks = [];
 let libraryCheckouts = [];
-let libraryFilters = {
-  search: '',
-  category: 'all',
-  genre: 'all',
-  owner: 'all',
-  status: 'all'
-};
+let activeLibraryFilters = new Set();
+let librarySearchQuery = '';
+let libraryFiltersVisible = false;
 let currentLibraryTab = 'books';
 
 // Fetch library data
@@ -24,7 +20,6 @@ async function fetchLibraryData() {
     parseLibraryCSV(csvText);
   } catch (error) {
     console.error('Error fetching library data:', error);
-    // Use mock data as fallback
     loadMockLibraryData();
   }
 }
@@ -44,7 +39,6 @@ function parseLibraryCSV(csvText) {
       book[header] = values[idx] ? values[idx].trim() : '';
     });
 
-    // Only add if it has a title
     if (book.Title && book.Title !== '') {
       libraryBooks.push(book);
     }
@@ -59,7 +53,6 @@ function parseCSVLine(line) {
 
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
-
     if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
@@ -70,87 +63,17 @@ function parseCSVLine(line) {
     }
   }
   result.push(current);
-
   return result.map(s => s.replace(/^"|"$/g, ''));
 }
 
 // Mock data fallback
 function loadMockLibraryData() {
   libraryBooks = [
-    {
-      Title: "Mere Christianity",
-      Author: "C.S. Lewis",
-      Category: "Christian Living",
-      Genre: "Apologetics",
-      Status: "Available",
-      Owner: "Church",
-      ISBN: "9780060652920"
-    },
-    {
-      Title: "The Cost of Discipleship",
-      Author: "Dietrich Bonhoeffer",
-      Category: "Christian Living",
-      Genre: "Discipleship",
-      Status: "Available",
-      Owner: "Church",
-      ISBN: "9780684815008"
-    },
-    {
-      Title: "Desiring God",
-      Author: "John Piper",
-      Category: "Theology",
-      Genre: "Christian Hedonism",
-      Status: "Checked Out",
-      Owner: "Church",
-      ISBN: "9781601423917"
-    },
-    {
-      Title: "Knowing God",
-      Author: "J.I. Packer",
-      Category: "Theology",
-      Genre: "Doctrine",
-      Status: "Available",
-      Owner: "Will",
-      ISBN: "9780830816507"
-    }
+    { Title: "Mere Christianity", Author: "C.S. Lewis", Category: "Religious", Genre: "Apologetics", Status: "Available", Owner: "Church", ISBN: "9780060652920" },
+    { Title: "The Cost of Discipleship", Author: "Dietrich Bonhoeffer", Category: "Religious", Genre: "Discipleship", Status: "Available", Owner: "Church", ISBN: "9780684815008" },
+    { Title: "Desiring God", Author: "John Piper", Category: "Theology", Genre: "Christian Hedonism", Status: "Checked Out", Owner: "Church", ISBN: "9781601423917" },
+    { Title: "Knowing God", Author: "J.I. Packer", Category: "Theology", Genre: "Doctrine", Status: "Available", Owner: "Will", ISBN: "9780830816507" }
   ];
-}
-
-// Filter books
-function getFilteredBooks() {
-  return libraryBooks.filter(book => {
-    // Search
-    if (libraryFilters.search) {
-      const search = libraryFilters.search.toLowerCase();
-      const title = (book.Title || '').toLowerCase();
-      const author = (book.Author || '').toLowerCase();
-      if (!title.includes(search) && !author.includes(search)) {
-        return false;
-      }
-    }
-
-    // Category
-    if (libraryFilters.category !== 'all' && book.Category !== libraryFilters.category) {
-      return false;
-    }
-
-    // Genre
-    if (libraryFilters.genre !== 'all' && book.Genre !== libraryFilters.genre) {
-      return false;
-    }
-
-    // Owner
-    if (libraryFilters.owner !== 'all' && book.Owner !== libraryFilters.owner) {
-      return false;
-    }
-
-    // Status
-    if (libraryFilters.status !== 'all' && book.Status !== libraryFilters.status) {
-      return false;
-    }
-
-    return true;
-  });
 }
 
 // Get unique values for filters
@@ -164,7 +87,30 @@ function getUniqueValues(field) {
   return Array.from(values).sort();
 }
 
-// Get category color
+// Check if a book matches active filters (OR logic — match ANY active filter)
+function bookMatchesFilters(book) {
+  if (activeLibraryFilters.size === 0) return true;
+  for (const filter of activeLibraryFilters) {
+    const [type, ...rest] = filter.split(':');
+    const val = rest.join(':');
+    if (type === 'cat' && (book.Category || '').toLowerCase() === val) return true;
+    if (type === 'genre' && (book.Genre || '').toLowerCase() === val) return true;
+    if (type === 'owner' && (book.Owner || '').toLowerCase() === val) return true;
+    if (type === 'status' && (book.Status || '').toLowerCase() === val) return true;
+  }
+  return false;
+}
+
+// Check if book matches search
+function bookMatchesSearch(book) {
+  if (!librarySearchQuery) return true;
+  const q = librarySearchQuery.toLowerCase();
+  return (book.Title || '').toLowerCase().includes(q) ||
+         (book.Author || '').toLowerCase().includes(q) ||
+         (book.Genre || '').toLowerCase().includes(q);
+}
+
+// Get category pill color
 function getCategoryColor(cat) {
   const colors = {
     'Religious': 'background:rgba(167,139,250,0.12);color:#7c3aed;border-color:#c4b5fd;',
@@ -172,77 +118,68 @@ function getCategoryColor(cat) {
     'Fiction': 'background:rgba(249,115,22,0.12);color:#c2410c;border-color:#fdba74;',
     'Reference': 'background:rgba(20,184,166,0.12);color:#0f766e;border-color:#5eead4;',
     'Kids': 'background:rgba(217,119,6,0.12);color:#b45309;border-color:#d97706;',
-    'Digital PDF': 'background:rgba(13,148,136,0.12);color:#0f766e;border-color:#0d9488;'
+    'Digital PDF': 'background:rgba(13,148,136,0.12);color:#0f766e;border-color:#0d9488;',
+    'Theology': 'background:rgba(124,58,237,0.12);color:#7c3aed;border-color:#a78bfa;',
+    'Christian Living': 'background:rgba(52,211,153,0.12);color:#047857;border-color:#6ee7b7;',
   };
   return colors[cat] || 'background:rgba(184,134,11,0.12);color:var(--accent);border-color:var(--accent-light);';
 }
 
 // Render Library page
 function renderLibraryPage() {
+  const hasActiveFilters = activeLibraryFilters.size > 0;
+
   return `
     <div class="page library-page">
       <h1 class="page-title">Friends Library</h1>
 
       <!-- Tab Buttons -->
       <div class="btn-group">
-        <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-tab="books">📚 Books</button>
-        <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-tab="checkouts">📤 Checked Out</button>
+        <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">📚 Books</button>
+        <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📤 Checked Out</button>
       </div>
 
       <!-- Books Tab -->
-      <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-tab="books">
+      <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
 
         <!-- Search Bar -->
         <div class="library-search-bar">
-          <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${libraryFilters.search}">
+          <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${escapeHtml(librarySearchQuery)}">
         </div>
 
         <!-- Filter Toggle Button -->
         <button class="btn btn-outline" id="libraryFilterToggle" style="margin-bottom:12px;font-size:12px;padding:8px 16px;min-height:36px;">
-          🔽 Filter ${libraryFilters.category !== 'all' || libraryFilters.genre !== 'all' ? '(active)' : ''}
+          ${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ' active)' : ''}
         </button>
 
-        <!-- Category Pills (hidden by default, shown on toggle) -->
-        <div class="library-pills" id="libraryPills" style="display:none;flex-wrap:wrap;gap:6px;padding-bottom:4px;margin-bottom:16px;">
-          <button class="library-pill ${libraryFilters.category === 'all' && libraryFilters.genre === 'all' && libraryFilters.owner === 'all' ? 'active' : ''}" data-filter-type="all" data-filter-value="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
+        <!-- Filter Pills (toggle visibility) -->
+        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;padding-bottom:4px;margin-bottom:16px;">
+          <button class="library-pill ${!hasActiveFilters ? 'active' : ''}" data-filter="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
           ${getUniqueValues('Category').map(cat => `
-            <button class="library-pill ${libraryFilters.category === cat ? 'active' : ''}" data-filter-type="category" data-filter-value="${cat}" style="${getCategoryColor(cat)}">${cat}</button>
+            <button class="library-pill ${activeLibraryFilters.has('cat:' + cat.toLowerCase()) ? 'active' : ''}" data-filter="cat:${cat.toLowerCase()}" style="${getCategoryColor(cat)}">${escapeHtml(cat)}</button>
           `).join('')}
           ${getUniqueValues('Genre').map(genre => `
-            <button class="library-pill ${libraryFilters.genre === genre ? 'active' : ''}" data-filter-type="genre" data-filter-value="${genre}" style="background:rgba(74,122,181,0.10);color:var(--blue);border-color:#93c5fd;">${genre}</button>
+            <button class="library-pill ${activeLibraryFilters.has('genre:' + genre.toLowerCase()) ? 'active' : ''}" data-filter="genre:${genre.toLowerCase()}" style="background:rgba(74,122,181,0.10);color:var(--blue);border-color:#93c5fd;">${escapeHtml(genre)}</button>
+          `).join('')}
+          ${getUniqueValues('Owner').map(owner => `
+            <button class="library-pill ${activeLibraryFilters.has('owner:' + owner.toLowerCase()) ? 'active' : ''}" data-filter="owner:${owner.toLowerCase()}" style="background:rgba(184,134,11,0.08);color:var(--accent);border-color:var(--accent-light);">👤 ${escapeHtml(owner)}</button>
           `).join('')}
         </div>
 
-        <!-- Books Grid (half-size cards) -->
-        <div class="library-books-grid">
-          ${getFilteredBooks().map(book => `
-            <div class="library-book-card card" data-isbn="${book.ISBN || ''}">
-              <div style="display:flex;gap:10px;">
-                <div style="width:50px;height:72px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;">
-                  ${book['Cover URL'] ? `<img src="${escapeHtml(book['Cover URL'])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='📖'">` : '<span style="font-size:20px;">📖</span>'}
-                </div>
-                <div class="book-info-compact" style="flex:1;min-width:0;">
-                  <h4 class="book-title-compact" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
-                  <p class="book-author-compact">${escapeHtml(book.Author)}</p>
-                  <div class="book-badges">
-                    <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}" style="font-size:9px;padding:2px 6px;">${book.Status || 'Available'}</span>
-                    ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Genre}</span>` : ''}
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('')}
+        <!-- Books Grid -->
+        <div class="library-books-grid" id="libraryGrid">
+          ${renderLibraryBooks()}
         </div>
 
-        ${getFilteredBooks().length === 0 ? `
+        ${libraryBooks.length === 0 ? `
           <div class="empty-state card">
-            <p>No books found matching your filters.</p>
+            <p>Loading library...</p>
           </div>
         ` : ''}
       </div>
 
       <!-- Checkouts Tab -->
-      <div class="library-tab-content ${currentLibraryTab === 'checkouts' ? 'active' : ''}" data-tab="checkouts">
+      <div class="library-tab-content ${currentLibraryTab === 'checkouts' ? 'active' : ''}" data-libtab="checkouts">
         <div class="card">
           <h3>Checkout Log</h3>
           <p style="color: var(--muted); margin-top: 8px;">Coming soon - track who has checked out books and when they're due back.</p>
@@ -252,38 +189,111 @@ function renderLibraryPage() {
   `;
 }
 
+function renderLibraryBooks() {
+  const hasFilters = activeLibraryFilters.size > 0;
+
+  // Score each book: matched + search-visible
+  const scored = libraryBooks.map((book, idx) => {
+    const filterMatch = bookMatchesFilters(book);
+    const searchMatch = bookMatchesSearch(book);
+    return { book, idx, highlighted: filterMatch && searchMatch, visible: searchMatch };
+  });
+
+  // Sort: highlighted first, then original order
+  scored.sort((a, b) => {
+    if (a.highlighted && !b.highlighted) return -1;
+    if (!a.highlighted && b.highlighted) return 1;
+    return a.idx - b.idx;
+  });
+
+  return scored.map(({ book, idx, highlighted, visible }) => {
+    if (!visible) return '';
+    const dimmed = hasFilters && !highlighted;
+    return `
+      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${book.ISBN || ''}">
+        <div style="display:flex;gap:10px;">
+          <div style="width:50px;height:72px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;">
+            ${book['Cover URL'] ? `<img src="${escapeHtml(book['Cover URL'])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='📖'">` : '<span style="font-size:20px;">📖</span>'}
+          </div>
+          <div class="book-info-compact" style="flex:1;min-width:0;">
+            <h4 class="book-title-compact" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
+            <p class="book-author-compact">${escapeHtml(book.Author)}</p>
+            <div class="book-badges">
+              <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}" style="font-size:9px;padding:2px 6px;">${book.Status || 'Available'}</span>
+              ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Genre}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Toggle a filter (multi-select)
+function toggleLibraryFilter(filter) {
+  if (filter === 'all') {
+    activeLibraryFilters.clear();
+  } else {
+    if (activeLibraryFilters.has(filter)) {
+      activeLibraryFilters.delete(filter);
+    } else {
+      activeLibraryFilters.add(filter);
+    }
+  }
+  applyLibraryFilters();
+}
+
+// Apply filters without full re-render (just update grid + pill states)
+function applyLibraryFilters() {
+  const grid = document.getElementById('libraryGrid');
+  if (grid) {
+    grid.innerHTML = renderLibraryBooks();
+  }
+
+  // Update pill active states
+  const hasActiveFilters = activeLibraryFilters.size > 0;
+  document.querySelectorAll('.library-pill').forEach(pill => {
+    const f = pill.dataset.filter;
+    if (f === 'all') {
+      pill.classList.toggle('active', !hasActiveFilters);
+    } else {
+      pill.classList.toggle('active', activeLibraryFilters.has(f));
+    }
+  });
+
+  // Update toggle button text
+  const toggle = document.getElementById('libraryFilterToggle');
+  if (toggle) {
+    toggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ' active)' : ''}`;
+  }
+}
+
 // Initialize Library page
 function initLibraryPage() {
-  // Fetch data if not already loaded
   if (libraryBooks.length === 0) {
     fetchLibraryData().then(() => {
-      renderLibraryPageContent();
+      applyLibraryFilters();
     });
   }
 
-  renderLibraryPageContent();
-}
-
-function renderLibraryPageContent() {
   // Tab switching
-  document.querySelectorAll('.btn-group .btn[data-tab]').forEach(btn => {
+  document.querySelectorAll('button[data-libtab]').forEach(btn => {
     btn.addEventListener('click', () => {
-      currentLibraryTab = btn.dataset.tab;
+      currentLibraryTab = btn.dataset.libtab;
       document.getElementById('app').innerHTML = renderLibraryPage();
       initLibraryPage();
     });
   });
 
-  // Filter toggle
+  // Filter toggle (expand/collapse)
   const filterToggle = document.getElementById('libraryFilterToggle');
   const filterPills = document.getElementById('libraryPills');
   if (filterToggle && filterPills) {
     filterToggle.addEventListener('click', () => {
-      const isVisible = filterPills.style.display !== 'none';
-      filterPills.style.display = isVisible ? 'none' : 'flex';
-      filterToggle.textContent = isVisible
-        ? `🔽 Filter ${libraryFilters.category !== 'all' || libraryFilters.genre !== 'all' ? '(active)' : ''}`
-        : `🔼 Filter ${libraryFilters.category !== 'all' || libraryFilters.genre !== 'all' ? '(active)' : ''}`;
+      libraryFiltersVisible = !libraryFiltersVisible;
+      filterPills.style.display = libraryFiltersVisible ? 'flex' : 'none';
+      const hasActive = activeLibraryFilters.size > 0;
+      filterToggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActive ? ' (' + activeLibraryFilters.size + ' active)' : ''}`;
     });
   }
 
@@ -291,43 +301,19 @@ function renderLibraryPageContent() {
   const searchInput = document.getElementById('librarySearch');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
-      libraryFilters.search = e.target.value;
-      document.getElementById('app').innerHTML = renderLibraryPage();
-      initLibraryPage();
+      librarySearchQuery = e.target.value;
+      applyLibraryFilters();
     });
+    // Restore focus position
+    if (librarySearchQuery) {
+      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    }
   }
 
-  // Pill filters
+  // Pill filter clicks (multi-select toggle)
   document.querySelectorAll('.library-pill').forEach(pill => {
-    pill.addEventListener('click', (e) => {
-      const filterType = e.target.dataset.filterType;
-      const filterValue = e.target.dataset.filterValue;
-
-      if (filterType === 'all') {
-        libraryFilters.category = 'all';
-        libraryFilters.genre = 'all';
-        libraryFilters.owner = 'all';
-        libraryFilters.status = 'all';
-      } else if (filterType === 'category') {
-        libraryFilters.category = filterValue;
-        libraryFilters.genre = 'all';
-        libraryFilters.owner = 'all';
-      } else if (filterType === 'genre') {
-        libraryFilters.genre = filterValue;
-        libraryFilters.category = 'all';
-        libraryFilters.owner = 'all';
-      }
-
-      document.getElementById('app').innerHTML = renderLibraryPage();
-      initLibraryPage();
-    });
-  });
-
-  // Book card clicks (future: expand to show details)
-  document.querySelectorAll('.library-book-card').forEach(card => {
-    card.addEventListener('click', () => {
-      // Future: show modal with full book details
-      console.log('Book clicked:', card.dataset.isbn);
+    pill.addEventListener('click', () => {
+      toggleLibraryFilter(pill.dataset.filter);
     });
   });
 }
