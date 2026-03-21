@@ -629,7 +629,7 @@ function renderOoSTab() {
           <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
             <div style="margin-bottom:16px;">
               <strong>Venue:</strong> ${escapeHtml(currentOoS.venueName)}
-              ${currentOoS.venueUrl ? `<br><a href="${escapeHtml(currentOoS.venueUrl)}" target="_blank" style="color:var(--accent);text-decoration:none;">📍 View on Google Maps</a>` : ''}
+              ${currentOoS.venueUrl ? `<br><a href="${escapeHtml(currentOoS.venueUrl)}" target="_blank" style="color:var(--accent);text-decoration:none;">📍 View on Google Maps 🔗</a>` : ''}
             </div>
 
             <div style="margin-top:16px;">
@@ -640,7 +640,7 @@ function renderOoSTab() {
                     <span style="color:var(--muted);font-weight:bold;min-width:20px;">${idx + 1}.</span>
                     <div style="flex:1;">
                       ${item.time ? `<span style="font-weight:bold;">${escapeHtml(item.time)}</span> — ` : ''}
-                      ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" style="color:var(--accent);text-decoration:none;">${escapeHtml(item.title)}</a>` : escapeHtml(item.title)}
+                      ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" style="color:var(--accent);text-decoration:none;">${escapeHtml(item.title)} 🔗</a>` : escapeHtml(item.title)}
                     </div>
                   </div>
                 `).join('')}
@@ -751,19 +751,32 @@ function saveOoS() {
 
   // Parse service items from structured inputs
   const items = [];
+  let psalmsIndex = -1;
   document.querySelectorAll('#oosServiceItems .oos-item-row').forEach(row => {
     const inputs = row.querySelectorAll('input');
     const time = inputs[0].value.trim();
     const title = inputs[1].value.trim();
-    if (title) items.push({ time, title, url: '' });
+    if (title) {
+      items.push({ time, title, url: '' });
+      // Track the "Psalms/Hymns/Spiritual Songs" item position
+      if (title.toLowerCase().includes('psalm') || title.toLowerCase().includes('hymn') || title.toLowerCase().includes('spiritual song')) {
+        psalmsIndex = items.length - 1;
+      }
+    }
   });
 
-  // Parse songs
+  // Parse songs — insert right after psalms item (or at end if no psalms item found)
+  const songs = [];
   document.querySelectorAll('#oosSongItems .oos-song-row').forEach(row => {
     const songName = row.querySelector('input[type="text"]').value.trim();
     const songUrl = row.querySelector('input[type="url"]').value.trim();
-    if (songName) items.push({ time: '', title: 'Song: ' + songName, url: songUrl });
+    if (songName) songs.push({ time: '', title: 'Song: ' + songName, url: songUrl });
   });
+
+  if (songs.length > 0) {
+    const insertAt = psalmsIndex >= 0 ? psalmsIndex + 1 : items.length;
+    items.splice(insertAt, 0, ...songs);
+  }
 
   if (scheduleState.editingId) {
     const oos = scheduleState.orderOfService.find(o => o.id === scheduleState.editingId);
