@@ -253,7 +253,7 @@ function renderBiblePage() {
       <h1 class="page-title">📖 Bible Reading</h1>
 
       <!-- Compact Summary -->
-      <div class="bible-summary card" style="display:flex;gap:14px;padding:14px 16px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+      <div class="bible-summary card" style="display:flex;gap:14px;padding:14px 16px;align-items:center;flex-wrap:wrap;margin-bottom:0;position:sticky;top:0;z-index:11;border-radius:0 0 12px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
         <!-- Main ring -->
         <div style="display:flex;gap:12px;align-items:center;flex-shrink:0;">
           <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
@@ -318,7 +318,7 @@ function renderBiblePage() {
       </div>
 
       <!-- Sticky OT / NT scroll buttons -->
-      <div class="bible-tab-bar" style="display:flex;gap:8px;margin-bottom:16px;position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 0 4px;">
+      <div class="bible-tab-bar" style="display:flex;gap:8px;margin-bottom:16px;position:sticky;top:120px;z-index:10;background:var(--bg);padding:8px 0 4px;">
         <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">Old Testament</button>
         <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">New Testament</button>
       </div>
@@ -362,6 +362,17 @@ function initBiblePage() {
       toggleChapter(bookAbbr, chapterNum);
     });
   });
+
+  // Position tab bar below sticky summary
+  const summary = document.querySelector('.bible-summary');
+  const tabBar = document.querySelector('.bible-tab-bar');
+  if (summary && tabBar) {
+    const updateTabBarTop = () => {
+      tabBar.style.top = summary.offsetHeight + 'px';
+    };
+    updateTabBarTop();
+    window.addEventListener('resize', updateTabBarTop);
+  }
 
   // Scroll spy for OT/NT tab highlight
   const observer = new IntersectionObserver((entries) => {
