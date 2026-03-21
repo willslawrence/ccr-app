@@ -1131,27 +1131,28 @@ body.dark-theme .theme-toggle-slider:before {
 }
 
 .chapter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-  gap: 6px;
-  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
 }
 
 .chapter-btn {
-  aspect-ratio: 1;
-  min-height: 40px;
+  width: 30px;
+  height: 26px;
   background: var(--card);
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 11px;
   font-weight: 500;
   font-family: 'JetBrains Mono', monospace;
   color: var(--text);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 
 .chapter-btn:hover {
