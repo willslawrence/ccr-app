@@ -197,8 +197,13 @@ function renderLibraryPage() {
           <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${libraryFilters.search}">
         </div>
 
-        <!-- Category Pills -->
-        <div class="library-pills" id="libraryPills" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:16px;">
+        <!-- Filter Toggle Button -->
+        <button class="btn btn-outline" id="libraryFilterToggle" style="margin-bottom:12px;font-size:12px;padding:8px 16px;min-height:36px;">
+          🔽 Filter ${libraryFilters.category !== 'all' || libraryFilters.genre !== 'all' ? '(active)' : ''}
+        </button>
+
+        <!-- Category Pills (hidden by default, shown on toggle) -->
+        <div class="library-pills" id="libraryPills" style="display:none;flex-wrap:wrap;gap:6px;padding-bottom:4px;margin-bottom:16px;">
           <button class="library-pill ${libraryFilters.category === 'all' && libraryFilters.genre === 'all' && libraryFilters.owner === 'all' ? 'active' : ''}" data-filter-type="all" data-filter-value="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
           ${getUniqueValues('Category').map(cat => `
             <button class="library-pill ${libraryFilters.category === cat ? 'active' : ''}" data-filter-type="category" data-filter-value="${cat}" style="${getCategoryColor(cat)}">${cat}</button>
@@ -212,13 +217,17 @@ function renderLibraryPage() {
         <div class="library-books-grid">
           ${getFilteredBooks().map(book => `
             <div class="library-book-card card" data-isbn="${book.ISBN || ''}">
-              <div class="book-info-compact">
-                <h4 class="book-title-compact" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
-                <p class="book-author-compact">${escapeHtml(book.Author)}</p>
-                <div class="book-badges">
-                  <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}" style="font-size:9px;padding:2px 6px;">${book.Status}</span>
-                  ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Genre}</span>` : ''}
-                  ${book.Owner ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Owner}</span>` : ''}
+              <div style="display:flex;gap:10px;">
+                <div style="width:50px;height:72px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;">
+                  ${book['Cover URL'] ? `<img src="${escapeHtml(book['Cover URL'])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='📖'">` : '<span style="font-size:20px;">📖</span>'}
+                </div>
+                <div class="book-info-compact" style="flex:1;min-width:0;">
+                  <h4 class="book-title-compact" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
+                  <p class="book-author-compact">${escapeHtml(book.Author)}</p>
+                  <div class="book-badges">
+                    <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}" style="font-size:9px;padding:2px 6px;">${book.Status || 'Available'}</span>
+                    ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Genre}</span>` : ''}
+                  </div>
                 </div>
               </div>
             </div>
@@ -257,13 +266,26 @@ function initLibraryPage() {
 
 function renderLibraryPageContent() {
   // Tab switching
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.btn-group .btn[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentLibraryTab = btn.dataset.tab;
       document.getElementById('app').innerHTML = renderLibraryPage();
       initLibraryPage();
     });
   });
+
+  // Filter toggle
+  const filterToggle = document.getElementById('libraryFilterToggle');
+  const filterPills = document.getElementById('libraryPills');
+  if (filterToggle && filterPills) {
+    filterToggle.addEventListener('click', () => {
+      const isVisible = filterPills.style.display !== 'none';
+      filterPills.style.display = isVisible ? 'none' : 'flex';
+      filterToggle.textContent = isVisible
+        ? `🔽 Filter ${libraryFilters.category !== 'all' || libraryFilters.genre !== 'all' ? '(active)' : ''}`
+        : `🔼 Filter ${libraryFilters.category !== 'all' || libraryFilters.genre !== 'all' ? '(active)' : ''}`;
+    });
+  }
 
   // Search
   const searchInput = document.getElementById('librarySearch');
