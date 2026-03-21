@@ -1236,6 +1236,14 @@ body.dark-theme .theme-toggle-slider:before {
 .library-pill.active {
   font-weight: 700;
   box-shadow: var(--shadow-md);
+  transform: scale(1.05);
+}
+
+/* When NOT active, override inline styles to neutral */
+.library-pill:not(.active) {
+  background: var(--card) !important;
+  color: var(--muted) !important;
+  border-color: var(--border) !important;
 }
 
 .library-filters {
