@@ -511,8 +511,53 @@ function renderOoSTab() {
             <label class="form-label">Service Items</label>
             <div id="oosServiceItems">
               <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
-                <input type="text" class="form-input" placeholder="Time" style="width:80px;flex:none;font-size:12px;padding:8px;">
-                <input type="text" class="form-input" placeholder="Item title (e.g. Arrival)" style="flex:1;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="1pm" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Arrival" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="1:15pm" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Food & Fellowship" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="1:45pm" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Gospel & Lord's Supper" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="2:15pm" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Public Reading" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Psalms, Hymns, Spiritual Songs" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="2:45pm" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Exhortation" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Prayers & Building Up" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Cheerful Giving" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Benediction" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" value="" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" value="Great Commission: Matthew 28:18-20" style="flex:1;font-size:12px;padding:8px;">
                 <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
               </div>
             </div>
