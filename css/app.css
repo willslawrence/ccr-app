@@ -134,15 +134,12 @@ h1, h2, h3, h4, h5, h6 {
   width: 40px;
   height: 240px;
   border: none;
-  background: rgba(255,255,255,0.10);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-right: none;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
   border-radius: 240px 0 0 240px;
-  box-shadow: 
-    -2px 0 10px rgba(0,0,0,0.05),
-    0 0 15px rgba(0,0,0,0.03);
+  box-shadow: none;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -156,13 +153,14 @@ h1, h2, h3, h4, h5, h6 {
 .fab-trigger:hover, .fab-trigger:active {
   width: 46px;
   height: 246px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(184,134,11,0.08);
 }
 
 .fab-trigger-icon {
-  font-size: 16px;
+  font-size: 28px;
   transition: transform 0.3s;
   color: var(--accent);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.15);
 }
 
 .fab-trigger.active .fab-trigger-icon {

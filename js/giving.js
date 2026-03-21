@@ -228,7 +228,7 @@ function initGivingPage() {
   loadTransactions();
 
   // Tab switching
-  document.querySelectorAll('[data-tab]').forEach(btn => {
+  document.querySelectorAll('button[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
       currentGivingTab = btn.dataset.tab;
       document.getElementById('app').innerHTML = renderGivingPage();
