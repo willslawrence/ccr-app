@@ -12,7 +12,46 @@ let librarySearchQuery = '';
 let libraryFiltersVisible = false;
 let currentLibraryTab = 'books';
 
-// Fetch library data
+// ─── CHECKOUT LOG STORAGE ───
+const CHECKOUT_STORAGE_KEY = 'ccr_checkout_logs';
+
+function getCheckoutLogs() {
+  try {
+    return JSON.parse(localStorage.getItem(CHECKOUT_STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveCheckoutLogs(logs) {
+  localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(logs));
+}
+
+function addCheckoutLog(entry) {
+  const logs = getCheckoutLogs();
+  entry.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+  logs.push(entry);
+  saveCheckoutLogs(logs);
+  return entry;
+}
+
+function updateCheckoutLog(id, updates) {
+  const logs = getCheckoutLogs();
+  const idx = logs.findIndex(l => l.id === id);
+  if (idx >= 0) {
+    Object.assign(logs[idx], updates);
+    saveCheckoutLogs(logs);
+  }
+}
+
+function getCheckoutsForBook(bookTitle) {
+  return getCheckoutLogs().filter(l => l.book === bookTitle);
+}
+
+function getActiveCheckoutForBook(bookTitle) {
+  return getCheckoutLogs().find(l => l.book === bookTitle && (l.status === 'reading' || l.status === 'requested'));
+}
+
+// ─── FETCH & PARSE ───
+
 async function fetchLibraryData() {
   try {
     const response = await fetch(LIBRARY_SHEET_URL);
@@ -24,7 +63,6 @@ async function fetchLibraryData() {
   }
 }
 
-// Parse CSV
 function parseLibraryCSV(csvText) {
   const lines = csvText.split('\n').filter(line => line.trim());
   const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
@@ -45,7 +83,6 @@ function parseLibraryCSV(csvText) {
   }
 }
 
-// Parse CSV line (handles quoted fields)
 function parseCSVLine(line) {
   const result = [];
   let current = '';
@@ -66,17 +103,17 @@ function parseCSVLine(line) {
   return result.map(s => s.replace(/^"|"$/g, ''));
 }
 
-// Mock data fallback
 function loadMockLibraryData() {
   libraryBooks = [
-    { Title: "Mere Christianity", Author: "C.S. Lewis", Category: "Religious", Genre: "Apologetics", Status: "Available", Owner: "Church", ISBN: "9780060652920" },
-    { Title: "The Cost of Discipleship", Author: "Dietrich Bonhoeffer", Category: "Religious", Genre: "Discipleship", Status: "Available", Owner: "Church", ISBN: "9780684815008" },
-    { Title: "Desiring God", Author: "John Piper", Category: "Theology", Genre: "Christian Hedonism", Status: "Checked Out", Owner: "Church", ISBN: "9781601423917" },
-    { Title: "Knowing God", Author: "J.I. Packer", Category: "Theology", Genre: "Doctrine", Status: "Available", Owner: "Will", ISBN: "9780830816507" }
+    { Title: "Mere Christianity", Author: "C.S. Lewis", Category: "Religious", Genre: "Apologetics", Status: "Available", Owner: "Church", ISBN: "9780060652920", Pages: "227", Summary: "A classic work of Christian apologetics." },
+    { Title: "The Cost of Discipleship", Author: "Dietrich Bonhoeffer", Category: "Religious", Genre: "Discipleship", Status: "Available", Owner: "Church", ISBN: "9780684815008", Pages: "316", Summary: "" },
+    { Title: "Desiring God", Author: "John Piper", Category: "Theology", Genre: "Christian Hedonism", Status: "Checked Out", Owner: "Church", ISBN: "9781601423917", Pages: "368", Summary: "" },
+    { Title: "Knowing God", Author: "J.I. Packer", Category: "Theology", Genre: "Doctrine", Status: "Available", Owner: "Will", ISBN: "9780830816507", Pages: "286", Summary: "" }
   ];
 }
 
-// Get unique values for filters
+// ─── HELPERS ───
+
 function getUniqueValues(field) {
   const values = new Set();
   libraryBooks.forEach(book => {
@@ -87,7 +124,6 @@ function getUniqueValues(field) {
   return Array.from(values).sort();
 }
 
-// Check if a book matches active filters (OR logic — match ANY active filter)
 function bookMatchesFilters(book) {
   if (activeLibraryFilters.size === 0) return true;
   for (const filter of activeLibraryFilters) {
@@ -101,7 +137,6 @@ function bookMatchesFilters(book) {
   return false;
 }
 
-// Check if book matches search
 function bookMatchesSearch(book) {
   if (!librarySearchQuery) return true;
   const q = librarySearchQuery.toLowerCase();
@@ -110,7 +145,6 @@ function bookMatchesSearch(book) {
          (book.Genre || '').toLowerCase().includes(q);
 }
 
-// Get category pill color
 function getCategoryColor(cat) {
   const colors = {
     'Religious': 'background:rgba(167,139,250,0.12);color:#7c3aed;border-color:#c4b5fd;',
@@ -125,7 +159,27 @@ function getCategoryColor(cat) {
   return colors[cat] || 'background:rgba(184,134,11,0.12);color:var(--accent);border-color:var(--accent-light);';
 }
 
-// Render Library page
+function getBookStatusFromLogs(book) {
+  // Check localStorage logs first, then fall back to sheet Status field
+  const active = getActiveCheckoutForBook(book.Title);
+  if (active) return active.status === 'requested' ? 'Requested' : 'Checked Out';
+  return book.Status || 'Available';
+}
+
+function renderBookCover(book, size) {
+  const w = size === 'large' ? 120 : 60;
+  const h = size === 'large' ? 175 : 88;
+  const radius = size === 'large' ? 12 : 8;
+  const fontSize = size === 'large' ? 48 : 24;
+  const coverUrl = book['Cover URL'] || '';
+  if (coverUrl) {
+    return `<img src="${escapeHtml(coverUrl)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fontSize}px;background:var(--gold-grad);color:white;font-weight:700;border-radius:${radius}px;\\'>${escapeHtml(book.Title)[0] || '?'}</div>'">`;
+  }
+  return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fontSize}px;background:var(--gold-grad);color:white;font-weight:700;border-radius:${radius}px;">${escapeHtml(book.Title)[0] || '?'}</div>`;
+}
+
+// ─── RENDER PAGE ───
+
 function renderLibraryPage() {
   const hasActiveFilters = activeLibraryFilters.size > 0;
 
@@ -136,7 +190,7 @@ function renderLibraryPage() {
       <!-- Tab Buttons -->
       <div class="btn-group">
         <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">📚 Books</button>
-        <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📤 Checked Out</button>
+        <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📋 Checked Out</button>
       </div>
 
       <!-- Books Tab -->
@@ -180,26 +234,23 @@ function renderLibraryPage() {
 
       <!-- Checkouts Tab -->
       <div class="library-tab-content ${currentLibraryTab === 'checkouts' ? 'active' : ''}" data-libtab="checkouts">
-        <div class="card">
-          <h3>Checkout Log</h3>
-          <p style="color: var(--muted); margin-top: 8px;">Coming soon - track who has checked out books and when they're due back.</p>
-        </div>
+        ${renderCheckoutLogs()}
       </div>
     </div>
   `;
 }
 
+// ─── RENDER BOOK CARDS ───
+
 function renderLibraryBooks() {
   const hasFilters = activeLibraryFilters.size > 0;
 
-  // Score each book: matched + search-visible
   const scored = libraryBooks.map((book, idx) => {
     const filterMatch = bookMatchesFilters(book);
     const searchMatch = bookMatchesSearch(book);
     return { book, idx, highlighted: filterMatch && searchMatch, visible: searchMatch };
   });
 
-  // Sort: highlighted first, then original order
   scored.sort((a, b) => {
     if (a.highlighted && !b.highlighted) return -1;
     if (!a.highlighted && b.highlighted) return 1;
@@ -209,18 +260,27 @@ function renderLibraryBooks() {
   return scored.map(({ book, idx, highlighted, visible }) => {
     if (!visible) return '';
     const dimmed = hasFilters && !highlighted;
+    const status = getBookStatusFromLogs(book);
+    const statusClass = status === 'Available' ? 'green' : status === 'Requested' ? 'purple' : 'orange';
+    const statusLabel = status === 'Available' ? '✅ Available' : status === 'Requested' ? '🔖 Requested' : '📤 Checked Out';
+    const pages = book.Pages || book['Total Pages'] || '';
+
     return `
-      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${book.ISBN || ''}">
-        <div style="display:flex;gap:10px;">
-          <div style="width:50px;height:72px;border-radius:6px;overflow:hidden;flex-shrink:0;background:var(--surface);display:flex;align-items:center;justify-content:center;">
-            ${book['Cover URL'] ? `<img src="${escapeHtml(book['Cover URL'])}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='📖'">` : '<span style="font-size:20px;">📖</span>'}
+      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}">
+        <div class="lib-card-inner">
+          <div class="lib-card-cover">
+            ${renderBookCover(book, 'small')}
           </div>
-          <div class="book-info-compact" style="flex:1;min-width:0;">
-            <h4 class="book-title-compact" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
-            <p class="book-author-compact">${escapeHtml(book.Author)}</p>
-            <div class="book-badges">
-              <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}" style="font-size:9px;padding:2px 6px;">${book.Status || 'Available'}</span>
-              ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Genre}</span>` : ''}
+          <div class="lib-card-info">
+            <h4 class="lib-card-title" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
+            <p class="lib-card-author">by ${escapeHtml(book.Author)}</p>
+            <div class="lib-card-badges">
+              <span class="badge badge-${statusClass}" style="font-size:9px;padding:2px 6px;">${statusLabel}</span>
+              ${book.Owner ? `<span class="badge badge-gold" style="font-size:9px;padding:2px 6px;">👤 ${escapeHtml(book.Owner)}</span>` : ''}
+            </div>
+            <div class="lib-card-badges" style="margin-top:3px;">
+              ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${escapeHtml(book.Genre)}</span>` : ''}
+              ${pages ? `<span style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${escapeHtml(pages)}p</span>` : ''}
             </div>
           </div>
         </div>
@@ -229,7 +289,311 @@ function renderLibraryBooks() {
   }).join('');
 }
 
-// Toggle a filter (multi-select)
+// ─── CHECKOUT LOGS TAB ───
+
+function renderCheckoutLogs() {
+  const logs = getCheckoutLogs();
+  if (logs.length === 0) {
+    return `
+      <div class="empty-state card">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">No checkouts yet</div>
+        <div class="empty-sub">Click on a book and check it out!</div>
+      </div>
+    `;
+  }
+
+  // Sort: active first (reading, requested), then returned
+  const sorted = [...logs].sort((a, b) => {
+    const order = { reading: 0, requested: 1, returned: 2 };
+    const sa = order[a.status] ?? 1;
+    const sb = order[b.status] ?? 1;
+    if (sa !== sb) return sa - sb;
+    // Within same status, most recent first
+    return (b.startDate || '').localeCompare(a.startDate || '');
+  });
+
+  return `<div class="checkout-log-cards">${sorted.map(log => renderCheckoutCard(log)).join('')}</div>`;
+}
+
+function renderCheckoutCard(log) {
+  const isReturned = log.status === 'returned';
+  const pct = log.totalPages ? Math.round((log.currentPage / log.totalPages) * 100) : 0;
+  const clampedPct = Math.min(pct, 100);
+  const isOverdue = log.dueBack && log.status === 'reading' && new Date(log.dueBack) < new Date();
+
+  let statusBadge = '';
+  if (isOverdue) {
+    statusBadge = '<span class="badge badge-red" style="font-size:10px;padding:3px 8px;">⚠️ Overdue</span>';
+  } else if (log.status === 'reading') {
+    statusBadge = '<span class="badge badge-gold" style="font-size:10px;padding:3px 8px;">📖 Reading</span>';
+  } else if (log.status === 'requested') {
+    statusBadge = '<span class="badge badge-purple" style="font-size:10px;padding:3px 8px;">🔖 Requested</span>';
+  } else {
+    statusBadge = '<span class="badge badge-green" style="font-size:10px;padding:3px 8px;">✅ Returned</span>';
+  }
+
+  const isActive = log.status === 'reading' || log.status === 'requested';
+
+  return `
+    <div class="checkout-log-card ${isReturned ? 'returned' : ''}" data-log-id="${escapeHtml(log.id)}">
+      <div class="checkout-log-top">
+        <span class="checkout-log-reader">${escapeHtml(log.name)}</span>
+        ${statusBadge}
+      </div>
+      <div class="checkout-log-book">📖 ${escapeHtml(log.book)}</div>
+      <div class="checkout-log-row">
+        <div class="checkout-log-dates">
+          ${log.startDate ? 'Started ' + formatDate(log.startDate) : ''}
+          ${log.dueBack ? '<br>Due <span style="color:' + (isOverdue ? 'var(--red)' : 'inherit') + ';">' + formatDate(log.dueBack) + '</span>' : ''}
+        </div>
+        ${log.status !== 'requested' && log.totalPages ? `
+        <div class="checkout-log-progress">
+          <div class="checkout-log-bar">
+            <div class="checkout-log-bar-fill ${clampedPct >= 100 ? 'completed' : 'reading'}" style="width:${clampedPct}%"></div>
+          </div>
+          <div style="text-align:right;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;">${log.currentPage}/${log.totalPages} (${clampedPct}%)</div>
+        </div>` : ''}
+      </div>
+      ${isActive ? `
+      <div class="checkout-log-buttons">
+        <button class="checkout-log-btn-progress" data-action="progress" data-log-id="${escapeHtml(log.id)}">📝 Update</button>
+        <button class="checkout-log-btn-return" data-action="return" data-log-id="${escapeHtml(log.id)}">📥 Return</button>
+      </div>
+      <div class="checkout-log-edit" id="edit-${escapeHtml(log.id)}" style="display:none;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--muted);">Page</span>
+          <input type="number" class="checkout-edit-input" id="page-${escapeHtml(log.id)}" value="${log.currentPage}" min="0" max="${log.totalPages}">
+          <span style="font-size:12px;color:var(--muted);">of ${log.totalPages}</span>
+          <button class="checkout-edit-save" data-log-id="${escapeHtml(log.id)}">Save</button>
+        </div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+// ─── BOOK DETAIL MODAL ───
+
+function openBookModal(idx) {
+  const book = libraryBooks[idx];
+  if (!book) return;
+
+  const modal = document.getElementById('bookDetailModal');
+  if (!modal) return;
+
+  const status = getBookStatusFromLogs(book);
+  const statusClass = status === 'Available' ? 'green' : status === 'Requested' ? 'purple' : 'orange';
+  const statusLabel = status === 'Available' ? '✅ Available' : status === 'Requested' ? '🔖 Requested' : '📤 Checked Out';
+  const pages = book.Pages || book['Total Pages'] || '';
+  const summary = book.Summary || 'No summary available.';
+  const checkouts = getCheckoutsForBook(book.Title);
+  const activeCheckout = getActiveCheckoutForBook(book.Title);
+
+  // Cover
+  document.getElementById('bookModalCover').innerHTML = renderBookCover(book, 'large');
+  // Title & author
+  document.getElementById('bookModalTitle').textContent = book.Title;
+  document.getElementById('bookModalAuthor').textContent = 'by ' + book.Author;
+  // Meta badges
+  let metaHTML = `<span class="badge badge-${statusClass}" style="font-size:10px;padding:3px 8px;">${statusLabel}</span>`;
+  if (book.Owner) metaHTML += `<span class="badge badge-gold" style="font-size:10px;padding:3px 8px;">👤 ${escapeHtml(book.Owner)}</span>`;
+  if (book.Genre) metaHTML += `<span class="badge badge-muted" style="font-size:10px;padding:3px 8px;">${escapeHtml(book.Genre)}</span>`;
+  if (pages) metaHTML += `<span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${escapeHtml(pages)} pages</span>`;
+  document.getElementById('bookModalMeta').innerHTML = metaHTML;
+  // Summary
+  document.getElementById('bookModalSummary').textContent = summary;
+
+  // Action buttons
+  const actionsEl = document.getElementById('bookModalActions');
+  const due30 = new Date();
+  due30.setDate(due30.getDate() + 30);
+  const dueVal = due30.toISOString().slice(0, 10);
+
+  if (status === 'Available') {
+    actionsEl.innerHTML = `
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">📤 Check Out This Book</h3>
+      <div class="book-modal-form">
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" class="form-input" id="bookModalCheckoutName" placeholder="Enter your name...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due Back Date</label>
+          <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" id="bookModalCheckoutBtn" data-book-idx="${idx}">📤 Check Out</button>
+        <p style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">Please coordinate with the owner to get the book. Update the site when you return it.</p>
+      </div>
+      <div class="book-modal-msg" id="bookModalMsg"></div>`;
+  } else {
+    const readerName = activeCheckout ? activeCheckout.name : 'someone';
+    actionsEl.innerHTML = `
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">This book is with ${escapeHtml(readerName)}</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn" style="flex:1;min-width:120px;background:var(--green);color:white;" id="bookModalReturnBtn" data-book-idx="${idx}">📥 Return</button>
+        <button class="btn" style="flex:1;min-width:120px;background:var(--purple);color:white;" id="bookModalRequestBtn" data-book-idx="${idx}">🔖 Request</button>
+      </div>
+      <div class="book-modal-form" id="bookModalInlineForm" style="display:none;margin-top:12px;"></div>
+      <div class="book-modal-msg" id="bookModalMsg"></div>`;
+  }
+
+  // Checkout history
+  const historyEl = document.getElementById('bookModalHistory');
+  if (checkouts.length === 0) {
+    historyEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">No one has checked out this book yet.</div>';
+  } else {
+    historyEl.innerHTML = checkouts.map(l => {
+      const pct = l.totalPages ? Math.round((l.currentPage / l.totalPages) * 100) : 0;
+      const cPct = Math.min(pct, 100);
+      const statusText = l.status === 'reading' ? '📖 Reading' : l.status === 'requested' ? '🔖 Requested' : '✅ Returned';
+      return `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--accent);flex-shrink:0;">${escapeHtml(l.name)[0] || '?'}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;">${escapeHtml(l.name)}</div>
+            <div style="font-size:11px;color:var(--muted);">${statusText} · Started ${formatDate(l.startDate)}${l.dueBack ? ' · Due ' + formatDate(l.dueBack) : ''}</div>
+          </div>
+          ${l.status !== 'requested' && l.totalPages ? `
+          <div style="width:80px;">
+            <div class="checkout-log-bar" style="height:6px;"><div class="checkout-log-bar-fill ${cPct >= 100 ? 'completed' : 'reading'}" style="width:${cPct}%"></div></div>
+            <div style="font-size:10px;color:var(--muted);text-align:right;font-family:'JetBrains Mono',monospace;">${cPct}%</div>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+  }
+
+  // Show modal
+  modal.classList.add('active');
+
+  // Attach action listeners
+  setTimeout(() => initBookModalActions(idx), 0);
+}
+
+function closeBookModal() {
+  const modal = document.getElementById('bookDetailModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function initBookModalActions(idx) {
+  const book = libraryBooks[idx];
+  if (!book) return;
+
+  // Close handlers
+  const closeBtn = document.getElementById('bookModalCloseBtn');
+  const overlay = document.getElementById('bookDetailModal');
+  if (closeBtn) closeBtn.onclick = closeBookModal;
+  if (overlay) overlay.onclick = (e) => { if (e.target === overlay) closeBookModal(); };
+
+  // Checkout button
+  const checkoutBtn = document.getElementById('bookModalCheckoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.onclick = () => {
+      const name = (document.getElementById('bookModalCheckoutName').value || '').trim();
+      const dueBack = document.getElementById('bookModalCheckoutDue').value;
+      const msgEl = document.getElementById('bookModalMsg');
+      if (!name) {
+        msgEl.innerHTML = '<div class="badge badge-red" style="padding:8px 12px;font-size:12px;">Please enter your name.</div>';
+        return;
+      }
+      const totalPages = parseInt(book.Pages || book['Total Pages'] || '0') || 0;
+      addCheckoutLog({
+        name,
+        book: book.Title,
+        startDate: new Date().toISOString().slice(0, 10),
+        dueBack,
+        currentPage: 0,
+        totalPages,
+        status: 'reading'
+      });
+      msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.</div>';
+      setTimeout(() => {
+        closeBookModal();
+        document.getElementById('app').innerHTML = renderLibraryPage();
+        initLibraryPage();
+      }, 1500);
+    };
+  }
+
+  // Return button
+  const returnBtn = document.getElementById('bookModalReturnBtn');
+  if (returnBtn) {
+    returnBtn.onclick = () => {
+      const formArea = document.getElementById('bookModalInlineForm');
+      const active = getActiveCheckoutForBook(book.Title);
+      formArea.style.display = 'block';
+      formArea.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Returning as</label>
+          <input type="text" class="form-input" id="bookModalReturnName" value="${escapeHtml(active ? active.name : '')}" placeholder="Your name">
+        </div>
+        <button class="btn" style="width:100%;background:var(--green);color:white;" id="bookModalConfirmReturn">✅ Confirm Return</button>`;
+      setTimeout(() => {
+        const confirmBtn = document.getElementById('bookModalConfirmReturn');
+        if (confirmBtn) {
+          confirmBtn.onclick = () => {
+            if (active) {
+              updateCheckoutLog(active.id, { status: 'returned', currentPage: active.totalPages || active.currentPage });
+            }
+            const msgEl = document.getElementById('bookModalMsg');
+            msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">✅ Book returned!</div>';
+            setTimeout(() => {
+              closeBookModal();
+              document.getElementById('app').innerHTML = renderLibraryPage();
+              initLibraryPage();
+            }, 1500);
+          };
+        }
+      }, 0);
+    };
+  }
+
+  // Request button
+  const requestBtn = document.getElementById('bookModalRequestBtn');
+  if (requestBtn) {
+    requestBtn.onclick = () => {
+      const formArea = document.getElementById('bookModalInlineForm');
+      formArea.style.display = 'block';
+      formArea.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" class="form-input" id="bookModalRequestName" placeholder="Enter your name...">
+        </div>
+        <button class="btn" style="width:100%;background:var(--purple);color:white;" id="bookModalConfirmRequest">🔖 Request Next in Line</button>`;
+      setTimeout(() => {
+        const confirmBtn = document.getElementById('bookModalConfirmRequest');
+        if (confirmBtn) {
+          confirmBtn.onclick = () => {
+            const name = (document.getElementById('bookModalRequestName').value || '').trim();
+            const msgEl = document.getElementById('bookModalMsg');
+            if (!name) {
+              msgEl.innerHTML = '<div class="badge badge-red" style="padding:8px 12px;font-size:12px;">Please enter your name.</div>';
+              return;
+            }
+            const totalPages = parseInt(book.Pages || book['Total Pages'] || '0') || 0;
+            addCheckoutLog({
+              name,
+              book: book.Title,
+              startDate: new Date().toISOString().slice(0, 10),
+              dueBack: '',
+              currentPage: 0,
+              totalPages,
+              status: 'requested'
+            });
+            msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">🔖 You\'re next in line!</div>';
+            setTimeout(() => {
+              closeBookModal();
+              document.getElementById('app').innerHTML = renderLibraryPage();
+              initLibraryPage();
+            }, 1500);
+          };
+        }
+      }, 0);
+    };
+  }
+}
+
+// ─── FILTERS ───
+
 function toggleLibraryFilter(filter) {
   if (filter === 'all') {
     activeLibraryFilters.clear();
@@ -243,14 +607,14 @@ function toggleLibraryFilter(filter) {
   applyLibraryFilters();
 }
 
-// Apply filters without full re-render (just update grid + pill states)
 function applyLibraryFilters() {
   const grid = document.getElementById('libraryGrid');
   if (grid) {
     grid.innerHTML = renderLibraryBooks();
+    // Re-attach card click listeners
+    attachBookCardListeners();
   }
 
-  // Update pill active states
   const hasActiveFilters = activeLibraryFilters.size > 0;
   document.querySelectorAll('.library-pill').forEach(pill => {
     const f = pill.dataset.filter;
@@ -261,22 +625,74 @@ function applyLibraryFilters() {
     }
   });
 
-  // Update toggle button text
   const toggle = document.getElementById('libraryFilterToggle');
   if (toggle) {
     toggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ' active)' : ''}`;
   }
 }
 
-// Initialize Library page
+// ─── ATTACH LISTENERS ───
+
+function attachBookCardListeners() {
+  document.querySelectorAll('.library-book-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.index);
+      if (!isNaN(idx)) openBookModal(idx);
+    });
+  });
+}
+
+function attachCheckoutLogListeners() {
+  // Progress toggle buttons
+  document.querySelectorAll('[data-action="progress"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const logId = btn.dataset.logId;
+      const editEl = document.getElementById('edit-' + logId);
+      if (editEl) editEl.style.display = editEl.style.display === 'none' ? 'block' : 'none';
+    });
+  });
+
+  // Return buttons
+  document.querySelectorAll('[data-action="return"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const logId = btn.dataset.logId;
+      const logs = getCheckoutLogs();
+      const log = logs.find(l => l.id === logId);
+      if (log) {
+        updateCheckoutLog(logId, { status: 'returned', currentPage: log.totalPages || log.currentPage });
+        document.getElementById('app').innerHTML = renderLibraryPage();
+        initLibraryPage();
+      }
+    });
+  });
+
+  // Save progress buttons
+  document.querySelectorAll('.checkout-edit-save').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const logId = btn.dataset.logId;
+      const pageInput = document.getElementById('page-' + logId);
+      if (pageInput) {
+        const newPage = parseInt(pageInput.value) || 0;
+        updateCheckoutLog(logId, { currentPage: newPage, status: 'reading' });
+        document.getElementById('app').innerHTML = renderLibraryPage();
+        initLibraryPage();
+      }
+    });
+  });
+}
+
+// ─── INIT ───
+
 function initLibraryPage() {
   if (libraryBooks.length === 0) {
     fetchLibraryData().then(() => {
-      // Re-render full page now that we have data (pills need book categories)
       document.getElementById('app').innerHTML = renderLibraryPage();
       initLibraryPage();
     });
-    return; // Don't attach listeners until data loads
+    return;
   }
 
   // Tab switching
@@ -288,7 +704,7 @@ function initLibraryPage() {
     });
   });
 
-  // Filter toggle (expand/collapse)
+  // Filter toggle
   const filterToggle = document.getElementById('libraryFilterToggle');
   const filterPills = document.getElementById('libraryPills');
   if (filterToggle && filterPills) {
@@ -307,16 +723,21 @@ function initLibraryPage() {
       librarySearchQuery = e.target.value;
       applyLibraryFilters();
     });
-    // Restore focus position
     if (librarySearchQuery) {
       searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
     }
   }
 
-  // Pill filter clicks (multi-select toggle)
+  // Pill filter clicks
   document.querySelectorAll('.library-pill').forEach(pill => {
     pill.addEventListener('click', () => {
       toggleLibraryFilter(pill.dataset.filter);
     });
   });
+
+  // Book card clicks → modal
+  attachBookCardListeners();
+
+  // Checkout log listeners
+  attachCheckoutLogListeners();
 }
