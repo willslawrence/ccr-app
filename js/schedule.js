@@ -508,8 +508,50 @@ function renderOoSTab() {
             <input type="url" class="form-input" id="oosVenueUrl" placeholder="https://maps.google.com/...">
           </div>
           <div class="form-group">
-            <label class="form-label">Service Items (one per line)</label>
-            <textarea class="form-textarea" id="oosItems" rows="10" placeholder="Format: Time | Title | URL (optional)&#10;Example:&#10;7:00 PM | Welcome&#10;7:05 PM | Song: Amazing Grace | https://youtube.com/...&#10;7:15 PM | Scripture Reading"></textarea>
+            <label class="form-label">Service Items</label>
+            <div id="oosServiceItems">
+              <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" class="form-input" placeholder="Time" style="width:80px;flex:none;font-size:12px;padding:8px;">
+                <input type="text" class="form-input" placeholder="Item title (e.g. Arrival)" style="flex:1;font-size:12px;padding:8px;">
+                <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="addOoSItemRow()" style="font-size:11px;padding:6px 12px;min-height:28px;">+ Add Item</button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Songs</label>
+            <div id="oosSongItems">
+              <div class="oos-song-row" style="margin-bottom:8px;">
+                <input type="text" class="form-input" placeholder="Song name" style="font-size:12px;padding:8px;margin-bottom:4px;">
+                <div style="display:flex;gap:6px;">
+                  <input type="url" class="form-input" placeholder="YouTube link" style="flex:1;font-size:12px;padding:8px;">
+                  <button type="button" class="btn-icon-sm" onclick="this.parentElement.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+                </div>
+              </div>
+              <div class="oos-song-row" style="margin-bottom:8px;">
+                <input type="text" class="form-input" placeholder="Song name" style="font-size:12px;padding:8px;margin-bottom:4px;">
+                <div style="display:flex;gap:6px;">
+                  <input type="url" class="form-input" placeholder="YouTube link" style="flex:1;font-size:12px;padding:8px;">
+                  <button type="button" class="btn-icon-sm" onclick="this.parentElement.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+                </div>
+              </div>
+              <div class="oos-song-row" style="margin-bottom:8px;">
+                <input type="text" class="form-input" placeholder="Song name" style="font-size:12px;padding:8px;margin-bottom:4px;">
+                <div style="display:flex;gap:6px;">
+                  <input type="url" class="form-input" placeholder="YouTube link" style="flex:1;font-size:12px;padding:8px;">
+                  <button type="button" class="btn-icon-sm" onclick="this.parentElement.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+                </div>
+              </div>
+              <div class="oos-song-row" style="margin-bottom:8px;">
+                <input type="text" class="form-input" placeholder="Song name" style="font-size:12px;padding:8px;margin-bottom:4px;">
+                <div style="display:flex;gap:6px;">
+                  <input type="url" class="form-input" placeholder="YouTube link" style="flex:1;font-size:12px;padding:8px;">
+                  <button type="button" class="btn-icon-sm" onclick="this.parentElement.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline" onclick="addOoSSongRow()" style="font-size:11px;padding:6px 12px;min-height:28px;">+ Add Song</button>
           </div>
           <div class="form-group">
             <label class="form-label">Children's Section</label>
@@ -628,21 +670,54 @@ function initOoSTab() {
   }
 }
 
+function addOoSItemRow() {
+  const container = document.getElementById('oosServiceItems');
+  const row = document.createElement('div');
+  row.className = 'oos-item-row';
+  row.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+  row.innerHTML = `
+    <input type="text" class="form-input" placeholder="Time" style="width:80px;flex:none;font-size:12px;padding:8px;">
+    <input type="text" class="form-input" placeholder="Item title" style="flex:1;font-size:12px;padding:8px;">
+    <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+function addOoSSongRow() {
+  const container = document.getElementById('oosSongItems');
+  const row = document.createElement('div');
+  row.className = 'oos-song-row';
+  row.style.cssText = 'margin-bottom:8px;';
+  row.innerHTML = `
+    <input type="text" class="form-input" placeholder="Song name" style="font-size:12px;padding:8px;margin-bottom:4px;">
+    <div style="display:flex;gap:6px;">
+      <input type="url" class="form-input" placeholder="YouTube link" style="flex:1;font-size:12px;padding:8px;">
+      <button type="button" class="btn-icon-sm" onclick="this.parentElement.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+    </div>
+  `;
+  container.appendChild(row);
+}
+
 function saveOoS() {
   const date = document.getElementById('oosDate').value;
   const venueName = document.getElementById('oosVenueName').value.trim();
   const venueUrl = document.getElementById('oosVenueUrl').value.trim();
-  const itemsText = document.getElementById('oosItems').value.trim();
   const childrenSection = document.getElementById('oosChildren').value.trim();
 
-  // Parse items (format: "Time | Title | URL")
-  const items = itemsText.split('\n').filter(line => line.trim()).map(line => {
-    const parts = line.split('|').map(p => p.trim());
-    return {
-      time: parts[0] || '',
-      title: parts[1] || parts[0] || '',
-      url: parts[2] || ''
-    };
+  // Parse service items from structured inputs
+  const items = [];
+  document.querySelectorAll('#oosServiceItems .oos-item-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const time = inputs[0].value.trim();
+    const title = inputs[1].value.trim();
+    if (title) items.push({ time, title, url: '' });
+  });
+
+  // Parse songs
+  document.querySelectorAll('#oosSongItems .oos-song-row').forEach(row => {
+    const songName = row.querySelector('input[type="text"]').value.trim();
+    const songUrl = row.querySelector('input[type="url"]').value.trim();
+    if (songName) items.push({ time: '', title: 'Song: ' + songName, url: songUrl });
   });
 
   if (scheduleState.editingId) {
@@ -685,18 +760,39 @@ function editOoS(id) {
   document.getElementById('oosVenueName').value = oos.venueName;
   document.getElementById('oosVenueUrl').value = oos.venueUrl || '';
 
-  // Format items back to text
-  const itemsText = oos.items.map(item => {
-    if (item.url) {
-      return `${item.time} | ${item.title} | ${item.url}`;
-    } else if (item.time) {
-      return `${item.time} | ${item.title}`;
-    } else {
-      return item.title;
-    }
-  }).join('\n');
+  // Populate service items and songs into structured fields
+  const serviceContainer = document.getElementById('oosServiceItems');
+  const songContainer = document.getElementById('oosSongItems');
+  serviceContainer.innerHTML = '';
+  songContainer.innerHTML = '';
 
-  document.getElementById('oosItems').value = itemsText;
+  oos.items.forEach(item => {
+    if (item.title.startsWith('Song: ') || item.url) {
+      const songName = item.title.replace(/^Song:\s*/, '');
+      const row = document.createElement('div');
+      row.className = 'oos-song-row';
+      row.style.cssText = 'margin-bottom:8px;';
+      row.innerHTML = `
+        <input type="text" class="form-input" placeholder="Song name" value="${escapeHtml(songName)}" style="font-size:12px;padding:8px;margin-bottom:4px;">
+        <div style="display:flex;gap:6px;">
+          <input type="url" class="form-input" placeholder="YouTube link" value="${escapeHtml(item.url || '')}" style="flex:1;font-size:12px;padding:8px;">
+          <button type="button" class="btn-icon-sm" onclick="this.parentElement.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+        </div>
+      `;
+      songContainer.appendChild(row);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'oos-item-row';
+      row.style.cssText = 'display:flex;gap:6px;margin-bottom:8px;';
+      row.innerHTML = `
+        <input type="text" class="form-input" placeholder="Time" value="${escapeHtml(item.time || '')}" style="width:80px;flex:none;font-size:12px;padding:8px;">
+        <input type="text" class="form-input" placeholder="Item title" value="${escapeHtml(item.title || '')}" style="flex:1;font-size:12px;padding:8px;">
+        <button type="button" class="btn-icon-sm" onclick="this.parentElement.remove()" style="width:28px;height:28px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:12px;flex:none;align-self:center;">✕</button>
+      `;
+      serviceContainer.appendChild(row);
+    }
+  });
+
   document.getElementById('oosChildren').value = oos.childrenSection || '';
   document.getElementById('oosForm').style.display = 'block';
   document.getElementById('oosDate').focus();

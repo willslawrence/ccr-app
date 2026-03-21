@@ -449,6 +449,8 @@ h1, h2, h3, h4, h5, h6 {
   padding: 18px;
   box-shadow: var(--shadow-neu);
   transition: all 0.3s;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .card-clickable {
@@ -510,6 +512,7 @@ h1, h2, h3, h4, h5, h6 {
 .form-textarea,
 .form-select {
   width: 100%;
+  max-width: 100%;
   padding: 12px 16px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -521,6 +524,7 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.3s;
   box-shadow: var(--shadow-neu-inset);
   min-height: 44px;
+  box-sizing: border-box;
 }
 
 .form-input:focus,
