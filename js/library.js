@@ -3,7 +3,7 @@
    Fetches from Google Sheets CSV
    ==================================== */
 
-const LIBRARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1tarzoeTPmF7At2B5a0yJJ9NzcrjtnTuXUgr-71xVHfk/export?format=csv';
+const LIBRARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1tarzoeTPmF7At2B5a0yJJ9NzcrjtnTuXUgr-71xVHfk/gviz/tq?tqx=out:csv';
 
 let libraryBooks = [];
 let libraryCheckouts = [];
@@ -164,6 +164,19 @@ function getUniqueValues(field) {
   return Array.from(values).sort();
 }
 
+// Get category color
+function getCategoryColor(cat) {
+  const colors = {
+    'Religious': 'background:rgba(167,139,250,0.12);color:#7c3aed;border-color:#c4b5fd;',
+    'Thinking': 'background:rgba(96,165,250,0.12);color:#2563eb;border-color:#93c5fd;',
+    'Fiction': 'background:rgba(249,115,22,0.12);color:#c2410c;border-color:#fdba74;',
+    'Reference': 'background:rgba(20,184,166,0.12);color:#0f766e;border-color:#5eead4;',
+    'Kids': 'background:rgba(217,119,6,0.12);color:#b45309;border-color:#d97706;',
+    'Digital PDF': 'background:rgba(13,148,136,0.12);color:#0f766e;border-color:#0d9488;'
+  };
+  return colors[cat] || 'background:rgba(184,134,11,0.12);color:var(--accent);border-color:var(--accent-light);';
+}
+
 // Render Library page
 function renderLibraryPage() {
   return `
@@ -184,68 +197,28 @@ function renderLibraryPage() {
           <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${libraryFilters.search}">
         </div>
 
-        <!-- Filter Button -->
-        <button class="btn-outline" id="toggleFilters">
-          <span>🔍 Filters</span>
-        </button>
-
-        <!-- Filter Area (collapsible) -->
-        <div class="library-filters" id="libraryFilters" style="display: none;">
-          <div class="filter-row">
-            <label>
-              Category
-              <select id="filterCategory">
-                <option value="all">All Categories</option>
-                ${getUniqueValues('Category').map(cat => `
-                  <option value="${cat}" ${libraryFilters.category === cat ? 'selected' : ''}>${cat}</option>
-                `).join('')}
-              </select>
-            </label>
-            <label>
-              Genre
-              <select id="filterGenre">
-                <option value="all">All Genres</option>
-                ${getUniqueValues('Genre').map(genre => `
-                  <option value="${genre}" ${libraryFilters.genre === genre ? 'selected' : ''}>${genre}</option>
-                `).join('')}
-              </select>
-            </label>
-          </div>
-          <div class="filter-row">
-            <label>
-              Owner
-              <select id="filterOwner">
-                <option value="all">All Owners</option>
-                ${getUniqueValues('Owner').map(owner => `
-                  <option value="${owner}" ${libraryFilters.owner === owner ? 'selected' : ''}>${owner}</option>
-                `).join('')}
-              </select>
-            </label>
-            <label>
-              Status
-              <select id="filterStatus">
-                <option value="all">All</option>
-                ${getUniqueValues('Status').map(status => `
-                  <option value="${status}" ${libraryFilters.status === status ? 'selected' : ''}>${status}</option>
-                `).join('')}
-              </select>
-            </label>
-          </div>
+        <!-- Category Pills -->
+        <div class="library-pills" id="libraryPills" style="display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-bottom:16px;">
+          <button class="library-pill ${libraryFilters.category === 'all' && libraryFilters.genre === 'all' && libraryFilters.owner === 'all' ? 'active' : ''}" data-filter-type="all" data-filter-value="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
+          ${getUniqueValues('Category').map(cat => `
+            <button class="library-pill ${libraryFilters.category === cat ? 'active' : ''}" data-filter-type="category" data-filter-value="${cat}" style="${getCategoryColor(cat)}">${cat}</button>
+          `).join('')}
+          ${getUniqueValues('Genre').map(genre => `
+            <button class="library-pill ${libraryFilters.genre === genre ? 'active' : ''}" data-filter-type="genre" data-filter-value="${genre}" style="background:rgba(74,122,181,0.10);color:var(--blue);border-color:#93c5fd;">${genre}</button>
+          `).join('')}
         </div>
 
         <!-- Books Grid (half-size cards) -->
         <div class="library-books-grid">
           ${getFilteredBooks().map(book => `
             <div class="library-book-card card" data-isbn="${book.ISBN || ''}">
-              <div class="book-cover-small">
-                <div class="book-cover-placeholder">📖</div>
-              </div>
               <div class="book-info-compact">
                 <h4 class="book-title-compact" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
                 <p class="book-author-compact">${escapeHtml(book.Author)}</p>
                 <div class="book-badges">
-                  <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}">${book.Status}</span>
-                  <span class="badge badge-muted">${book.Genre}</span>
+                  <span class="badge badge-${book.Status === 'Available' ? 'green' : 'orange'}" style="font-size:9px;padding:2px 6px;">${book.Status}</span>
+                  ${book.Genre ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Genre}</span>` : ''}
+                  ${book.Owner ? `<span class="badge badge-muted" style="font-size:9px;padding:2px 6px;">${book.Owner}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -302,53 +275,31 @@ function renderLibraryPageContent() {
     });
   }
 
-  // Toggle filters
-  const toggleFiltersBtn = document.getElementById('toggleFilters');
-  const filtersDiv = document.getElementById('libraryFilters');
-  if (toggleFiltersBtn && filtersDiv) {
-    toggleFiltersBtn.addEventListener('click', () => {
-      const isVisible = filtersDiv.style.display === 'block';
-      filtersDiv.style.display = isVisible ? 'none' : 'block';
-    });
-  }
+  // Pill filters
+  document.querySelectorAll('.library-pill').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      const filterType = e.target.dataset.filterType;
+      const filterValue = e.target.dataset.filterValue;
 
-  // Filter dropdowns
-  const filterCategory = document.getElementById('filterCategory');
-  const filterGenre = document.getElementById('filterGenre');
-  const filterOwner = document.getElementById('filterOwner');
-  const filterStatus = document.getElementById('filterStatus');
+      if (filterType === 'all') {
+        libraryFilters.category = 'all';
+        libraryFilters.genre = 'all';
+        libraryFilters.owner = 'all';
+        libraryFilters.status = 'all';
+      } else if (filterType === 'category') {
+        libraryFilters.category = filterValue;
+        libraryFilters.genre = 'all';
+        libraryFilters.owner = 'all';
+      } else if (filterType === 'genre') {
+        libraryFilters.genre = filterValue;
+        libraryFilters.category = 'all';
+        libraryFilters.owner = 'all';
+      }
 
-  if (filterCategory) {
-    filterCategory.addEventListener('change', (e) => {
-      libraryFilters.category = e.target.value;
       document.getElementById('app').innerHTML = renderLibraryPage();
       initLibraryPage();
     });
-  }
-
-  if (filterGenre) {
-    filterGenre.addEventListener('change', (e) => {
-      libraryFilters.genre = e.target.value;
-      document.getElementById('app').innerHTML = renderLibraryPage();
-      initLibraryPage();
-    });
-  }
-
-  if (filterOwner) {
-    filterOwner.addEventListener('change', (e) => {
-      libraryFilters.owner = e.target.value;
-      document.getElementById('app').innerHTML = renderLibraryPage();
-      initLibraryPage();
-    });
-  }
-
-  if (filterStatus) {
-    filterStatus.addEventListener('change', (e) => {
-      libraryFilters.status = e.target.value;
-      document.getElementById('app').innerHTML = renderLibraryPage();
-      initLibraryPage();
-    });
-  }
+  });
 
   // Book card clicks (future: expand to show details)
   document.querySelectorAll('.library-book-card').forEach(card => {

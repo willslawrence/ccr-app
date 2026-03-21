@@ -20,10 +20,13 @@ function renderSchedulePage() {
         <p class="page-subtitle">Events, volunteering, and Order of Service</p>
       </div>
 
-      <div class="btn-group" style="margin-bottom:20px;">
-        <button class="btn ${scheduleState.currentTab === 'events' ? 'btn-primary' : 'btn-outline'}" id="eventsTabBtn">Events</button>
-        <button class="btn ${scheduleState.currentTab === 'volunteering' ? 'btn-primary' : 'btn-outline'}" id="volunteeringTabBtn">Volunteering</button>
-        <button class="btn ${scheduleState.currentTab === 'oos' ? 'btn-primary' : 'btn-outline'}" id="oosTabBtn">Friday OoS</button>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+        <div class="btn-group" style="flex:1;margin-bottom:0;">
+          <button class="btn ${scheduleState.currentTab === 'events' ? 'btn-primary' : 'btn-outline'}" id="eventsTabBtn">Events</button>
+          <button class="btn ${scheduleState.currentTab === 'volunteering' ? 'btn-primary' : 'btn-outline'}" id="volunteeringTabBtn">Volunteering</button>
+          <button class="btn ${scheduleState.currentTab === 'oos' ? 'btn-primary' : 'btn-outline'}" id="oosTabBtn">Friday OoS</button>
+        </div>
+        ${isEditor() ? `<button class="btn btn-primary" id="quickAddBtn" style="flex:none;padding:10px 16px;font-size:13px;min-height:44px;">+</button>` : ''}
       </div>
 
       <div id="scheduleContent"></div>
@@ -49,6 +52,19 @@ function initSchedulePage() {
     scheduleState.currentTab = 'oos';
     renderScheduleContent();
   });
+
+  const quickAddBtn = document.getElementById('quickAddBtn');
+  if (quickAddBtn) {
+    quickAddBtn.addEventListener('click', () => {
+      if (scheduleState.currentTab === 'events') {
+        document.getElementById('addEventBtn')?.click();
+      } else if (scheduleState.currentTab === 'volunteering') {
+        document.getElementById('addVolunteerBtn')?.click();
+      } else if (scheduleState.currentTab === 'oos') {
+        document.getElementById('addOoSBtn')?.click();
+      }
+    });
+  }
 }
 
 function loadScheduleData() {
@@ -91,12 +107,7 @@ function renderEventsTab() {
   );
 
   return `
-    ${canEdit ? `
-      <div class="btn-group" style="margin-bottom:20px;">
-        <button class="btn btn-primary" id="addEventBtn">+ Add Event</button>
-      </div>
-    ` : ''}
-
+    <button class="btn btn-primary" id="addEventBtn" style="display:none;">+ Add Event</button>
     <div id="eventForm" style="display:none;margin-bottom:24px;">
       <div class="card">
         <h3 style="margin-bottom:16px;">${scheduleState.editingId ? 'Edit Event' : 'New Event'}</h3>
@@ -275,12 +286,7 @@ function renderVolunteeringTab() {
   );
 
   return `
-    ${canEdit ? `
-      <div class="btn-group" style="margin-bottom:20px;">
-        <button class="btn btn-primary" id="addVolunteerBtn">+ Add Week</button>
-      </div>
-    ` : ''}
-
+    <button class="btn btn-primary" id="addVolunteerBtn" style="display:none;">+ Add Week</button>
     <div id="volunteerForm" style="display:none;margin-bottom:24px;">
       <div class="card">
         <h3 style="margin-bottom:16px;">${scheduleState.editingId ? 'Edit Week' : 'New Week'}</h3>
@@ -484,12 +490,7 @@ function renderOoSTab() {
   const currentOoS = sortedOoS.length > 0 ? sortedOoS[0] : null;
 
   return `
-    ${canEdit ? `
-      <div class="btn-group" style="margin-bottom:20px;">
-        <button class="btn btn-primary" id="addOoSBtn">+ New Order of Service</button>
-      </div>
-    ` : ''}
-
+    <button class="btn btn-primary" id="addOoSBtn" style="display:none;">+ New Order of Service</button>
     <div id="oosForm" style="display:none;margin-bottom:24px;">
       <div class="card">
         <h3 style="margin-bottom:16px;">${scheduleState.editingId ? 'Edit OoS' : 'New Order of Service'}</h3>

@@ -242,17 +242,14 @@ function renderPrayers() {
           <div class="card-content" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);" onclick="event.stopPropagation();">
             ${prayer.longDesc ? `<p style="margin-bottom:16px;">${escapeHtml(prayer.longDesc)}</p>` : ''}
 
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-              <button class="btn ${hasPrayed ? 'btn-outline' : 'btn-primary'}" style="font-size:13px;padding:8px 16px;" onclick="prayForRequest('${prayer.id}')" ${hasPrayed ? 'disabled' : ''}>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-bottom:12px;">
+              <button class="btn ${hasPrayed ? 'btn-outline' : 'btn-primary'}" style="font-size:12px;padding:6px 12px;min-height:32px;border-radius:8px;" onclick="prayForRequest('${prayer.id}')" ${hasPrayed ? 'disabled' : ''}>
                 🙏 ${hasPrayed ? 'Prayed' : 'Pray'}
               </button>
-              <span class="text-muted" style="font-size:13px;">${prayer.prayingCount} ${prayer.prayingCount === 1 ? 'person' : 'people'} praying</span>
-            </div>
-
-            <div class="btn-group">
-              ${!prayer.answered && canAnswer ? `<button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="markAnswered('${prayer.id}')">✓ Mark Answered</button>` : ''}
-              ${canEdit ? `<button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editPrayer('${prayer.id}')">✏️ Edit</button>` : ''}
-              ${canEdit ? `<button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deletePrayer('${prayer.id}')">🗑️ Delete</button>` : ''}
+              <span class="text-muted" style="font-size:11px;">${prayer.prayingCount}</span>
+              ${!prayer.answered && canAnswer ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;" onclick="markAnswered('${prayer.id}')">✓ Answered</button>` : ''}
+              ${canEdit ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;" onclick="editPrayer('${prayer.id}')">✏️</button>` : ''}
+              ${canEdit ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;color:var(--red);" onclick="deletePrayer('${prayer.id}')">🗑️</button>` : ''}
             </div>
           </div>
         ` : ''}
