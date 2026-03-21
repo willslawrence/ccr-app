@@ -184,9 +184,9 @@ function renderLibraryPage() {
       <h1 class="page-title">Friends Library</h1>
 
       <!-- Tab Buttons -->
-      <div class="tab-buttons">
-        <button class="tab-btn ${currentLibraryTab === 'books' ? 'active' : ''}" data-tab="books">📚 Books</button>
-        <button class="tab-btn ${currentLibraryTab === 'checkouts' ? 'active' : ''}" data-tab="checkouts">📤 Checked Out</button>
+      <div class="btn-group">
+        <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-tab="books">📚 Books</button>
+        <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-tab="checkouts">📤 Checked Out</button>
       </div>
 
       <!-- Books Tab -->
