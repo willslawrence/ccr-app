@@ -171,6 +171,7 @@ function init() {
   }
 
   // Setup FAB
+  initVersionModal();
   initFAB();
 
   // Initial render
@@ -229,4 +230,32 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Version modal
+function initVersionModal() {
+  const versionBadge = document.getElementById('fabVersionBadge');
+  const versionModalOverlay = document.getElementById('versionModalOverlay');
+  const versionModalClose = document.getElementById('versionModalClose');
+
+  if (versionBadge) {
+    versionBadge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      versionModalOverlay.classList.add('active');
+    });
+  }
+
+  if (versionModalClose) {
+    versionModalClose.addEventListener('click', () => {
+      versionModalOverlay.classList.remove('active');
+    });
+  }
+
+  if (versionModalOverlay) {
+    versionModalOverlay.addEventListener('click', (e) => {
+      if (e.target === versionModalOverlay) {
+        versionModalOverlay.classList.remove('active');
+      }
+    });
+  }
 }

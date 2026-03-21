@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giving Dashboard</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --card: #ffffff;
+    --card-hover: #f0f2f8;
+    --border: #e2e5ed;
+    --text: #1a1a2e;
+    --muted: #6b7185;
+    --accent: #3b82f6;
+    --green: #16a34a;
+    --orange: #d97706;
+    --red: #dc2626;
+    --purple: #7c3aed;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; }
+  
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .header h1 { font-size: 24px; font-weight: 700; }
+  .header .total { font-size: 14px; color: var(--muted); text-align: right; }
+  .header .total span { color: var(--green); font-size: 20px; font-weight: 700; }
+  
+  .section { margin-bottom: 32px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .section-title { font-size: 16px; font-weight: 600; }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .section-count { font-size: 12px; color: var(--muted); background: var(--card); padding: 3px 10px; border-radius: 10px; border: 1px solid var(--border); }
+  
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  
+  /* Category filter toggles */
+  .cat-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .cat-btn { padding: 6px 14px; border-radius: 20px; border: 2px solid var(--border); background: var(--card); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; color: var(--muted); }
+  .cat-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cat-btn.active { color: #fff; }
+  .cat-btn.active[data-cat="all"] { background: var(--accent); border-color: var(--accent); }
+  .cat-btn.active[data-cat="church"] { background: #60a5fa; border-color: #60a5fa; }
+  .cat-btn.active[data-cat="orphan"] { background: #d4a017; border-color: #d4a017; }
+  .cat-btn.active[data-cat="persecuted"] { background: #f97316; border-color: #f97316; }
+  .cat-btn.active[data-cat="word"] { background: #166534; border-color: #166534; }
+  .cat-btn.active[data-cat="local"] { background: #4ade80; border-color: #4ade80; color: #0f172a; }
+  .cat-btn.active[data-cat="global"] { background: #1e40af; border-color: #1e40af; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .card.dimmed { opacity: 0.3; filter: grayscale(80%); transform: scale(0.98); }
+  .card:hover { background: var(--card-hover); border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .card.cat-church { border-left: 3px solid #60a5fa; }
+  .card.cat-orphan { border-left: 3px solid #facc15; }
+  .card.cat-persecuted { border-left: 3px solid #f97316; }
+  .card.cat-word { border-left: 3px solid #166534; }
+  .card.cat-local { border-left: 3px solid #4ade80; }
+  .card.cat-global { border-left: 3px solid #1e40af; }
+  .card.cat-church { background: linear-gradient(135deg, var(--card) 90%, rgba(96,165,250,0.06)); }
+  .card.cat-orphan { background: linear-gradient(135deg, var(--card) 90%, rgba(250,204,21,0.06)); }
+  .card.cat-persecuted { background: linear-gradient(135deg, var(--card) 90%, rgba(249,115,22,0.06)); }
+  .card.cat-word { background: linear-gradient(135deg, var(--card) 90%, rgba(22,101,52,0.06)); }
+  .card.cat-local { background: linear-gradient(135deg, var(--card) 90%, rgba(74,222,128,0.06)); }
+  .card.cat-global { background: linear-gradient(135deg, var(--card) 90%, rgba(30,64,175,0.06)); }
+  .status-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; display: inline-block; margin-bottom: 6px; }
+  .status-tag.given { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .status-tag.new { background: rgba(236,72,153,0.15); color: #ec4899; }
+  .cat-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; display: inline-block; margin-bottom: 6px; }
+  .cat-tag.cat-tag-church { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .cat-tag.cat-tag-orphan { background: rgba(250,204,21,0.15); color: #d4a017; }
+  .cat-tag.cat-tag-persecuted { background: rgba(249,115,22,0.15); color: #f97316; }
+  .cat-tag.cat-tag-word { background: rgba(22,101,52,0.15); color: #22c55e; }
+  .cat-tag.cat-tag-local { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .cat-tag.cat-tag-global { background: rgba(30,64,175,0.15); color: #6088e0; }
+  
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .card-img { width: 100%; height: 96px; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #eef0f5; }
+  .card-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .card-img svg { width: 100%; height: 100%; }
+  .card-top-left { display: flex; align-items: flex-start; flex: 1; min-width: 0; }
+  .card-name { font-size: 14px; font-weight: 600; }
+  .card-badge { font-size: 10px; padding: 3px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; }
+  .badge-org { background: rgba(59,130,246,0.15); color: var(--accent); }
+  .badge-person { background: rgba(168,85,247,0.15); color: var(--purple); }
+  .badge-potential { background: rgba(245,158,11,0.15); color: var(--orange); }
+  .badge-need { background: rgba(239,68,68,0.15); color: var(--red); }
+  .badge-past { background: rgba(139,143,163,0.1); color: var(--muted); }
+  .badge-given { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .badge-new { background: rgba(236,72,153,0.15); color: #ec4899; }
+  
+  .card-category { font-size: 11px; color: var(--muted); margin-bottom: 8px; display: flex; gap: 8px; align-items: center; }
+  .card-category .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .dot-church { background: #60a5fa; }
+  .dot-orphan { background: #facc15; }
+  .dot-persecuted { background: #f97316; }
+  .dot-special { background: #1e40af; }
+  .dot-relief { background: var(--red); }
+  .dot-word { background: #166534; }
+  .dot-local { background: #4ade80; }
+  .dot-global { background: #1e40af; }
+  
+  .card-desc { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+  
+  .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 8px; }
+  .card-amount { font-size: 15px; font-weight: 700; }
+  .card-amount.zero { color: var(--muted); font-size: 14px; }
+  .card-freq { font-size: 11px; color: var(--muted); }
+  .card-update { font-size: 10px; color: var(--muted); }
+  
+  .card-score { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .score-green { background: rgba(22,163,74,0.1); color: var(--green); border: 2px solid var(--green); }
+  .score-yellow { background: rgba(217,119,6,0.1); color: var(--orange); border: 2px solid var(--orange); }
+  .score-red { background: rgba(220,38,38,0.1); color: var(--red); border: 2px solid var(--red); }
+  .score-na { background: rgba(107,113,133,0.08); color: var(--muted); border: 2px solid var(--border); font-size: 9px; }
+  
+  .click-hint { font-size: 10px; color: var(--accent); opacity: 0; transition: opacity 0.2s; }
+  .card:hover .click-hint { opacity: 1; }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 90%; max-width: 700px; max-height: 85vh; overflow-y: auto; padding: 28px; position: relative; }
+  .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+  .modal h2 { font-size: 20px; margin-bottom: 4px; }
+  .modal .modal-sub { color: var(--muted); font-size: 12px; margin-bottom: 16px; }
+  .modal .modal-desc { font-size: 13px; line-height: 1.6; margin-bottom: 16px; color: var(--text); }
+  .modal .modal-link { color: var(--accent); text-decoration: none; font-size: 12px; }
+  .modal .modal-link:hover { text-decoration: underline; }
+  .modal .audit-frame { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; }
+  .modal .update-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 12px; }
+  .modal .update-box h3 { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .modal .update-box p { font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
+  .modal-stats { display: flex; gap: 16px; margin-bottom: 16px; }
+  .modal-stat { background: var(--bg); border-radius: 8px; padding: 10px 14px; flex: 1; }
+  .modal-stat .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  .modal-stat .stat-value { font-size: 16px; font-weight: 700; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- Password Gate -->
+<div id="lockScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <div style="text-align:center;max-width:340px;">
+    <h2 style="color:#0f172a;margin-bottom:8px;">Potential Giving</h2>
+    <p style="color:#64748b;font-size:14px;margin-bottom:24px;">Enter password to continue</p>
+    <p style="color:#94a3b8;font-size:12px;margin-bottom:16px;">Hint: The hanging King's last word...</p>
+    <input id="pwInput" type="password" placeholder="Password" autofocus
+      style="width:100%;padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;font-size:16px;outline:none;text-align:center;margin-bottom:12px;"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()"
+      style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;">
+      Enter
+    </button>
+    <p id="pwError" style="color:#dc2626;font-size:13px;margin-top:10px;display:none;">Incorrect password</p>
+  </div>
+</div>
+<script>
+function checkPw() {
+  const pw = document.getElementById('pwInput').value.toLowerCase();
+  // Case-insensitive simple hash check (not crypto-secure, but blocks casual access)
+  if (simpleHash(pw) === 'd8c072' || simpleHash(pw) === '990bf1') {
+    document.getElementById('lockScreen').style.display = 'none';
+    sessionStorage.setItem('giving_auth', '1');
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+function simpleHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) & 0xffffff;
+  return h.toString(16);
+}
+// Auto-unlock if already authenticated this session
+if (sessionStorage.getItem('giving_auth') === '1') {
+  document.getElementById('lockScreen').style.display = 'none';
+}
+</script>
+
+<div class="header">
+  <div>
+    <h1>✝️ Giving Dashboard</h1>
+    <div style="font-size:12px; color:var(--muted); margin-top:4px;">Will's giving tracker — click any card for details</div>
+  </div>
+  <div class="total">
+    Total Given<br>
+    <span id="totalGiven">SAR —</span>
+  </div>
+</div>
+
+<div style="margin-bottom:24px;">
+  <button onclick="document.getElementById('linksPanel').style.display=document.getElementById('linksPanel').style.display==='none'?'block':'none'" style="background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;">🔗 Links</button>
+  <div id="linksPanel" style="display:none;margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <ul style="list-style:none;padding:0;margin:0;">
+      <li style="padding:8px 0;border-bottom:1px solid var(--border);"><a href="https://www.charitynavigator.org" target="_blank" style="color:var(--accent);text-decoration:none;font-size:14px;font-weight:500;">🏛️ Charity Navigator</a><span style="color:var(--muted);font-size:12px;margin-left:8px;">— Research & rate charities</span></li>
+      <li style="padding:8px 0;border-bottom:1px solid var(--border);"><a href="https://willslawrence.github.io/giving-vote/" target="_blank" style="color:var(--accent);text-decoration:none;font-size:14px;font-weight:500;">🗳️ Giving Vote</a><span style="color:var(--muted);font-size:12px;margin-left:8px;">— Vote on giving priorities</span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="cat-filters" id="catFilters">
+  <button class="cat-btn active" data-cat="all" onclick="filterCat('all')">All</button>
+  <button class="cat-btn" data-cat="church" onclick="filterCat('church')">⛪ Church Planting</button>
+  <button class="cat-btn" data-cat="orphan" onclick="filterCat('orphan')">💛 Orphans, Widows & Sojourners</button>
+  <button class="cat-btn" data-cat="persecuted" onclick="filterCat('persecuted')">🔥 Persecuted Church</button>
+  <button class="cat-btn" data-cat="word" onclick="filterCat('word')">📖 Ministry of the Word</button>
+  <button class="cat-btn" data-cat="local" onclick="filterCat('local')">🏠 Local Church</button>
+  <button class="cat-btn" data-cat="global" onclick="filterCat('global')">🌍 Global Church Needs</button>
+</div>
+
+<div id="allSection" class="section"></div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+// Logo images — real PNGs for orgs, styled SVGs for people
+const logos = {
+  // Real org logos (base64 PNGs from favicons)
+  radical: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAACoCAMAAABt9SM9AAAAe1BMVEUSEhLw8PAAAAD39/f29vb6+voODg6JiYnz8/Pk5OQYGBi5ubkEBAQICAitra1OTk5AQEDMzMzAwMDZ2dlYWFjb29uenp59fX2zs7MvLy+NjY01NTWYmJirq6vp6elDQ0MhISFxcXFdXV14eHgoKCg6OjppaWnJyclaWlprYRoRAAAEQUlEQVR4nO3Z63KyOhQGYLOSQBDwVEVUPNbDvv8r3CsJAbTaGf/0w5n3mekMEkjL2yQkcTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAvqPf/es/r1dotEte2y2RVgelyrwmY4TVQakRrymE1YWw3oCw3oCw3lCHZWSHVgjrKR+WmVLUyFdr9SSsKGtFd1V0ZmO5L8+bC/i4qSB/vJmoLXyotJeehBXltFc/wooO49ahfcoBzeNjuCqf+PJJVOeQ8bE74ESHe1+4CalQHG/ytvZV79Nqwro/W6jHsLK57phuQkFEQupx/YmmdblMRhN7jrS+kb3olO7CvUW4eM31hOP/tF73vst3woo6q5yN/hHWWAsVntcYMYhCBUqYhPynEJaUSrlQSJkZcc0zbRQPht2w8jP/Q3S9RKC5/IAJcBtWNFx8tcyTsFS1mTjj1Mi6HXCTsK+HEMDFle9P8VQLm4oPi27SyHQ537vCVQiWIxdm6D59Xli6s9D5MWbZsGLKHSKlSlcS0c7IM/9cMneVL8+4bZ6U0OfchUVXbXYbPudL66y+tUqPWs1cPR8YlptCNPOGZ2HVrlL5tkRbKSsbxtfjk9JacevzYc2Mnj+UR7kwxrYufXVj2weGJafLa7UzL8ISSd1HF1Jo9x6jvbbjlU3j8VHzjVajOizu1D+yTBXfkl00F0UfGZbZunYzfTYpdQO8nbJyH1VSXX3DWhi9t7fwpYf8ruJ8pbmrvgqLTpp/J6t8h/7AsIQ8urfi9MmklMMys6qqtpxZccx9VmspkqooiooH69vD7GMpVdV2w8ldKQ91wpSFvdMI20U/MSyh79N6NmZV3B2H7nS+kmGhxG8Efew8bETDndCTzIe1dM2oM+ekLc83lL/TTTw+Miyhv31a8llYbrpABb/bDu6I21OzqcrVcBzNbnTMKab11CHi3qqSY7tVTdylRbMbayceNqxl73ez67C+QlghrZt8FdaARpzWMBvUDaa2VSolKv1cLeEWw7PzqJ5n5eeEJ1rKvx8W/I5MjD6FGzNulBMOSySLxrafadW7DnqT1WE1aakfYYUFCaVa7g7ZQSod1nZ21aN4FnDTYeciid1bTms7kcqoEE1JwW1TzpqKKdZywXNbpdptj1mvw+KmRQMflk0r58X0zdyFlV/K8hpWcsWorGhZlp3vM+hajgpalyOriPe+K1FZuoR5KXVab11ZeaRyVJ47ew/bUTqe+Bu9sqfDV9j8M8n3pQ5L6O2FDtXjFk3eGUr8yHM/tjTnfOdqz/qDzsrTHkb3d9pVQf+/gWt2So0MWXFG2vgNQGz+3cG28hsQ1hsQ1hsQ1ht+D+sDliB/iWZavvYB++J/KRr+atD7b1z+VPS7f/3nAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/Kn/ARjmQLt/LjqVAAAAAElFTkSuQmCC',
+  sendRelief: 'data:image/png;base64,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',
+  lifesong: 'data:image/png;base64,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',
+  gcr: 'data:image/png;base64,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',
+  
+  // Cartoon-style SVGs for people/projects (matching PDF aesthetic)
+  hopeVillage: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="hv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a7c3f"/><stop offset="100%" stop-color="#2d5a27"/></linearGradient></defs><rect width="120" height="120" rx="16" fill="url(#hv)"/><circle cx="60" cy="42" r="22" fill="#fff" opacity="0.15"/><text x="60" y="50" text-anchor="middle" font-size="32">⚽</text><text x="60" y="72" text-anchor="middle" font-size="8" font-weight="bold" fill="#c8e6c0" font-family="sans-serif">SPECIAL NEEDS</text><text x="60" y="86" text-anchor="middle" font-size="8" fill="#a8d4a0" font-family="sans-serif">SPORTS</text><text x="60" y="98" text-anchor="middle" font-size="8" fill="#a8d4a0" font-family="sans-serif">MINISTRY</text><text x="60" y="112" text-anchor="middle" font-size="7" fill="#8bc48070" font-family="sans-serif">Alexandria, Egypt</text></svg>')}`,
+  
+  stanTasha: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="st" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2a4a7a"/><stop offset="100%" stop-color="#1a3058"/></linearGradient></defs><rect width="120" height="120" rx="16" fill="url(#st)"/><circle cx="45" cy="40" r="12" fill="#f5d6b8"/><circle cx="75" cy="40" r="12" fill="#f5d6b8"/><rect x="35" y="52" width="20" height="24" rx="4" fill="#3b7dd8"/><rect x="65" y="52" width="20" height="24" rx="4" fill="#48a866"/><circle cx="45" cy="36" r="14" fill="none" stroke="#5c3a1e" stroke-width="3"/><circle cx="75" cy="36" r="14" fill="none" stroke="#3a2010" stroke-width="3"/><text x="60" y="96" text-anchor="middle" font-size="9" font-weight="bold" fill="#93b8e8" font-family="sans-serif">STAN &amp; TASHA</text><text x="60" y="110" text-anchor="middle" font-size="7" fill="#7ba0d070" font-family="sans-serif">Tajikistan</text></svg>')}`,
+  
+  joseph: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="jj" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5a3080"/><stop offset="100%" stop-color="#3a1860"/></linearGradient></defs><rect width="120" height="120" rx="16" fill="url(#jj)"/><circle cx="60" cy="42" r="16" fill="#d4a574"/><rect x="45" y="58" width="30" height="28" rx="6" fill="#f0f0f0"/><circle cx="55" cy="39" r="2" fill="#333"/><circle cx="65" cy="39" r="2" fill="#333"/><path d="M56 45 Q60 49 64 45" fill="none" stroke="#333" stroke-width="1.5"/><ellipse cx="60" cy="30" rx="18" ry="8" fill="#2a1a10" opacity="0.8"/><text x="60" y="100" text-anchor="middle" font-size="9" font-weight="bold" fill="#c4a0e8" font-family="sans-serif">JOYFUL JOSEPH</text><text x="60" y="113" text-anchor="middle" font-size="7" fill="#a080c870" font-family="sans-serif">Ministry Trainee</text></svg>')}`,
+  
+  crisisAid: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="ca" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#b82020"/><stop offset="100%" stop-color="#8b1a1a"/></linearGradient></defs><rect width="120" height="120" rx="16" fill="url(#ca)"/><rect x="52" y="20" width="16" height="50" rx="3" fill="#fff"/><rect x="35" y="37" width="50" height="16" rx="3" fill="#fff"/><text x="60" y="92" text-anchor="middle" font-size="8" font-weight="bold" fill="#ffb3b3" font-family="sans-serif">CRISIS AID</text><text x="60" y="106" text-anchor="middle" font-size="7" fill="#ff9090" font-family="sans-serif">INTERNATIONAL</text></svg>')}`,
+  
+  danielBall: 'daniel-ball.jpg',
+  
+  projector: 'img/projector-epson.png',
+};
+
+
+const currentRecipients = [];
+
+const pastRecipients = [];
+
+// All recipients in one array, grouped by category
+const allManualRecipients = [
+  // ── CHURCH PLANTING ──
+  {
+    name: "Special Needs Sports Ministry",
+    image: null,
+    status: "given",
+    type: "person",
+    category: "church",
+    categoryLabel: "Church Planting",
+    amount: "SAR 4,391",
+    amountNum: 4391,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Gospel-centered sports outreach in Alexandria, Egypt — using coaching as a bridge to share Christ with vulnerable children at a special needs school, juvenile centres, and boys' homes.",
+    fullDescription: "This ministry uses sports — taekwondo, baseball, basketball, fitness — as a means to share the gospel and make disciples in Alexandria, Egypt. The vision is life transformation through a discipleship model with God as the head coach. They coach at a special needs school, girls' juvenile detention centres, and boys' homes, building trust through sport and pointing children and families to Christ. We sponsor weekly coaching sessions where children with special needs build confidence, confront fears, and experience safe, loving community. The Egyptian economy is squeezing families hard, and some parents are pulling kids from programs — but the team presses on, believing sport opens doors for the gospel that would otherwise stay shut.",
+    link: null,
+    lastUpdate: "3/18/2026",
+    score: null,
+    updateText: "<strong>February 2026 Training Report</strong><br><br><strong>Student K:</strong> K communicates non-verbally and previously preferred sitting near the door and training only on the bicycle. The coach had been gradually encouraging treadmill use at low speeds. On Feb 4th, K trained independently — refused the bicycle and successfully worked on the treadmill. This marks noticeable progress and reduced anxiety toward new equipment.<br><br><strong>Student MG:</strong> MG displays persistent pressure (insistence through repetition) to get what he wants. During the Feb 4th session, part of a machine was intentionally removed for the planned exercise. He repeatedly insisted on restoring it. The coach maintained boundaries and offered a conditional agreement: complete the assigned exercise first. He later requested boxing — was told he must first walk on the treadmill. He completed five minutes with difficulty and was then allowed to box.<br><br><strong>⚠️ Behavioral Note:</strong> At the end of the session, accumulated frustration was expressed through aggressive behavior toward the supervisor. This indicates ongoing challenges in emotional regulation and anger management.<br><br><strong>Overall Assessment:</strong> The session showed positive behavioral progress in overcoming avoidance (K) and improving compliance with structured conditions (MG). However, emotional regulation — particularly anger management — remains an area requiring continued intervention and structured support.<br><br><strong>🙏 Prayer Requests:</strong><br>• Pray for the children — that they would grow in confidence and feel safe and loved<br>• Pray for a girls' juvenile centre in Cairo that recently lost its funding — for new sponsors to step in<br>• Pray for Egyptian families under economic pressure, that they can keep their children in programs<br>• Pray for the coaching team as they serve vulnerable populations across multiple sites",
+    updatePdf: null
+  },
+  {
+    name: "Stan and Tasha",
+    image: 'img/stan-tasha.png',
+    status: "given",
+    type: "person",
+    category: "church",
+    categoryLabel: "Church Planting",
+    amount: "SAR 3,750",
+    amountNum: 3750,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Church planting in Tajikistan as part of a church centred ministry. Engaging Tajiks through English as second language classes, sports clubs, and in regular life as well as being involved in discipleship in the Tajik church.",
+    link: "",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "Hey everyone, thank you so much for praying for our 'outreach week' at our language centre. God was very gracious to answer our prayers. Two new students (brothers) agreed to read the Bible with us. We began reading Genesis 1-3 with them last week. Please pray God would open their eyes to the truth of his way of salvation!<br><br>They're church planting in Tajikistan, engaging Tajiks through ESL classes, sports clubs, and discipleship. They only need a little for this next round of giving."
+  },
+  {
+    name: "Radical",
+    image: 'img/radical.png',
+    status: "given",
+    type: "org",
+    category: "church",
+    categoryLabel: "Church Planting",
+    amount: "SAR 11,739",
+    amountNum: 11739,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Founded by David Platt equipping Christians for global mission. Focuses on helping believers grow, go, and give to make Jesus known everywhere, especially unreached areas. Teaching/mobilization ministry.",
+    link: "https://radical.net",
+    lastUpdate: "",
+    score: null,
+    scoreLabel: "N/R",
+    stats: { programs: "Not rated yet", ceoPay: "Not available", revenue: "$5.75M" },
+    audit: {
+      ein: "27-2343084", location: "radical.net · ECFA Member", score: null, scoreSource: "Insufficient data",
+      programs: ["Bible Teaching — free sermons, podcasts, and resources","Secret Church — intensive study connecting with persecuted believers","Global Missions — equipping churches for unreached people groups","Church Planting — supporting church planting among all nations","Discipleship Resources — training believers worldwide"],
+      mission: "The American church is asleep to the Great Commission — and Radical exists to wake it up. David Platt's conviction: comfortable Christianity costs the unreached everything. Every resource, every event, every dollar is aimed at mobilizing believers to go, give, and sacrifice for the people who have never once heard the name of Jesus.",
+      financials: [
+        {metric:"Revenue",value:"$5.75M"},{metric:"Expenses",value:"$3.69M"},
+        {metric:"Total Assets",value:"$3.52M"},{metric:"Liabilities",value:"$596K (16.9%)",rating:"Moderate",ratingColor:"amber"},
+        {metric:"Program Ratio",value:"Not calculated",rating:"Unrated",ratingColor:"amber"},
+        {metric:"Program Expense Ratio",value:"~73-90% (varies by year)",rating:"Moderate-Good",ratingColor:"amber"}
+      ],
+      leaders: [{name:"David Platt",role:"Chair/Founder",comp:"$0"},{name:"Christopher Hunsberger",role:"CEO/Director",comp:"$159,102"},{name:"Warren Beason",role:"President",comp:"$66,128"},{name:"3 Directors",role:"Various",comp:"$0"}],
+      leaderNote: "Total: ~$225K / $3.69M = 6.1% · David Platt serves as founder and chair with $0 salary · Board members unpaid",
+      governance: ["ECFA member (since 2023)","Board majority independent","Platt takes no salary","Board members unpaid","Consistent filings 2011–2021","Platinum Candid designation","Annual audits by Capin Crouse","Financial statements publicly available on radical.net"],
+      redflags: "Charity Navigator cannot rate yet. Most recent 990 is FY2021 — 3+ years old. Platt faced governance disputes at McLean Bible Church (separate from Radical).",
+      redflagLevel: "amber",
+      critics: [
+        "Most recent 990 is FY2021 — 5 years old. Current financial health is unverifiable.",
+        "David Platt faced serious governance accusations at McLean Bible Church — authoritarianism, secret votes, and congregational splits. Though separate from Radical, it raises leadership questions.",
+        "Charity Navigator cannot rate them due to insufficient data — a red flag for a ministry of this size.",
+        "Revenue dropped from $10.5M (2019) to $5.75M (2021) — a 45% decline with no public explanation.",
+        "No independent program expense ratio available — 'lean operation' is claimed but unproven."
+      ],
+      ambassadors: [
+        "Secret Church events have raised millions for Bible translation and persecuted believers worldwide.",
+        "'Radical' (the book) has mobilized thousands of Christians toward sacrificial giving and missions.",
+        "Consistent IRS filings from 2011–2021 with no asset diversion or governance red flags.",
+        "Candid Platinum designation with audited financial statements published on radical.net."
+      ],
+      verdict: "A pure missions-focused ministry — your dollar funds Gospel teaching, church planting, and missions mobilization.",
+      sources: "Sources: IRS Form 990 (FY2021), ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  // ── ORPHANS, WIDOWS & SOJOURNERS ──
+  {
+    name: "Crisis Aid International",
+    image: 'img/crisis-aid.png',
+    status: "given",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "SAR 2,372",
+    amountNum: 2372,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Provides hunger relief (117M+ meals), clean water (52+ wells), medical care (833K+ recipients), anti-trafficking rescue (3,200+ victims), and emergency disaster relief across 12 countries. Connected to Francis Chan / Crazy Love.",
+    link: "https://crisisaid.org",
+    lastUpdate: "",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "90¢ per $1 to programs", ceoPay: "$0.03 to raise $1", revenue: "$5.88M" },
+    audit: {
+      ein: "30-0060905", location: "St. Louis, MO · Founded 2002 · ECFA Accredited", score: 100, scoreSource: "Charity Navigator FY2024",
+      programs: ["Hunger Relief — 117.6M+ meals distributed","Clean Water — 52+ wells built in rural communities","Medical Care — 833K+ recipients","Anti-Trafficking — 3,200+ victims rescued & supported","Emergency Relief — rapid crisis response"],
+      mission: '"Saving Lives, Saving Souls & Changing Futures." The conviction is simple: you can\'t tell someone Jesus loves them while they\'re starving. Crisis Aid meets the urgent physical need first — food, water, rescue — then shares the Gospel that gives eternal hope. Every well drilled, every meal served, every trafficking victim rescued is an act of worship.',
+      financials: [
+        {metric:"Program Expense Ratio",value:"90.25%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.03 to raise $1",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$5.88M / $5.89M"},
+        {metric:"Liabilities to Assets",value:"2.84%",rating:"Very Low",ratingColor:"green"},
+        {metric:"Working Capital",value:"0.94 years",rating:"Healthy",ratingColor:"green"}
+      ],
+      leaders: [{name:"Patrick Bradley",role:"President/Founder",comp:"$124,767"},{name:"Susan Bradley",role:"Vice President",comp:"$55,978"},{name:"Mike Lemp",role:"Secretary",comp:"$50,785"},{name:"5 Board Directors",role:"Various",comp:"$0 (unpaid)"}],
+      leaderNote: "Total: ~$231K / $5.89M = 3.9% · Benefits: 0% · No bonuses",
+      governance: ["62% independent board (5/8)","Audited w/ oversight committee","No asset diversion","All policies in place","ECFA accredited","990 published on website"],
+      redflags: "None found. No scandals, complaints, or controversies. Consistent filings since 2007. Stable salaries year over year.",
+      redflagLevel: "clean",
+      critics: [
+        "Family-run elements — President (Pat Bradley) and Vice President (Susan Bradley) are married. Board should ensure independent oversight of compensation.",
+        "Relatively small revenue ($5.88M) limits scale of impact compared to larger relief orgs.",
+        "No Charity Navigator rating history before FY2024 — limited track record of third-party evaluation.",
+        "Anti-trafficking claims (3,200+ victims) are self-reported with no independent verification published."
+      ],
+      ambassadors: [
+        "Only ~5% of rated charities achieve a perfect 100 Charity Navigator score.",
+        "Partnered with Francis Chan / Crazy Love — credible evangelical endorsement.",
+        "Consistent filings since 2007. Zero scandals, complaints, or controversies found."
+      ],
+      verdict: "Clean finances, Gospel-centered mission, lean leadership. Founder modestly paid. A strong choice for giving.",
+      sources: "Sources: IRS Form 990 (FY2024), Charity Navigator, ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Lifesong for Orphans",
+    image: 'img/lifesong.png',
+    status: "given",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "SAR 12,372",
+    amountNum: 12372,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Mobilizes the Church to bring joy and purpose to orphans through Gospel-centered care. Supports adoption grants/loans, foster initiatives, and global orphan ministries in 16 countries so vulnerable children experience family and holistic provision.",
+    link: "https://lifesong.org",
+    lastUpdate: "",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "93¢ per $1 to programs", ceoPay: "$0.04 to raise $1", revenue: "$42.8M" },
+    audit: {
+      ein: "35-1902841", location: "Gridley, IL · Founded 2003 · ECFA Accredited", score: 100, scoreSource: "Charity Navigator FY2024",
+      programs: ["Orphan Care — holistic, Gospel-centered care in 16 countries","Education & Discipleship — schools and spiritual formation","Adoption Support — no-cost church adoption funds & grants","Lifesong Farms — vocational training for orphan graduates","Transition Programs — helping orphans become independent adults"],
+      mission: 'James 1:27 — pure religion is looking after orphans. Lifesong believes every child is made in God\'s image and deserves to be known, loved, and given a future. They don\'t just house kids — they disciple them, educate them, and train them for independence. The goal isn\'t charity, it\'s family. They also help churches fund adoptions so more kids land in homes, not institutions.',
+      financials: [
+        {metric:"Program Expense Ratio",value:"93.20%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.04 to raise $1",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$42.8M / $34.4M"},
+        {metric:"Liabilities to Assets",value:"0.73%",rating:"Extremely Low",ratingColor:"green"},
+        {metric:"Working Capital",value:"2.28 years",rating:"Strong",ratingColor:"green"}
+      ],
+      leaders: [{name:"Gary Ringger",role:"President/CEO",comp:"$0 (volunteers)"},{name:"N. Andrew Lehman",role:"Vice President",comp:"$241,522"},{name:"Kory Kaeb",role:"VP Operations",comp:"$225,855"},{name:"7 Board Directors",role:"Various",comp:"$0 (all unpaid)"}],
+      leaderNote: "CEO volunteers. 100% independent board (7/7). Benefits: 2%.",
+      governance: ["100% independent board","Audited w/ oversight committee","No asset diversion","All policies in place","ECFA accredited","Donor-advised fund"],
+      redflags: "None found. No controversies, scandals, or complaints. CEO donates his time. Impeccable record.",
+      redflagLevel: "clean",
+      critics: [
+        "VP compensation ($241K) is above average for a Gridley, IL-based nonprofit — may reflect broader responsibilities but warrants context.",
+        "Working capital of 2.28 years means $78M+ in assets — some donors prefer orgs that deploy funds faster rather than building reserves.",
+        "Revenue ($42.8M) significantly exceeds expenses ($34.4M) — the $8.4M surplus raises questions about pace of deployment.",
+        "Founder-led board dynamics: Gary Ringger founded it and serves as unpaid CEO — governance should ensure he doesn't wield outsized influence despite $0 salary."
+      ],
+      ambassadors: [
+        "Only ~5% of rated charities achieve a perfect 100 Charity Navigator score.",
+        "Zero scandals in 23-year history.",
+        "Indigenous church partnerships across 16 countries — culturally sensitive model.",
+        "Lifesong Farms gives orphan graduates vocational skills for independence — not just care, but a future."
+      ],
+      verdict: "One of the best. Gospel at the center, elite financial efficiency, and gold-standard governance.",
+      sources: "Sources: IRS Form 990 (FY2024), Charity Navigator, ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Send Relief",
+    image: 'img/send-relief.png',
+    status: "given",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "SAR 11,395",
+    amountNum: 11395,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Southern Baptist global compassion ministry (NAMB/IMB partnership) equipping churches to meet tangible needs and share the gospel. Responds to crises, disasters, refugees, trafficking, and community service from neighborhoods to nations.",
+    link: "https://sendrelief.org",
+    lastUpdate: "",
+    score: null,
+    scoreLabel: "N/R",
+    stats: { programs: "Not public", ceoPay: "Not public", revenue: "Under NAMB" },
+    audit: {
+      ein: "75-1977130", location: "Alpharetta, GA · SBC Ministry · ECFA Accredited (via NAMB)", score: null, scoreSource: "Church entity — exempt",
+      programs: ["Crisis Response — disasters, war zones (Ukraine, hurricanes)","Refugee Care — 1M+ refugees across Europe & Middle East","Child & Family Protection — foster care, adoption support","Anti-Trafficking — combating human trafficking globally","Community Strengthening — food banks, ministry centers","Global Hunger Relief — feeding programs worldwide"],
+      mission: 'The church should be first on the scene and last to leave. Send Relief exists because compassion and the Gospel are inseparable — you can\'t preach good news while ignoring suffering in front of you. Every disaster response, refugee welcome, and anti-trafficking operation is rooted in local church partnerships so the help doesn\'t end when the crisis team goes home.',
+      financials: [
+        {metric:"Public IRS Form 990",value:"N/A — church exemption",rating:"Cannot verify",ratingColor:"amber"},
+        {metric:"Revenue",value:"Embedded in NAMB financials",rating:"No breakout",ratingColor:"amber"},
+        {metric:"Independent Audit",value:"Yes — NAMB publishes on sbc.net",rating:"Good",ratingColor:"green"},
+        {metric:"ECFA Accredited",value:"Yes (via NAMB)",rating:"Good",ratingColor:"green"}
+      ],
+      leaders: [{name:"(NAMB leadership)",role:"Send Relief under NAMB",comp:"Not disclosed"}],
+      leaderNote: "Individual compensation not publicly disclosed. SBC trustees provide oversight.",
+      governance: ["ECFA accredited (via NAMB)","Audited financials on SBC website"],
+      redflags: "No independent financials — cannot verify program vs. overhead ratio. Federal grant controversy. SBC Transparency group has requested forensic audit of NAMB spending.",
+      redflagLevel: "amber",
+      critics: [
+        "No public 990 — church exemption means zero independent financial verification. You literally cannot see where your dollar goes.",
+        "SBC has faced major governance crises: sexual abuse cover-up scandal (2019–2022), DOJ investigation, and Executive Committee resignations.",
+        "SBC Transparency group has formally requested a forensic audit of NAMB spending — the parent org of Send Relief.",
+        "Federal grant controversies raised questions about government funding mixing with ministry operations.",
+        "Kevin Ezell (NAMB President) compensation was ~$700K+ including housing — one of the highest in SBC entities. Send Relief operates under his leadership.",
+        "Individual compensation for Send Relief staff is not publicly disclosed — unusual for a ministry receiving millions in donations."
+      ],
+      ambassadors: [
+        "Leverages the largest Protestant missions network in the world (3,500+ IMB missionaries).",
+        "Rapid disaster response via SBC's massive volunteer network (Southern Baptist Disaster Relief).",
+        "Local church partnership model connects relief to ongoing discipleship, not just one-time aid.",
+        "Audited financials published on SBC.net — some transparency exists even without a 990."
+      ],
+      verdict: "Massive SBC infrastructure and proven disaster response. <strong>Financial details aren't public due to church exemption</strong> — review the Critics and Ambassadors sections to weigh this.",
+      sources: "Sources: SBC.net, ECFA (NAMB profile), GuideStar, SBC Transparency · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "PreBorn!",
+    image: 'img/preborn.jpg',
+    status: "new",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "—",
+    amountNum: 0,
+    potentialAmount: "",
+    frequency: "Potential",
+    description: "Pro-life ministry equipping pregnancy resource centers with free ultrasounds and funding so women can see their baby before deciding. Explicitly Gospel-centered — every appointment includes a Gospel presentation. National network, explosive growth ($1.2M to $34.7M in 7 years).",
+    link: "https://preborn.com",
+    lastUpdate: "Mar 2026",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "87¢ per $1 to programs", ceoPay: "$0.03 to raise $1", revenue: "$34.7M" },
+    audit: {
+      ein: "20-8755673", location: "Indianapolis, IN · Founded ~2010 · ECFA Accredited", score: 100, scoreSource: "Charity Navigator FY2023",
+      programs: ["Free Ultrasounds — equipping pregnancy centers with ultrasound machines","Pregnancy Center Support — funding, training, and advertising for clinics","Counseling & Follow-Up — resources for pregnancy counselors + post-visit contact","Gospel Outreach — sharing the Gospel through pregnancy center interactions","Pro-Life Advocacy — education and awareness campaigns nationwide"],
+      mission: 'Every life matters because every life is made by God. PreBorn believes that when a woman facing an impossible decision sees her baby on that ultrasound screen, truth breaks through. The ultrasound is the vehicle — but the Gospel is the real mission. Every appointment is an invitation to meet Jesus, not just keep a pregnancy. That\'s why they exist: saving babies and saving souls.',
+      financials: [
+        {metric:"Program Expense Ratio",value:"87.20%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.03 to raise $1",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$34.7M / $24.7M"},
+        {metric:"Liabilities to Assets",value:"2.25%",rating:"Very Low",ratingColor:"green"},
+        {metric:"Working Capital",value:"0.83 years",rating:"Healthy",ratingColor:"green"}
+      ],
+      leaders: [{name:"Dan Steiner",role:"Founder/CEO",comp:"~$469K*"},{name:"Stan Lovings II",role:"Chairman",comp:"$0"},{name:"6 Board Members",role:"Various",comp:"$0 (unpaid)"}],
+      leaderNote: "*Total officer comp from 990 = $469,921. Benefits rate: 25%. Board: 6 members (83% independent).",
+      governance: ["83% independent board (5/6)","Audited w/ oversight committee","No asset diversion","All policies in place","ECFA accredited (since 2011)","990 published on website"],
+      redflags: "Minor. $10M surplus in FY2023 needs explanation — could be earmarked for expansion or represents excess fundraising beyond deployment capacity. Benefits rate (25%) above average. No major controversies.",
+      redflagLevel: "amber",
+      critics: [
+        "Revenue ($34.7M) exceeded expenses ($24.7M) by $10M — a 29% surplus. Where is the $10M going? Large surpluses warrant explanation for a donor-funded ministry.",
+        "CEO compensation ~$469K on $34.7M revenue (1.35%) is within range, but the absolute figure is notable. Benefits rate of 25% is on the higher side.",
+        "Pregnancy resource centers (CPCs) face criticism for counseling approaches — some observers argue they pressure vulnerable women and blur the line between medical care and advocacy.",
+        "Self-reported impact metrics ('babies saved') are not independently verified. The causal link between an ultrasound visit and a woman's decision is difficult to measure objectively.",
+        "Explosive growth from $1.2M to $34.7M in 7 years — governance and internal controls need to keep pace. Rapid scaling increases operational risk."
+      ],
+      ambassadors: [
+        "Only ~5% of rated charities achieve a perfect 100 Charity Navigator score.",
+        "15 years of continuous ECFA accreditation (since 2011).",
+        "Consistent IRS filings from 2011–2023. No scandals or governance red flags in any filing.",
+        "Revenue growth from $1.2M to $34.7M in 7 years demonstrates significant donor confidence."
+      ],
+      verdict: "Clean finances, Gospel-centered pro-life mission, strong governance. The $10M surplus and rapid growth warrant monitoring, but the financial metrics are solid.",
+      sources: "Sources: IRS Form 990 (FY2023 filed Aug 2025), Charity Navigator, ProPublica, ECFA, MinistryWatch · Prepared by Po — Mar 2026"
+    }
+  },
+  // ── PERSECUTED CHURCH ──
+  {
+    name: "Open Doors International",
+    image: 'img/open-doors.png',
+    status: "given",
+    type: "org",
+    category: "persecuted",
+    categoryLabel: "Persecuted Church",
+    amount: "SAR 2,558",
+    amountNum: 2558,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Founded in 1955 by Brother Andrew ('God's Smuggler'). Strengthens and equips persecuted Christians in 70+ countries through Bible distribution, church leader training, emergency relief, and the annual World Watch List — the gold standard for tracking Christian persecution globally.",
+    link: "https://opendoorsus.org",
+    lastUpdate: "Feb 2026",
+    score: 75,
+    scoreLabel: "75",
+    stats: { programs: "60¢ per $1 to programs", ceoPay: "$0.23 to raise $1", revenue: "$9.11M" },
+    audit: {
+      ein: "92-1154296", location: "Santa Ana, CA · Founded 1955 · ECFA Accredited", score: 75, scoreSource: "Charity Navigator FY2024",
+      programs: ["World Watch List — annual ranking of 50 countries of persecution","Bible Distribution — Scriptures in 70+ countries","Church Leader Training — equipping pastors in persecuted regions","Emergency Relief — support for displaced Christians","Advocacy & Awareness — mobilizing prayer from the free world"],
+      mission: "Brother Andrew smuggled Bibles behind the Iron Curtain because he believed no believer should suffer alone and without God's Word. That conviction hasn't changed in 70 years. Open Doors exists so the free church remembers the persecuted church — through prayer, Bibles, training, and emergency relief. If your faith could cost you everything, they want you to know someone is standing with you.",
+      financials: [
+        {metric:"Program Expense Ratio",value:"60%",rating:"Below Average",ratingColor:"amber"},
+        {metric:"Fundraising Efficiency",value:"$0.23 to raise $1",rating:"High Cost",ratingColor:"red"},
+        {metric:"Revenue / Expenses",value:"$9.11M / $9.26M"},
+        {metric:"Liabilities to Assets",value:"15%",rating:"Healthy",ratingColor:"green"},
+        {metric:"Working Capital",value:"2.83 months",rating:"Adequate",ratingColor:"green"}
+      ],
+      leaders: [{name:"Ryan Brown",role:"CEO",comp:"$193,871"},{name:"Sarah Cunningham",role:"COO",comp:"$174,196"},{name:"Kevin Wilson",role:"CIO",comp:"$164,823"},{name:"Andrew Richards",role:"Sr. Dir. Partnerships",comp:"$144,051"},{name:"Matthew Dewolf",role:"CFO",comp:"$42,592"},{name:"3 Board Directors",role:"Various",comp:"$0"}],
+      leaderNote: "Total top-5: ~$719K / $9.26M = 7.8% · CEO ratio: 5.7x avg · Benefits: 23%",
+      governance: ["ECFA accredited (2024)","Audited w/ oversight committee","No asset diversion","All policies in place","990 on website"],
+      redflags: "High fundraising costs (22%), low program ratio (60%), very small board (3 members). Complex restructuring — split from Open Doors USA (now GCR) in Jan 2023. New EIN, rebuilding track record.",
+      redflagLevel: "warning",
+      critics: [
+        "60% program ratio is well below the 75% benchmark most watchdogs recommend — 40 cents of every dollar does NOT reach the mission.",
+        "$0.23 to raise $1 is expensive fundraising — healthy orgs spend $0.05–$0.10.",
+        "Only 3 board members — far below governance best practices (minimum 5–7). Concentration of control risk.",
+        "Messy split from Open Doors USA (now GCR) in Jan 2023 — organizational instability, new EIN, rebuilding from scratch.",
+        "Top-5 executive compensation totals $719K on $9.26M revenue (7.8%) — high for a small org with poor program efficiency.",
+        "Benefits ratio at 23% of compensation is notably high.",
+        "The World Watch List, while widely cited, is produced by an advocacy org with a fundraising incentive to emphasize persecution severity. Its methodology is not fully transparent or independently audited. Persecution narratives — particularly around Nigeria and Syria — should be cross-referenced with neutral sources (UN, Reuters, AP) rather than accepted at face value."
+      ],
+      ambassadors: [
+        "World Watch List is widely cited by governments, media, and researchers worldwide.",
+        "FY2024 financials are current and transparent — they file and publish, unlike many peers.",
+        "Operating in 70+ countries where the church faces active persecution — among the hardest mission fields on earth.",
+        "New leadership may improve efficiency as the post-split organization matures."
+      ],
+      verdict: "70 years serving persecuted Christians. <strong>60% program ratio and 22% fundraising costs are below benchmarks</strong> — worth monitoring as the post-split organization matures.",
+      sources: "Sources: IRS Form 990 (FY2024), Charity Navigator, ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Global Christian Relief",
+    image: logos.gcr,
+    status: "given",
+    type: "org",
+    category: "persecuted",
+    categoryLabel: "Persecuted Church",
+    amount: "SAR 10,000",
+    amountNum: 10000,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Supports persecuted Christians worldwide through emergency aid, trauma care, rebuilding, Bibles, and empowerment. Builds a movement of prayer and support so believers stand firm amid persecution. Formerly Open Doors USA.",
+    link: "https://globalchristianrelief.org",
+    lastUpdate: "",
+    score: -1,
+    scoreLabel: "⚠️",
+    stats: { programs: "Not rated yet", ceoPay: "Not available", revenue: "$33.6M" },
+    audit: {
+      ein: "23-7275342", location: "Santa Ana, CA · Rebranded Jan 2023 · Formerly Open Doors USA", score: null, scoreSource: "Insufficient data",
+      programs: ["Persecuted Church — serving Christians in 70+ countries","Bible Distribution — Scriptures in restricted nations","Emergency Relief — aid to displaced/persecuted believers","Vocational Training — economic empowerment for families","Advocacy & Awareness — raising global awareness of persecution"],
+      mission: "Born from the same legacy as Open Doors — the conviction that Christians suffering for their faith should never be forgotten. GCR carries forward the work of getting Bibles, aid, and hope into the hardest places on earth. The persecuted church isn't a cause to them — it IS the mission. Frontline kingdom work where the cost of following Jesus is highest.",
+      financials: [
+        {metric:"Revenue",value:"$33.6M"},{metric:"Expenses",value:"$28.8M"},
+        {metric:"Total Assets",value:"$12.2M"},{metric:"Liabilities",value:"$2.88M (23.6%)",rating:"Notable",ratingColor:"amber"},
+        {metric:"Program Ratio",value:"Not calculated",rating:"Unrated",ratingColor:"amber"}
+      ],
+      leaders: [{name:"David Curry",role:"President/CEO",comp:"$324,223"},{name:"Tim Muret",role:"Chief Comms Officer",comp:"$253,028"},{name:"Jeff Taylor",role:"Chief of Staff",comp:"$198,345"},{name:"9 Board Directors",role:"Various",comp:"$0 (unpaid)"}],
+      leaderNote: "CEO total comp $324K on $33.6M revenue. 'Other comp' includes retirement/benefits.",
+      governance: ["Board directors unpaid (9)"],
+      redflags: "Organizational split (Jan 2023) after founder died. CEO comp $324K higher than peers. Most recent 990 is 2020. No ECFA accreditation for rebranded entity.",
+      redflagLevel: "warning",
+      critics: [
+        "Most recent 990 is FY2020 — 6 years old. Current financial state is completely unknown.",
+        "Organizational split after Brother Andrew's death raises questions about what the dispute was actually about — money, control, or mission direction?",
+        "No ECFA accreditation for the rebranded GCR entity — they lost that accountability marker in the split.",
+        "CEO comp $324K — while the ratio to revenue (0.97%) is reasonable, the total is high compared to Crisis Aid ($124K) and Lifesong ($0) CEOs doing comparable work.",
+        "Chief Comms Officer at $253K is notably high — suggests significant spending on brand/marketing rather than field operations.",
+        "$2.88M in liabilities (23.6% of assets) is the highest ratio among the orgs on this dashboard.",
+        "'Christian persecution' has become a geopolitical buzzword used to justify military actions in some contexts. GCR's front-page story features Nigerian Christian persecution, but evidence suggests the violence there is not primarily religiously motivated — more Muslims than Christians have died in the broader conflict (per Nigerian government data). Christian aid orgs are among the weakest at fact-checking persecution narratives and risk creating propaganda. Claims should be cross-referenced with neutral sources (UN, Reuters, AP), not just advocacy reports."
+      ],
+      ambassadors: [
+        "Inherits 68 years of Open Doors USA infrastructure, relationships, and field networks.",
+        "David Curry is a visible public advocate, frequently appearing in media and before Congress.",
+        "Revenue exceeds expenses — not running deficits despite the organizational restructuring.",
+        "Serving persecuted Christians is among the most important and dangerous mission fields — few organizations do this work."
+      ],
+      verdict: "Significant scale ($33.6M) with an unpaid board. <strong>Current financials unavailable (last 990 is FY2020)</strong> — the mission is deeply valuable, the question is whether this organization is the best vehicle for it.",
+      sources: "Sources: IRS Form 990 (FY2020), ProPublica, Christianity Today · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Help The Persecuted",
+    image: 'img/htp.svg',
+    status: "new",
+    type: "org",
+    category: "persecuted",
+    categoryLabel: "Persecuted Church",
+    amount: "—",
+    amountNum: 0,
+    potentialAmount: "",
+    frequency: "Potential",
+    description: "Rescue, restore, and rebuild the lives of persecuted Christians in the Middle East and North Africa through safe houses, underground church networks, and emergency aid — working toward a vision where the persecuted Church endures, flourishes and multiplies in the most hostile regions.",
+    link: "https://htp.org",
+    lastUpdate: "Mar 2026",
+    score: null,
+    scoreLabel: "N/R",
+    stats: { programs: "Cannot verify", ceoPay: "Unknown", revenue: "$6.4M" },
+    audit: {
+      ein: "83-1799054", location: "Marietta, GA · Founded 2011 · ECFA Accredited", score: null, scoreSource: "Charity Navigator — Not Currently Rated",
+      programs: ["Safe Houses — Secure accommodation for persecuted Christians","Relocation Services — Assistance with emergency evacuation","Trauma Recovery — Pastoral care and counseling support","Emergency Relief Kits — Food, medical supplies, basic necessities","Underground Church Networks — Support for Christian communities in hostile regions"],
+      mission: "Joshua Youssef grew up watching his father, Michael Youssef, serve persecuted believers — so this isn't abstract for him. HTP exists because Christians in the Middle East and North Africa are losing homes, families, and lives for their faith, and someone needs to be there with a safe house, a plan, and a way out. Rescue first, then restore, then rebuild — so the underground church doesn't just survive, it multiplies.",
+      financials: [
+        {metric:"Program Expense Ratio",value:"Cannot verify",rating:"Unknown",ratingColor:"red"},
+        {metric:"Revenue (ECFA)",value:"$6.4M (FY2025)",rating:"Good",ratingColor:"green"},
+        {metric:"Total Expenses (ECFA)",value:"$6.0M (FY2025)",rating:"Good",ratingColor:"green"}
+      ],
+      leaders: [{name:"Joshua Youssef",role:"President & CEO",comp:"Unknown"},{name:"Allan Guinan",role:"Executive Vice President",comp:"Unknown"}],
+      leaderNote: "No compensation data available due to missing 990 filings. ECFA shows revenue vs expenses but not executive compensation breakdown.",
+      governance: ["Board of Directors — 6 members including independent positions","ECFA accredited since August 2019","Excellence in Giving certified","Religious Liberty Partnership member"],
+      redflags: "No public 990 filings — see Critics section for details.",
+      redflagLevel: "warning",
+      critics: [
+        "No Form 990 filings found despite 2019 tax exemption ruling — zero independent financial verification available.",
+        "Cannot verify program ratios or executive compensation — only ECFA summary data exists.",
+        "Operates in geopolitically complex regions with limited independent verification of impact claims.",
+        "Revenue growth from $3.1M to $6.4M requires scrutiny given the lack of public financials."
+      ],
+      ambassadors: [
+        "Dual accountability: both ECFA accredited and Excellence in Giving certified.",
+        "14+ years operational track record (founded 2011).",
+        "Religious Liberty Partnership membership shows peer recognition.",
+        "Independent Chairman (David Dungan) with separation of CEO/Chairman roles."
+      ],
+      verdict: "Strong accountability certifications (ECFA + Excellence in Giving) but <strong>no Form 990 filings publicly available</strong>. Revenue growing ($3.1M→$6.4M). The certifications are reassuring, but independent financial verification would strengthen confidence.",
+      sources: "Sources: ECFA Financial Data (FY2025), Charity Navigator, ProPublica, Excellence in Giving · Prepared by Po — Mar 2026"
+    }
+  },
+  // ── MINISTRY OF THE WORD / GLOBAL CHURCH NEEDS ──
+  {
+    name: "Joyful Joseph",
+    image: 'img/joseph.png',
+    status: "given",
+    type: "person",
+    category: "word",
+    categoryLabel: "Ministry of the Word",
+    categories: [{cat: "word", label: "Ministry of the Word"}, {cat: "global", label: "Global Church Needs"}],
+    amount: "SAR 5,626 ($1,500)",
+    amountNum: 5626,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Seeking funding to take Joseph out of full-time employment for 1 year to grow in Character, Competency, and Convictions for ministry. He's been faithful serving the church and sharing boldly with friends and family. Has a teaching gift that needs time to develop.",
+    link: "",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "<strong>Ministry Trainee Year — 3 Growth Areas:</strong><br><br><strong>1. Character</strong> — Life-on-life mentoring and regular check-ins.<br><br><strong>2. Competency</strong> — Modelling and releasing in all elements of ministry: evangelism, Bible reading, teaching, preaching, and pastoring.<br><br><strong>3. Convictions</strong> — An online theology course.<br><br><strong>Why this is wise:</strong><br>• He has been faithful in serving the gathered church and sharing boldly with friends and family.<br>• His type of employment means a year out won't impact future work opportunities.<br>• He has a teaching gift which needs time to hone — no capacity to develop it in his current job."
+  },
+  {
+    name: "Ridgy Vibrating Ball",
+    image: 'img/daniel-ball-nobg.png',
+    status: "given",
+    type: "need",
+    category: "global",
+    categoryLabel: "Global Church Needs",
+    amount: "SAR 275",
+    amountNum: 275,
+    frequency: "Given",
+    description: "A gift for Daniel. A rechargeable vibrating sensory ball with textured ridges and 3 intensity levels. Great for proprioception, muscle relaxation, and focus. 9cm diameter, silicone rubber, USB rechargeable.",
+    link: "https://specialneedstoys.com/can/proprioception/vibrating-ball.html",
+    link2: "https://www.google.com/search?q=vibrating+ball+special+needs+toys",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "<strong>Ridgy Vibrating Ball — TFH Sensory Specialists</strong><br><br>A handheld textured silicone ball with 3 vibration levels (2,650–3,700 RPM). Designed for sensory exploration, proprioception, and calming.<br><br><strong>Key features:</strong><br>• Textured ridges for tactile feedback<br>• 3 adjustable vibration intensities<br>• Rechargeable via micro USB<br>• Auto-off feature<br>• 9 cm diameter, 14 oz<br><br><strong>Benefits:</strong> Muscle relaxation, deep tissue relief, improved body awareness, focus and engagement, pain management. Great for sensory room setups or standalone use."
+  },
+  // ── LOCAL CHURCH ──
+  {
+    name: "Local Church (Us)",
+    image: 'img/local-church.png',
+    status: "given",
+    type: "org",
+    category: "local",
+    categoryLabel: "Local Church",
+    amount: "SAR 26,800",
+    amountNum: 26800,
+    potentialAmount: "",
+    frequency: "Given — Annual",
+    description: "Our local church. No fundraising costs. 70% of budget goes to external programs and missions beyond the local body. Assets: ~SAR 2,000.",
+    link: "",
+    lastUpdate: "",
+    score: null,
+    scoreLabel: "N/A",
+    givenLabel: "Year to Date Received",
+    potentialLabel: "Year to Date Expenses",
+    potentialAmount: "SAR 8,700",
+    stats: { programs: "70% to external", ceoPay: "$0.00 to raise $1", revenue: "SAR 26,800 / 8,700" }
+  },
+  {
+    name: "Projector",
+    image: 'img/projector-epson.png',
+    status: "new",
+    type: "want",
+    category: "local",
+    categoryLabel: "Local Church",
+    amount: "SAR 1,500",
+    amountNum: 1500,
+    potentialAmount: "",
+    frequency: "1,500 received — needs ~329 more",
+    description: "Epson CO-FH01 — Full HD 1080p, 3LCD, 3,000 lumens, HDMI/USB, horizontal & vertical keystone correction, built-in speaker, up to 378\" projection.",
+    link: "https://www.amazon.sa/-/en/Epson-CO-FH01-Technology-Connection-Horizontal/dp/B0BWS6TZNL",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "<strong>Epson CO-FH01 Smart Video Projector</strong><br>• Full HD 1080p resolution<br>• 3LCD technology — no rainbow effect<br>• 3,000 lumens colour & white brightness<br>• Up to 378\" projection<br>• HDMI & USB connectivity<br>• Horizontal & vertical keystone correction<br>• Built-in speaker<br>• Compact and portable<br><br>Price: SAR 1,829–2,229 on Amazon.sa<br>SAR 1,500 received so far — needs ~329 more."
+  }
+];
+
+function renderCard(r) {
+  const dotClass = r.category === 'church' ? 'dot-church' : 
+                   r.category === 'orphan' ? 'dot-orphan' :
+                   r.category === 'persecuted' ? 'dot-persecuted' :
+                   r.category === 'relief' ? 'dot-relief' :
+                   r.category === 'word' ? 'dot-word' :
+                   r.category === 'local' ? 'dot-local' :
+                   r.category === 'global' ? 'dot-global' : 'dot-special';
+  
+  let badgeClass, badgeText;
+  if (r.status === 'given') { badgeClass = 'badge-given'; badgeText = '✓ Given'; }
+  else if (r.status === 'new') { badgeClass = 'badge-new'; badgeText = '★ New'; }
+  else if (r.type === 'org') { badgeClass = 'badge-org'; badgeText = 'Organization'; }
+  else { badgeClass = 'badge-potential'; badgeText = 'Potential'; }
+  
+  let scoreHtml = '';
+  if (r.score === 100) scoreHtml = `<div class="card-score score-green">${r.scoreLabel}</div>`;
+  else if (r.score > 0 && r.score < 100) scoreHtml = `<div class="card-score score-yellow">${r.scoreLabel}</div>`;
+  else if (r.score === -1) scoreHtml = `<div class="card-score score-red">${r.scoreLabel}</div>`;
+  else if (r.score === null && r.type === 'org') scoreHtml = `<div class="card-score score-na">${r.scoreLabel || 'N/R'}</div>`;
+  
+  const amountClass = r.amountNum === 0 && r.amount === 'TBD' ? 'zero' : '';
+  const amountText = r.amount === 'TBD' ? 'TBD' : r.amount;
+  const recommendedHtml = r.recommended ? `<div style="font-size:11px; color:var(--accent); margin-top:2px;">Next: ${r.recommended}</div>` : '';
+  
+  const card = document.createElement('div');
+  card.className = `card ${r.type} ${r.status === 'given' ? 'status-given' : 'status-new'} cat-${r.category}`;
+  card.dataset.category = r.category;
+  if (r.categories) card.dataset.categories = r.categories.map(c => c.cat).join(',');
+  card.onclick = () => openModal(r);
+  const catTag = r.categories
+    ? r.categories.map(c => `<span class="cat-tag cat-tag-${c.cat}">${c.label}</span>`).join(' ')
+    : `<span class="cat-tag cat-tag-${r.category}">${r.categoryLabel}</span>`;
+
+  card.innerHTML = `
+    ${scoreHtml}
+    ${r.image ? `<div class="card-img"><img src="${r.image}" alt="${r.name}"></div>` : ''}
+    <div class="card-top">
+      <div>
+        ${catTag}
+        <div class="card-name">${r.name}</div>
+      </div>
+      <span class="card-badge ${badgeClass}">${badgeText}</span>
+    </div>
+    <div class="card-desc">${r.description}</div>
+    <div class="card-footer">
+      <div>
+        <div style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">${r.givenLabel || 'Previously Given'}</div>
+        <div class="card-amount" style="color:#60a5fa;">${r.givenAmount || (r.status === 'given' ? r.amount : '—')}</div>
+        <div class="card-freq">${r.frequency}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px;">${r.potentialLabel || 'Potential'}</div>
+        <div class="card-amount" style="color:#ec4899;">${r.potentialAmount || '—'}</div>
+        <div style="font-size:11px; color:var(--accent); margin-top:4px; cursor:pointer;">Click for details</div>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+const allRecipients = allManualRecipients;
+document.getElementById('totalGiven').textContent = 'SAR ' + allRecipients.filter(r => r.status === 'given' && r.name !== 'Local Church (Us)').reduce((s,r) => s + r.amountNum, 0).toLocaleString();
+
+let activeCat = 'all';
+
+function filterCat(cat) {
+  activeCat = cat;
+  // Update button states
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  // Re-render with matching cards first
+  const grid = document.querySelector('.grid');
+  if (!grid) return;
+  const cards = Array.from(grid.children);
+  
+  if (cat === 'all') {
+    // Restore original order
+    cards.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+    cards.forEach(card => {
+      card.classList.remove('dimmed');
+      grid.appendChild(card);
+    });
+  } else {
+    const matching = [];
+    const dimmed = [];
+    cards.forEach(card => {
+      const cardCats = (card.dataset.categories || card.dataset.category).split(',');
+      if (cardCats.includes(cat)) {
+        card.classList.remove('dimmed');
+        matching.push(card);
+      } else {
+        card.classList.add('dimmed');
+        dimmed.push(card);
+      }
+    });
+    // Sort each group by original index to keep stable order within
+    matching.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+    dimmed.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+    matching.forEach(c => grid.appendChild(c));
+    dimmed.forEach(c => grid.appendChild(c));
+  }
+}
+
+function renderSections() {
+  const el = document.getElementById('allSection');
+  el.innerHTML = `
+    <div class="section-header">
+      <div class="section-title">💛 Giving</div>
+      <div class="section-line"></div>
+      <div class="section-count">${allRecipients.length} recipients</div>
+    </div>
+  `;
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  allRecipients.forEach((r, i) => {
+    const card = renderCard(r);
+    card.dataset.index = i;
+    grid.appendChild(card);
+  });
+  el.appendChild(grid);
+}
+
+function openModal(r) {
+  const modal = document.getElementById('modal');
+  const overlay = document.getElementById('modalOverlay');
+  
+  let content = `<button class="modal-close" onclick="closeModal()">&times;</button>`;
+  if (r.image) {
+    content += `<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">`;
+    content += `<img src="${r.image}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;background:var(--bg);padding:4px" alt="${r.name}">`;
+    content += `<h2 style="margin:0">${r.name}</h2></div>`;
+  } else {
+    content += `<h2>${r.name}</h2>`;
+  }
+  const catColors = {church:'#60a5fa',orphan:'#d4a017',persecuted:'#f97316',word:'#22c55e',local:'#4ade80',global:'#6088e0'};
+  const cc = catColors[r.category] || 'var(--muted)';
+  content += `<div class="modal-sub"><span style="color:${cc};font-weight:600">${r.categoryLabel}</span> · ${r.frequency} · ${r.amount || 'TBD'}</div>`;
+  content += `<div class="modal-desc">${r.fullDescription || r.description}</div>`;
+  
+  if (r.link) {
+    content += `<a class="modal-link" href="${r.link}" target="_blank">${r.link} ↗</a>`;
+  }
+  if (r.link2) {
+    content += `<a class="modal-link" href="${r.link2}" target="_blank">${r.link2} ↗</a>`;
+  }
+  
+  if (r.type === 'org' && r.stats) {
+    content += `<div class="modal-stats">
+      <div class="modal-stat"><div class="stat-label">$ to Mission</div><div class="stat-value">${r.stats.programs}</div></div>
+      ${r.stats.ceoPay ? `<div class="modal-stat"><div class="stat-label">Fundraiser Efficiency</div><div class="stat-value">${r.stats.ceoPay}</div></div>` : ''}
+      <div class="modal-stat"><div class="stat-label">Revenue</div><div class="stat-value">${r.stats.revenue}</div></div>
+    </div>`;
+  }
+  
+  if (r.type === 'org' && r.audit) {
+    const a = r.audit;
+    const scoreColor = a.score >= 80 ? '#16a34a' : a.score >= 60 ? '#ca8a04' : a.score === null ? '#94a3b8' : '#dc2626';
+    const scoreBg = a.score >= 80 ? '#dcfce7' : a.score >= 60 ? '#fef9c3' : a.score === null ? '#f1f5f9' : '#fee2e2';
+    content += `<div style="border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:12px;background:var(--bg)">`;
+    content += `<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px">
+      <div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Charity Audit</div>
+        <div style="font-size:11px;color:var(--muted)">${a.ein} · ${a.location}</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${scoreColor};background:${scoreBg};display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-size:18px;font-weight:800;color:${scoreColor}">${a.score !== null ? a.score : 'N/R'}</div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">${a.scoreSource || 'Charity Navigator'}</div>
+      </div>
+    </div>`;
+    // What They Do
+    if (a.programs) {
+      content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">What They Do</div>`;
+      content += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-bottom:14px">`;
+      a.programs.forEach(p => {
+        const [bold, ...rest] = p.split(' — ');
+        content += `<div style="font-size:11px;display:flex;align-items:baseline;gap:5px"><span style="color:#2563eb">•</span><span><strong>${bold}</strong>${rest.length ? ' — ' + rest.join(' — ') : ''}</span></div>`;
+      });
+      content += `</div>`;
+    }
+    // Mission & Outreach
+    if (a.mission) {
+      content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Mission & Outreach</div>`;
+      content += `<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-left:4px solid #2563eb;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;color:#1e40af;margin-bottom:14px">${a.mission}</div>`;
+    }
+    // Financials table
+    content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Financials</div>`;
+    content += `<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:14px">`;
+    a.financials.forEach((f, i) => {
+      const bg = i % 2 === 0 ? 'var(--bg)' : 'transparent';
+      const pill = f.rating ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${f.ratingColor === 'green' ? '#dcfce7' : f.ratingColor === 'red' ? '#fee2e2' : '#fef9c3'};color:${f.ratingColor === 'green' ? '#166534' : f.ratingColor === 'red' ? '#991b1b' : '#854d0e'}">${f.rating}</span>` : '';
+      content += `<tr style="background:${bg}"><td style="padding:5px 8px;color:var(--muted)">${f.metric}</td><td style="padding:5px 8px;font-weight:700">${f.value}</td><td style="padding:5px 8px">${pill}</td></tr>`;
+    });
+    content += `</table>`;
+    // Leadership
+    content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Leadership</div>`;
+    content += `<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:14px">`;
+    a.leaders.forEach((l, i) => {
+      const bg = i % 2 === 0 ? 'var(--bg)' : 'transparent';
+      content += `<tr style="background:${bg}"><td style="padding:4px 8px;font-weight:600">${l.name}</td><td style="padding:4px 8px;color:var(--muted)">${l.role}</td><td style="padding:4px 8px;font-weight:700">${l.comp}</td></tr>`;
+    });
+    content += `</table>`;
+    if (a.leaderNote) content += `<div style="font-size:11px;color:var(--muted);margin-bottom:14px">${a.leaderNote}</div>`;
+    // Governance
+    if (a.governance) {
+      content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Governance</div>`;
+      content += `<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px">`;
+      a.governance.forEach(g => content += `<span style="font-size:11px;color:#166534">✓ ${g}</span>`);
+      content += `</div>`;
+    }
+    // Critics Say
+    if (a.critics && a.critics.length) {
+      content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #dc2626;display:inline-block;padding-bottom:2px">⚖️ Critics Say</div>`;
+      content += `<div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:8px;padding:10px 12px;margin-bottom:14px">`;
+      a.critics.forEach(c => content += `<div style="font-size:12px;line-height:1.6;margin-bottom:4px;display:flex;gap:6px"><span style="color:#dc2626;flex-shrink:0">✗</span><span>${c}</span></div>`);
+      content += `</div>`;
+    }
+    // Ambassadors Say
+    if (a.ambassadors && a.ambassadors.length) {
+      content += `<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #16a34a;display:inline-block;padding-bottom:2px">🤝 Ambassadors Say</div>`;
+      content += `<div style="background:#f0fdf4;border-left:4px solid #16a34a;border-radius:8px;padding:10px 12px;margin-bottom:14px">`;
+      a.ambassadors.forEach(c => content += `<div style="font-size:12px;line-height:1.6;margin-bottom:4px;display:flex;gap:6px"><span style="color:#16a34a;flex-shrink:0">✓</span><span>${c}</span></div>`);
+      content += `</div>`;
+    }
+    // Red flags
+    if (a.redflags) {
+      const rfBg = a.redflagLevel === 'clean' ? '#dcfce7' : a.redflagLevel === 'warning' ? '#fee2e2' : '#fef3c7';
+      const rfBorder = a.redflagLevel === 'clean' ? '#16a34a' : a.redflagLevel === 'warning' ? '#dc2626' : '#d97706';
+      content += `<div style="border-left:4px solid ${rfBorder};background:${rfBg};border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:14px">${a.redflags}</div>`;
+    }
+    // Verdict
+    if (a.verdict) {
+      content += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6">${a.verdict}</div>`;
+    }
+    content += `<div style="font-size:9px;color:var(--muted);margin-top:8px">${a.sources || ''}</div>`;
+    content += `</div>`;
+  } else if (r.updatePdf) {
+    content += `<div class="update-box" style="max-height:none;overflow:visible">
+      <h3>📋 Latest Update</h3>
+      <div style="font-size:13px;line-height:1.8;white-space:normal;word-wrap:break-word;margin-bottom:12px">${r.updateText || ''}</div>
+      <iframe class="audit-frame" src="${r.updatePdf}"></iframe>
+      ${r.lastUpdate ? `<p style="margin-top:12px;font-size:11px;color:var(--muted)">Last updated: ${r.lastUpdate}</p>` : ''}
+    </div>`;
+  } else {
+    content += `<div class="update-box" style="max-height:none;overflow:visible">
+      <h3>📋 Latest Update</h3>
+      <div style="font-size:13px;line-height:1.8;white-space:normal;word-wrap:break-word">${r.updateText || 'No updates yet. Add updates as you receive them.'}</div>
+      ${r.lastUpdate ? `<p style="margin-top:12px;font-size:11px;color:var(--muted)">Last updated: ${r.lastUpdate}</p>` : ''}
+    </div>`;
+  }
+  
+  modal.innerHTML = content;
+  overlay.classList.add('show');
+}
+
+function closeModal(e) {
+  if (e && e.target !== e.currentTarget) return;
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+renderSections();
+</script>
+</body>
+</html>

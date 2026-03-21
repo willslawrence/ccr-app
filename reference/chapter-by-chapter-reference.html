@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter by Chapter — Your companion through Scripture</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='9' fill='%23E8441A'/%3E%3Crect x='15' y='4' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='4' y='15' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='15' y='15' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='26' y='15' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='15' y='26' width='10' height='10' rx='2' fill='white'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --oc-orange:  #E8441A;
+            --oc-green:   #1DB37A;
+            --oc-purple:  #7B68BD;
+            /* Theme-sensitive */
+            --oc-black:   #2B2828;
+            --oc-bg:      #F2EEE8;
+            --oc-surface: #FEFCFA;
+            --oc-border:  #E5E2DC;
+            --oc-text:    #2B2828;
+            --oc-muted:   #8A8480;
+            --chip-unread: #EDE9E4;
+        }
+
+        [data-theme="dark"] {
+            --oc-black:    #E8E4DF;
+            --oc-bg:       #1C1C1E;
+            --oc-surface:  #313133;
+            --oc-border:   #3A3A3C;
+            --oc-text:     #E8E4DF;
+            --oc-muted:    #8E8E93;
+            --chip-unread: #3A3A3C;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --oc-black:    #E8E4DF;
+                --oc-bg:       #1C1C1E;
+                --oc-surface:  #313133;
+                --oc-border:   #3A3A3C;
+                --oc-text:     #E8E4DF;
+                --oc-muted:    #8E8E93;
+                --chip-unread: #3A3A3C;
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--oc-bg);
+            color: var(--oc-text);
+            line-height: 1.5;
+            border-top: 3px solid var(--oc-orange);
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 28px 24px 80px; }
+
+        /* ── Header ── */
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 32px 0 28px; border-bottom: 1px solid var(--oc-border);
+            margin-bottom: 32px; gap: 16px; flex-wrap: wrap;
+        }
+        .header-brand { display: flex; align-items: center; gap: 14px; }
+        @media (max-width: 760px) {
+            .header-brand { align-items: flex-start; }
+            .header-brand svg { width: 36px; height: 36px; margin-top: 4px; }
+            .brand-text h1 { font-size: 1.4em; }
+        }
+        .brand-text { display: inline-flex; flex-direction: column; }
+        .brand-text h1 { font-size: 1.8em; font-weight: 700; color: var(--oc-black); margin-bottom: 2px; letter-spacing: -0.02em; }
+        .brand-text p { color: var(--oc-muted); font-size: 0.68em; text-transform: uppercase; letter-spacing: 0.22em; margin-top: 2px; }
+
+        .btn-reset {
+            padding: 8px 16px; background: transparent;
+            border: 1.5px solid var(--oc-border); border-radius: 7px;
+            font-size: 0.82em; font-family: 'Poppins', sans-serif;
+            color: var(--oc-muted); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .btn-reset:hover { border-color: #dc2626; color: #dc2626; }
+
+        /* Auth button — highlighted */
+        #auth-btn {
+            background: var(--oc-orange); color: #fff;
+            border-color: var(--oc-orange); font-weight: 500;
+            position: relative;
+        }
+        #auth-btn:hover { background: #d03a14; border-color: #d03a14; color: #fff; }
+        #auth-btn.signed-in { background: transparent; color: var(--oc-muted); border-color: var(--oc-border); font-weight: 400; }
+        #auth-btn.signed-in:hover { border-color: var(--oc-orange); color: var(--oc-orange); }
+
+        /* Tooltip */
+        #auth-btn:not(.signed-in)::after {
+            content: "Create a free account to save your progress and sync across all your devices";
+            position: absolute; top: calc(100% + 10px); right: 0;
+            width: 220px; padding: 10px 13px;
+            background: #1C1C1E; color: #fff;
+            font-size: 0.78em; font-weight: 400; line-height: 1.5;
+            border-radius: 8px; text-align: left; white-space: normal;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.2s; z-index: 100;
+        }
+        #auth-btn:not(.signed-in):hover::after { opacity: 1; }
+
+        /* ── Stats section ── */
+        .stats-section {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 28px;
+            background: var(--oc-surface);
+            border: 1px solid var(--oc-border);
+            border-radius: 14px;
+            padding: 32px;
+            margin-bottom: 20px; margin-top: 4px;
+            align-items: center;
+        }
+        @media (max-width: 680px) {
+            .stats-section { grid-template-columns: 1fr; }
+        }
+
+        /* Rings */
+        .rings-area { display: flex; gap: 20px; align-items: center; }
+
+        .ring-main { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+        .ring-main svg { transform: rotate(-90deg); }
+        .ring-center {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .ring-pct { font-size: 1.85em; font-weight: 700; color: var(--oc-orange); line-height: 1; }
+        .ring-lbl { font-size: 0.62em; color: var(--oc-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+        .mini-stack { display: flex; flex-direction: column; gap: 14px; }
+        .ring-mini { display: flex; align-items: center; gap: 10px; }
+        .ring-mini svg { transform: rotate(-90deg); flex-shrink: 0; }
+        .mini-title { font-size: 0.82em; font-weight: 600; color: var(--oc-black); }
+        .mini-sub { font-size: 0.72em; color: var(--oc-muted); }
+
+        /* Stat cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            align-content: stretch;
+        }
+        .stat-card {
+            background: var(--oc-bg); border-radius: 10px;
+            padding: 20px 12px; text-align: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .stat-val { font-size: 1.75em; font-weight: 700; color: var(--oc-black); line-height: 1.1; }
+        .stat-val.orange { color: var(--oc-orange); }
+        .stat-lbl { font-size: 0.72em; color: var(--oc-muted); margin-top: 6px; line-height: 1.3; }
+
+        /* ── Pacing row (inside stats section) ── */
+        .stats-pace-row {
+            grid-column: 1 / -1;
+            border-top: 1px solid var(--oc-border);
+            padding-top: 20px;
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        }
+        .stats-pace-info { flex: 1; min-width: 200px; font-size: 0.83em; color: var(--oc-muted); }
+        .stats-pace-info strong { color: var(--oc-black); }
+        .pacing-track {
+            flex: 2; min-width: 160px; height: 7px;
+            background: var(--oc-bg); border-radius: 4px; overflow: hidden;
+        }
+        .pacing-fill { height: 100%; background: var(--oc-orange); border-radius: 4px; transition: width 0.5s ease; }
+
+        /* ── Main layout ── */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: stretch;
+            margin-bottom: 20px;
+        }
+        .left-col, .right-col { display: flex; flex-direction: column; gap: 20px; }
+        .left-col { height: 100%; }
+        #ot-block { flex: 1; }
+        @media (max-width: 760px) { .main-layout { grid-template-columns: 1fr; } }
+
+        .testament-block {
+            background: var(--oc-surface);
+            border: 1px solid var(--oc-border);
+            border-radius: 14px;
+            padding: 26px 22px;
+        }
+        .testament-heading {
+            display: flex; align-items: baseline; justify-content: space-between;
+            font-size: 1em; font-weight: 700; color: var(--oc-black);
+            letter-spacing: -0.01em;
+            padding-bottom: 12px; border-bottom: 1px solid var(--oc-border);
+            margin-bottom: 16px;
+        }
+        .testament-heading .ch-count {
+            font-size: 0.72em; font-weight: 500; color: var(--oc-muted); letter-spacing: 0;
+        }
+
+        /* ── Mobile tab switcher ── */
+        .tab-bar { display: none; }
+        @media (max-width: 760px) {
+            .tab-bar {
+                display: flex; gap: 8px; margin-bottom: 16px;
+            }
+            .tab-btn {
+                flex: 1; padding: 10px; border-radius: 9px;
+                border: 1.5px solid var(--oc-border);
+                background: var(--oc-surface); color: var(--oc-muted);
+                font-family: 'Poppins', sans-serif; font-size: 0.82em; font-weight: 600;
+                cursor: pointer; transition: all 0.15s;
+            }
+            .tab-btn.active {
+                background: var(--oc-orange); color: #fff; border-color: var(--oc-orange);
+            }
+        }
+
+        /* Book rows */
+        .book-row { margin-bottom: 10px; }
+        .book-name {
+            display: block;
+            font-size: 0.68em; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.04em;
+            color: var(--oc-black); margin-bottom: 4px;
+            white-space: nowrap;
+            cursor: pointer; padding: 2px 4px; border-radius: 3px;
+            transition: color 0.15s, background 0.15s;
+        }
+        .chapters-row { display: flex; flex-wrap: wrap; gap: 2px; }
+        .book-name:hover { background: color-mix(in srgb, var(--book-color, var(--oc-orange)) 15%, var(--oc-surface)); color: var(--book-color, var(--oc-orange)); }
+        .book-name.partial { color: var(--book-color, #c07a5a); opacity: 0.65; }
+        .book-name.complete { color: var(--book-color, var(--oc-orange)); opacity: 1; }
+
+        .ch {
+            width: 22px; height: 22px; border-radius: 6px;
+            background: color-mix(in srgb, var(--ch-color, var(--oc-orange)) 9%, var(--chip-unread));
+            color: var(--oc-muted);
+            font-size: 0.6em; font-weight: 500;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; user-select: none; flex-shrink: 0;
+            position: relative;
+            transition: background 0.1s, color 0.1s, transform 0.08s;
+        }
+        .ch:hover { background: color-mix(in srgb, var(--ch-color, var(--oc-orange)) 22%, var(--oc-surface)); color: var(--ch-color, var(--oc-orange)); transform: scale(1.15); }
+        .ch.read { background: var(--ch-color, var(--oc-orange)); color: #fff; }
+        .ch.read:hover { filter: brightness(0.88); transform: scale(1.05); }
+        .ch.starred::after { content: ''; position: absolute; top: 0; right: 0; width: 0; height: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--oc-orange) transparent transparent; border-top-right-radius: 6px; pointer-events: none; }
+        .ch.read.starred::after { border-color: transparent rgba(255,255,255,0.75) transparent transparent; }
+
+        @media (max-width: 760px) {
+            .ch { width: 30px; height: 30px; border-radius: 7px; font-size: 0.68em; }
+            .chapters-row { gap: 3px; }
+            .book-row { margin-bottom: 14px; }
+        }
+
+        /* ── Mid section panels ── */
+
+        .genre-block, .books-block {
+            background: var(--oc-surface); border: 1px solid var(--oc-border);
+            border-radius: 14px; padding: 28px 26px;
+        }
+        .block-title {
+            font-size: 0.84em; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--oc-muted); margin-bottom: 16px;
+        }
+
+        /* Genre bars */
+        .genre-row { margin-bottom: 14px; }
+        .genre-row:last-child { margin-bottom: 0; }
+        .genre-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .genre-name { font-size: 0.78em; font-weight: 500; color: var(--oc-black); }
+        .genre-count { font-size: 0.72em; color: var(--oc-muted); }
+        .genre-track { height: 8px; background: var(--oc-bg); border-radius: 4px; overflow: hidden; }
+        .genre-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+
+        /* Books completed badges */
+        .completed-books-wrap { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 18px; }
+        .book-badge {
+            padding: 3px 8px; border-radius: 4px; font-size: 0.66em; font-weight: 500;
+            background: var(--oc-bg); color: #C5BFB8;
+            border: 1px solid var(--oc-border); white-space: nowrap; transition: all 0.2s;
+        }
+        .book-badge.complete {
+            background: color-mix(in srgb, var(--oc-orange) 12%, var(--oc-surface));
+            color: var(--oc-orange);
+            border-color: color-mix(in srgb, var(--oc-orange) 35%, var(--oc-surface));
+            font-weight: 600;
+        }
+
+        /* Quick wins */
+        .quickwin-list { display: flex; flex-direction: column; gap: 6px; }
+        .quickwin-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 11px 14px; background: var(--oc-bg); border-radius: 7px;
+            cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+        }
+        .quickwin-item:hover { border-color: color-mix(in srgb, var(--oc-orange) 35%, var(--oc-surface)); background: color-mix(in srgb, var(--oc-orange) 10%, var(--oc-surface)); }
+        .qw-name { font-size: 0.83em; font-weight: 500; color: var(--oc-black); }
+        .qw-left { font-size: 0.75em; color: var(--oc-muted); }
+        .qw-left.one { color: var(--oc-orange); font-weight: 600; }
+
+        /* SVG ring tracks adapt to theme */
+        .ring-track { stroke: var(--chip-unread); }
+
+        /* ── Genre legend (inline inside genre panel) ── */
+        .genre-legend-inline {
+            display: flex; flex-wrap: wrap; gap: 5px 12px;
+            margin-bottom: 14px; padding-bottom: 14px;
+            border-bottom: 1px solid var(--oc-border);
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+        .legend-name { font-size: 0.72em; color: var(--oc-muted); }
+
+        /* ── Heatmap ── */
+        .heatmap-wrap {
+            background: var(--oc-surface); border: 1px solid var(--oc-border);
+            border-radius: 14px; padding: 24px 26px; margin-bottom: 20px;
+        }
+        .heatmap-grid {
+            display: grid;
+            grid-template-rows: repeat(7, 13px);
+            grid-auto-flow: column;
+            gap: 2px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .heatmap-cell {
+            width: 13px; height: 13px; border-radius: 3px;
+            background: var(--oc-border); cursor: default;
+        }
+        .heatmap-cell[data-level="1"] { background: rgba(232,68,26,0.22); }
+        .heatmap-cell[data-level="2"] { background: rgba(232,68,26,0.48); }
+        .heatmap-cell[data-level="3"] { background: rgba(232,68,26,0.72); }
+        .heatmap-cell[data-level="4"] { background: rgba(232,68,26,1); }
+        .heatmap-cell[data-today] { box-shadow: 0 0 0 1.5px var(--oc-orange); }
+        .heatmap-footer { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: 10px; font-size: 0.7em; color: var(--oc-muted); }
+        .heatmap-scale { display: flex; gap: 2px; }
+        .heatmap-scale-cell { width: 13px; height: 13px; border-radius: 3px; background: var(--oc-border); }
+        .heatmap-scale-cell[data-level="1"] { background: rgba(232,68,26,0.22); }
+        .heatmap-scale-cell[data-level="2"] { background: rgba(232,68,26,0.48); }
+        .heatmap-scale-cell[data-level="3"] { background: rgba(232,68,26,0.72); }
+        .heatmap-scale-cell[data-level="4"] { background: rgba(232,68,26,1); }
+
+        /* Page footer */
+        .page-footer {
+            text-align: center; padding: 28px 20px 20px;
+            font-size: 0.75em; color: var(--oc-muted); line-height: 1.8;
+        }
+        .page-footer a { color: var(--oc-muted); text-decoration: underline; text-underline-offset: 2px; }
+        .page-footer a:hover { color: var(--oc-orange); }
+
+        /* Data transfer buttons */
+        .data-transfer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* Milestone toast */
+        .milestone-toast {
+            position: fixed; bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(90px);
+            background: var(--oc-orange); color: #fff;
+            padding: 13px 26px; border-radius: 30px;
+            font-size: 0.9em; font-weight: 600;
+            box-shadow: 0 8px 28px rgba(232,68,26,0.4);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000; pointer-events: none; white-space: nowrap;
+        }
+        .milestone-toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* About panel */
+        .about-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            z-index: 2000; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
+        .about-overlay.open { opacity: 1; pointer-events: all; }
+        .about-panel {
+            position: fixed; top: 0; right: 0; height: 100%; width: min(420px, 95vw);
+            background: var(--oc-surface); border-left: 1px solid var(--oc-border);
+            z-index: 2001; padding: 32px 28px; box-sizing: border-box;
+            transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            overflow-y: auto;
+        }
+        .about-panel.open { transform: translateX(0); }
+        .about-close {
+            position: absolute; top: 20px; right: 20px;
+            background: transparent; border: 1.5px solid var(--oc-border);
+            border-radius: 6px; padding: 4px 12px; cursor: pointer;
+            color: var(--oc-muted); font-size: 0.82em; font-family: 'Poppins', sans-serif;
+            transition: all 0.15s;
+        }
+        .about-close:hover { border-color: var(--oc-orange); color: var(--oc-orange); }
+        .about-panel h2 { font-size: 1.25em; font-weight: 700; color: var(--oc-black); margin: 0 0 8px; letter-spacing: -0.02em; }
+        .about-panel h3 { font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--oc-orange); margin: 22px 0 8px; }
+        .about-panel p { font-size: 0.87em; color: var(--oc-black); line-height: 1.75; margin: 0 0 8px; }
+        .about-panel ul { margin: 0 0 8px; padding-left: 18px; }
+        .about-panel ul li { font-size: 0.87em; color: var(--oc-black); line-height: 1.75; margin-bottom: 5px; }
+        .about-divider { border: none; border-top: 1px solid var(--oc-border); margin: 20px 0; }
+        .favs-book-group { margin-bottom: 18px; }
+        .favs-book-group:last-child { margin-bottom: 0; }
+        .favs-book-heading { font-size: 0.62em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--oc-orange); margin-bottom: 6px; padding: 0 2px; }
+        .favs-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; border-radius: 7px; cursor: pointer; border: 1px solid transparent; transition: background 0.12s, border-color 0.12s; gap: 8px; }
+        .favs-item:hover { background: var(--oc-surface-2, #f5f0e8); border-color: var(--oc-border); }
+        .favs-item-name { font-size: 0.87em; color: var(--oc-black); flex: 1; }
+        .favs-item-unstar { background: none; border: none; color: var(--oc-muted); cursor: pointer; font-size: 0.75em; padding: 2px 5px; border-radius: 4px; transition: color 0.12s; }
+        .favs-item-unstar:hover { color: var(--oc-orange); }
+        .favs-empty { text-align: center; padding: 32px 0; font-size: 0.87em; color: var(--oc-muted); line-height: 1.85; }
+        .about-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .about-link {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 0.82em; color: var(--oc-muted); text-decoration: none;
+            border: 1.5px solid var(--oc-border); border-radius: 7px;
+            padding: 6px 13px; font-family: 'Poppins', sans-serif;
+            transition: all 0.15s;
+        }
+        .about-link:hover { border-color: var(--oc-orange); color: var(--oc-orange); }
+
+        /* Auth panel */
+        .auth-input {
+            display: block; width: 100%; padding: 10px 14px; margin-bottom: 10px;
+            background: var(--oc-bg); border: 1.5px solid var(--oc-border);
+            border-radius: 8px; color: var(--oc-black); font-family: 'Poppins', sans-serif; font-size: 0.9em;
+        }
+        .auth-input:focus { outline: none; border-color: var(--oc-orange); }
+        .auth-input::placeholder { color: var(--oc-muted); }
+        .btn-primary {
+            display: block; width: 100%; padding: 11px; margin-bottom: 8px;
+            background: var(--oc-orange); color: #fff; border: none; border-radius: 8px;
+            font-family: 'Poppins', sans-serif; font-size: 0.9em; font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-secondary {
+            display: block; width: 100%; padding: 11px; margin-bottom: 8px;
+            background: transparent; color: var(--oc-black); border: 1.5px solid var(--oc-border);
+            border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9em; cursor: pointer; transition: border-color 0.15s;
+        }
+        .btn-secondary:hover { border-color: var(--oc-orange); }
+        .btn-text {
+            display: block; width: 100%; padding: 8px; background: none; border: none;
+            color: var(--oc-muted); font-family: 'Poppins', sans-serif; font-size: 0.83em; cursor: pointer; text-decoration: underline;
+        }
+        .auth-signed-in-email { font-size: 0.85em; color: var(--oc-muted); margin: 0 0 6px; }
+        .auth-signed-in-email strong { color: var(--oc-black); }
+        #auth-btn.signed-in { font-size: 0.78em; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <div class="header-brand">
+            <svg width="52" height="52" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+                <rect x="15" y="4" width="10" height="10" rx="2" fill="#E8441A"/>
+                <rect x="4" y="15" width="10" height="10" rx="2" fill="#E8441A"/>
+                <rect x="15" y="15" width="10" height="10" rx="2" fill="#E8441A"/>
+                <rect x="26" y="15" width="10" height="10" rx="2" fill="#E8441A"/>
+                <rect x="15" y="26" width="10" height="10" rx="2" fill="#E8441A"/>
+            </svg>
+            <div class="brand-text">
+                <h1>Chapter by Chapter</h1>
+                <p>Your companion through Scripture</p>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-reset" onclick="openFavourites()">★ Study List</button>
+            <button class="btn-reset" onclick="openAbout()">How to Use</button>
+            <button class="btn-reset" onclick="openCredits()">About</button>
+
+            <button class="btn-reset" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">☀︎</button>
+        </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-section">
+        <div class="rings-area">
+
+            <!-- Main ring -->
+            <div class="ring-main">
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                    <circle cx="70" cy="70" r="58" class="ring-track" fill="none" stroke-width="11"/>
+                    <circle id="ring-all" cx="70" cy="70" r="58" fill="none"
+                            stroke="#E8441A" stroke-width="11" stroke-linecap="round"
+                            stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+                </svg>
+                <div class="ring-center">
+                    <span class="ring-pct" id="pct-all">0%</span>
+                    <span class="ring-lbl">Complete</span>
+                </div>
+            </div>
+
+            <!-- OT / NT mini rings -->
+            <div class="mini-stack">
+                <div class="ring-mini">
+                    <svg width="52" height="52" viewBox="0 0 52 52">
+                        <circle cx="26" cy="26" r="21" class="ring-track" fill="none" stroke-width="7"/>
+                        <circle id="ring-ot" cx="26" cy="26" r="21" fill="none"
+                                stroke="#7B68BD" stroke-width="7" stroke-linecap="round"
+                                stroke-dasharray="131.9" stroke-dashoffset="131.9"/>
+                    </svg>
+                    <div>
+                        <div class="mini-title">Old Testament</div>
+                        <div class="mini-sub" id="ot-sub">0 / 929 chapters</div>
+                    </div>
+                </div>
+                <div class="ring-mini">
+                    <svg width="52" height="52" viewBox="0 0 52 52">
+                        <circle cx="26" cy="26" r="21" class="ring-track" fill="none" stroke-width="7"/>
+                        <circle id="ring-nt" cx="26" cy="26" r="21" fill="none"
+                                stroke="#1DB37A" stroke-width="7" stroke-linecap="round"
+                                stroke-dasharray="131.9" stroke-dashoffset="131.9"/>
+                    </svg>
+                    <div>
+                        <div class="mini-title">New Testament</div>
+                        <div class="mini-sub" id="nt-sub">0 / 260 chapters</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-val orange" id="s-read">0</div>
+                <div class="stat-lbl">Chapters read</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="s-left">1,189</div>
+                <div class="stat-lbl">Chapters to go</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="s-books">0</div>
+                <div class="stat-lbl">Books finished</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="s-pace">—</div>
+                <div class="stat-lbl">Chapters/day to finish <span id="s-year">2026</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val orange" id="s-streak">—</div>
+                <div class="stat-lbl">Day streak</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-val" id="s-best">—</div>
+                <div class="stat-lbl">Best streak</div>
+            </div>
+        </div>
+
+        <!-- Pacing row — full width inside stats card -->
+        <div class="stats-pace-row">
+            <div class="stats-pace-info">
+                <strong id="pace-main">0 of 1,189 chapters read</strong>
+                &nbsp;&middot;&nbsp;
+                <span id="pace-sub">365 days remaining in 2026</span>
+            </div>
+            <div class="pacing-track">
+                <div class="pacing-fill" id="pace-fill" style="width:0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile tab switcher (hidden on desktop) -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="ot" onclick="setTab('ot')">Old Testament</button>
+        <button class="tab-btn" data-tab="deutero" id="deutero-tab-btn" onclick="setTab('deutero')" style="display:none">Deuterocanonical</button>
+        <button class="tab-btn" data-tab="nt" onclick="setTab('nt')">New Testament</button>
+    </div>
+
+    <!-- Main layout -->
+    <div class="main-layout">
+
+        <!-- Left: Old Testament -->
+        <div class="left-col">
+            <div class="testament-block" id="ot-block">
+                <div class="testament-heading">
+                    <span>Old Testament</span>
+                    <span class="ch-count">929 chapters</span>
+                </div>
+                <div id="ot-grid"></div>
+            </div>
+        </div>
+
+        <!-- Right: New Testament + stats -->
+        <div class="right-col">
+            <div class="testament-block" id="nt-block">
+                <div class="testament-heading">
+                    <span>New Testament</span>
+                    <span class="ch-count">260 chapters</span>
+                </div>
+                <div id="nt-grid"></div>
+            </div>
+
+        <!-- Genre progress -->
+        <div class="genre-block">
+            <div class="block-title">Progress by Genre</div>
+            <div class="genre-legend-inline" id="genre-legend"></div>
+            <div id="genre-bars"></div>
+        </div>
+
+        <!-- Books + Quick Wins -->
+        <div class="books-block">
+            <div class="block-title">Books Completed &nbsp;<span id="books-completed-count" style="font-weight:500;text-transform:none;letter-spacing:0;font-size:1em;color:var(--oc-muted)"></span></div>
+            <div class="completed-books-wrap" id="completed-books"></div>
+            <div class="block-title" style="margin-top:4px">Quick Wins &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;font-size:1em">— shortest books to finish</span></div>
+            <div class="quickwin-list" id="quick-wins"></div>
+        </div>
+        </div><!-- /right-col -->
+        <!-- Deuterocanonical books — spans both columns -->
+        <div class="testament-block" id="deutero-block" style="display:none;grid-column:1/-1">
+            <div class="testament-heading">
+                <span>Deuterocanonical Books</span>
+                <span class="ch-count" id="deutero-ch-count"></span>
+            </div>
+            <div id="deutero-grid"></div>
+        </div>
+
+    </div><!-- /main-layout -->
+
+    <!-- Reading heatmap -->
+    <div class="heatmap-wrap">
+        <div class="block-title" style="margin-bottom:14px">Reading Activity <span style="font-weight:400;text-transform:none;letter-spacing:0;font-style:italic;font-size:1em">— last 12 months</span></div>
+        <div class="heatmap-grid" id="heatmap"></div>
+        <div class="heatmap-footer">
+            <span>Less</span>
+            <div class="heatmap-scale">
+                <div class="heatmap-scale-cell"></div>
+                <div class="heatmap-scale-cell" data-level="1"></div>
+                <div class="heatmap-scale-cell" data-level="2"></div>
+                <div class="heatmap-scale-cell" data-level="3"></div>
+                <div class="heatmap-scale-cell" data-level="4"></div>
+            </div>
+            <span>More</span>
+        </div>
+    </div>
+
+    <!-- Milestone toast -->
+    <div class="milestone-toast" id="milestone-toast"></div>
+
+    <!-- Favourites overlay -->
+    <div class="about-overlay" id="favs-overlay" onclick="closeFavourites()"></div>
+    <div class="about-panel" id="favs-panel">
+        <button class="about-close" onclick="closeFavourites()">✕ Close</button>
+        <h2>Study List</h2>
+        <p style="font-size:0.82em;color:var(--oc-muted);margin:0 0 20px">Right-click any chapter (or long-press on mobile) to star it for deeper study.</p>
+        <div id="favs-list"></div>
+    </div>
+
+    <!-- How to use overlay -->
+    <div class="about-overlay" id="about-overlay" onclick="closeAbout()"></div>
+    <div class="about-panel" id="about-panel">
+        <button class="about-close" onclick="closeAbout()">✕ Close</button>
+        <h2>How to use it</h2>
+        <p>The Bible has 1,189 chapters. Click any square to mark it as read — and watch your journey unfold.</p>
+        <ul style="margin-top:14px">
+            <li><strong>Click</strong> any chapter square to mark it as read — click again to unmark</li>
+            <li><strong>Click and drag</strong> across multiple chapters to mark them all at once</li>
+            <li><strong>Click a book name</strong> to mark or unmark all its chapters in one go</li>
+            <li><strong>Right-click</strong> any chapter (or <strong>long-press</strong> on mobile) to add it to your <strong>Study List</strong></li>
+            <li><strong>Export data</strong> saves a backup; <strong>Import data</strong> restores it — both in the footer</li>
+            <li>Progress saves automatically to your browser — use <strong>Export data</strong> to back up your progress</li>
+        </ul>
+        <h3 style="margin-top:20px">Catholic &amp; Orthodox readers</h3>
+        <p>Use the <strong>+ Include Deuterocanonical books</strong> button in the footer to add the 7 additional books (Tobit, Judith, 1 &amp; 2 Maccabees, Wisdom of Solomon, Sirach, and Baruch) found in Catholic and Orthodox Bibles. Your preference is saved automatically.</p>
+    </div>
+
+
+
+    <div class="about-overlay" id="credits-overlay" onclick="closeCredits()"></div>
+    <div class="about-panel" id="credits-panel">
+        <button class="about-close" onclick="closeCredits()">✕ Close</button>
+        <h2>About Chapter by Chapter</h2>
+        <p>I wanted to track my Bible reading, but most plans felt too prescriptive. Miss a day and you're behind. Fall behind and the guilt creeps in.</p>
+        <p>Then I came across a simple PDF by Matthew Everhard — every chapter of the Bible, ready to tick off as you read it. No daily schedule, no catching up, no guilt. Just a record of where you'd been and a nudge toward where you hadn't. Something clicked.</p>
+        <p>The goal of this app is the same: a companion for your journey through Scripture, not a plan to keep up with. You choose what to read, and when. It tracks your progress, celebrates the milestones, and quietly cheers you on.</p>
+        <hr class="about-divider">
+        <h3>App design</h3>
+        <p>This app was designed by <strong>Darren Rowse</strong>. Got feedback or a feature idea? Get in touch:</p>
+        <div class="about-links">
+            <a class="about-link" href="https://darrenrowse.substack.com/" target="_blank" rel="noopener">Substack</a>
+            <a class="about-link" href="mailto:darrenrowse@gmail.com">✉ darrenrowse@gmail.com</a>
+            <a class="about-link" href="https://x.com/problogger" target="_blank" rel="noopener">𝕏 Twitter/X</a>
+            <a class="about-link" href="https://www.threads.com/@darrenrowse" target="_blank" rel="noopener">Threads</a>
+        </div>
+        <p style="margin-top:14px">If this app has been useful, you're welcome to support it:</p>
+        <div class="about-links">
+            <a class="about-link" href="https://ko-fi.com/darrenrowse" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+        </div>
+        <hr class="about-divider">
+        <h3>Original concept</h3>
+        <p>The chapter-by-chapter tracking idea was developed by pastor and author <strong>Matthew Everhard</strong>. Check out his resources:</p>
+        <div class="about-links">
+            <a class="about-link" href="https://www.facebook.com/pastor.everhard/" target="_blank" rel="noopener">Facebook</a>
+            <a class="about-link" href="https://www.youtube.com/c/mattheweverhard" target="_blank" rel="noopener">YouTube</a>
+        </div>
+    </div>
+
+    <footer class="page-footer">
+        <div class="data-transfer">
+            <button class="btn-reset" onclick="exportData()" title="Download all your reading data as a backup file">Export data</button>
+            <button class="btn-reset" onclick="document.getElementById('import-file').click()" title="Restore data from a backup file">Import data</button>
+            <button class="btn-reset" onclick="confirmReset()" title="Clear all reading progress">Reset progress</button>
+            <button class="btn-reset" id="deutero-toggle-btn" onclick="toggleDeutero()" title="Add the 7 deuterocanonical books used in Catholic &amp; Orthodox Bibles">+ Include Deuterocanonical books</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+        <div><a href="#" onclick="event.preventDefault();openCredits()">About Chapter by Chapter</a> &nbsp;·&nbsp; <a href="https://ko-fi.com/darrenrowse" target="_blank" rel="noopener">☕ Support this app</a></div>
+    </footer>
+
+</div>
+
+<script>
+    // ── No cloud sync — localStorage only ──
+    function debouncedSync() {} // no-op
+    function closeAuth() {}
+
+    const BIBLE = {
+        OT: [
+            ['Genesis',50],['Exodus',40],['Leviticus',27],['Numbers',36],['Deuteronomy',34],
+            ['Joshua',24],['Judges',21],['Ruth',4],['1 Samuel',31],['2 Samuel',24],
+            ['1 Kings',22],['2 Kings',25],['1 Chronicles',29],['2 Chronicles',36],
+            ['Ezra',10],['Nehemiah',13],['Esther',10],['Job',42],['Psalms',150],
+            ['Proverbs',31],['Ecclesiastes',12],['Song of Songs',8],['Isaiah',66],
+            ['Jeremiah',52],['Lamentations',5],['Ezekiel',48],['Daniel',12],
+            ['Hosea',14],['Joel',3],['Amos',9],['Obadiah',1],['Jonah',4],['Micah',7],
+            ['Nahum',3],['Habakkuk',3],['Zephaniah',3],['Haggai',2],['Zechariah',14],['Malachi',4]
+        ],
+        NT: [
+            ['Matthew',28],['Mark',16],['Luke',24],['John',21],['Acts',28],
+            ['Romans',16],['1 Corinthians',16],['2 Corinthians',13],['Galatians',6],
+            ['Ephesians',6],['Philippians',4],['Colossians',4],['1 Thessalonians',5],
+            ['2 Thessalonians',3],['1 Timothy',6],['2 Timothy',4],['Titus',3],['Philemon',1],
+            ['Hebrews',13],['James',5],['1 Peter',5],['2 Peter',3],
+            ['1 John',5],['2 John',1],['3 John',1],['Jude',1],['Revelation',22]
+        ],
+        DEUTERO: [
+            ['Tobit',14],['Judith',16],['1 Maccabees',16],['2 Maccabees',15],
+            ['Wisdom of Solomon',19],['Sirach',51],['Baruch',6],
+            ['Daniel (additions)',3],['Esther (additions)',6]
+        ]
+    };
+
+    const NT_TOTAL = 260;
+    let showDeutero = localStorage.getItem('brt-deutero') === 'true';
+    function getOTTotal() { return showDeutero ? 929 + BIBLE.DEUTERO.reduce((s,[,n]) => s+n, 0) : 929; }
+    function getTotal()   { return getOTTotal() + NT_TOTAL; }
+
+    const GENRES = [
+        { name: 'Pentateuch',       color: '#C05535', light: '#f0ddd5', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
+        { name: 'History',          color: '#6B62A8', light: '#e2e0f2', books: ['Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther'] },
+        { name: 'Poetry & Wisdom',  color: '#A83878', light: '#f0dcea', books: ['Job','Psalms','Proverbs','Ecclesiastes','Song of Songs'] },
+        { name: 'Major Prophets',   color: '#28827A', light: '#d2eeec', books: ['Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel'] },
+        { name: 'Minor Prophets',   color: '#9A6228', light: '#f0e4d0', books: ['Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
+        { name: 'Gospels & Acts',   color: '#38885A', light: '#d4eede', books: ['Matthew','Mark','Luke','John','Acts'] },
+        { name: "Paul's Letters",   color: '#3E68B8', light: '#d8e4f4', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon'] },
+        { name: 'General Epistles', color: '#AA3A3A', light: '#f0dada', books: ['Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
+        { name: 'Revelation',       color: '#6A42A8', light: '#e4d8f8', books: ['Revelation'] },
+    ];
+
+    function getAllBooks() {
+        return showDeutero ? [...BIBLE.OT, ...BIBLE.DEUTERO, ...BIBLE.NT] : [...BIBLE.OT, ...BIBLE.NT];
+    }
+
+    // Build book → color lookup from genre data
+    const BOOK_COLOR_MAP = {};
+    GENRES.forEach(g => g.books.forEach(b => { BOOK_COLOR_MAP[b] = { color: g.color, light: g.light }; }));
+    // Deuterocanonical books get a distinct slate-blue colour
+    BIBLE.DEUTERO.forEach(([name]) => { BOOK_COLOR_MAP[name] = { color: '#5A7A9A', light: '#d8e8f4' }; });
+
+    // Load saved state
+    let read      = new Set(JSON.parse(localStorage.getItem('brt-2')         || '[]'));
+    let favorites = new Set(JSON.parse(localStorage.getItem('brt-favorites') || '[]'));
+
+    // Date tracking: { "YYYY-MM-DD": chapterCount }
+    let readDates = JSON.parse(localStorage.getItem('brt-dates') || '{}');
+
+    function save() {
+        localStorage.setItem('brt-2', JSON.stringify([...read]));
+        debouncedSync();
+    }
+
+    function saveFavorites() {
+        localStorage.setItem('brt-favorites', JSON.stringify([...favorites]));
+        debouncedSync();
+    }
+
+    // Returns a YYYY-MM-DD string in the user's local timezone
+    function localDateKey(date) {
+        const d = date || new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function recordReading(delta) {
+        if (delta === 0) return;
+        const today = localDateKey();
+        const updated = Math.max(0, (readDates[today] || 0) + delta);
+        if (updated === 0) delete readDates[today];
+        else readDates[today] = updated;
+        localStorage.setItem('brt-dates', JSON.stringify(readDates));
+        debouncedSync();
+    }
+
+    // Drag-to-mark state
+    const drag = { active: false, marking: true, dirty: false };
+
+    // Touch state — tracks whether a touch is a tap, scroll, or horizontal drag
+    const touch = { startX: 0, startY: 0, startKey: null, startEl: null, dragging: false, scrolling: false, longPressTimer: null, longPressActive: false };
+
+    document.addEventListener('mouseup', () => {
+        if (drag.active && drag.dirty) updateStats();
+        drag.active = false; drag.dirty = false;
+    });
+    document.addEventListener('touchend', () => {
+        if (drag.active && drag.dirty) updateStats();
+        drag.active = false; drag.dirty = false;
+        touch.startKey = null; touch.startEl = null;
+        touch.dragging = false; touch.scrolling = false;
+        if (touch.longPressTimer) { clearTimeout(touch.longPressTimer); touch.longPressTimer = null; }
+        touch.longPressActive = false;
+    });
+
+    function toggleChapter(key, el, skipStats) {
+        if (read.has(key)) { read.delete(key); el.classList.remove('read'); recordReading(-1); }
+        else               { read.add(key);    el.classList.add('read'); recordReading(1); }
+        save();
+        if (!skipStats) updateStats();
+        updateBookLabel(el.closest('.book-row'));
+    }
+
+    function toggleFavorite(key, el) {
+        if (favorites.has(key)) { favorites.delete(key); el.classList.remove('starred'); }
+        else                    { favorites.add(key);    el.classList.add('starred'); }
+        saveFavorites();
+        if (document.getElementById('favs-panel').classList.contains('open')) renderFavouritesPanel();
+    }
+
+    function toggleBook(bookName, count, rowEl) {
+        const allRead = Array.from({length: count}, (_, i) => `${bookName}-${i+1}`).every(k => read.has(k));
+        let added = 0, removed = 0;
+        for (let i = 1; i <= count; i++) {
+            const key = `${bookName}-${i}`;
+            if (allRead) { read.delete(key); removed++; }
+            else if (!read.has(key)) { read.add(key); added++; }
+        }
+        if (added > 0)   recordReading(added);
+        if (removed > 0) recordReading(-removed);
+        rowEl.querySelectorAll('.ch').forEach(ch => ch.classList.toggle('read', !allRead));
+        save();
+        updateStats();
+        updateBookLabel(rowEl);
+    }
+
+    function updateBookLabel(rowEl) {
+        if (!rowEl) return;
+        const nameEl = rowEl.querySelector('.book-name');
+        if (!nameEl) return;
+        const dots = rowEl.querySelectorAll('.ch');
+        const readCount = rowEl.querySelectorAll('.ch.read').length;
+        nameEl.classList.remove('partial', 'complete');
+        if (readCount === dots.length) nameEl.classList.add('complete');
+        else if (readCount > 0)        nameEl.classList.add('partial');
+    }
+
+    function renderGrid(books, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        books.forEach(([name, count]) => {
+            const row = document.createElement('div');
+            row.className = 'book-row';
+            row.dataset.book = name;
+
+            const bookColor = BOOK_COLOR_MAP[name] || { color: '#E8441A', light: '#fde8e0' };
+
+            const nameEl = document.createElement('span');
+            nameEl.className = 'book-name';
+            nameEl.textContent = name;
+            nameEl.title = `Click to toggle all ${count} chapter${count > 1 ? 's' : ''} of ${name}`;
+            nameEl.style.setProperty('--book-color', bookColor.color);
+            nameEl.onclick = () => toggleBook(name, count, row);
+            row.appendChild(nameEl);
+
+            const chaptersRow = document.createElement('div');
+            chaptersRow.className = 'chapters-row';
+
+            for (let i = 1; i <= count; i++) {
+                const key = `${name}-${i}`;
+                const ch = document.createElement('span');
+                ch.className = 'ch' + (read.has(key) ? ' read' : '') + (favorites.has(key) ? ' starred' : '');
+                ch.textContent = i;
+                ch.title = `${name} ${i}`;
+                ch.dataset.key = key;
+                ch.style.setProperty('--ch-color', bookColor.color);
+                ch.style.setProperty('--ch-light', bookColor.light);
+
+                ch.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    drag.active = true;
+                    drag.marking = !read.has(key);
+                    drag.dirty = false;
+                    toggleChapter(key, ch, true);
+                    drag.dirty = true;
+                });
+                ch.addEventListener('mouseover', () => {
+                    if (!drag.active) return;
+                    const isRead = read.has(key);
+                    if (drag.marking && !isRead) { toggleChapter(key, ch, true); drag.dirty = true; }
+                    else if (!drag.marking && isRead) { toggleChapter(key, ch, true); drag.dirty = true; }
+                });
+                ch.addEventListener('contextmenu', e => {
+                    e.preventDefault();
+                    toggleFavorite(key, ch);
+                });
+                chaptersRow.appendChild(ch);
+            }
+            row.appendChild(chaptersRow);
+
+            // Touch support — tap to mark, horizontal drag to sweep, vertical scroll passes through
+            row.addEventListener('touchstart', e => {
+                const ch = e.target.closest('.ch');
+                if (!ch) return;
+                const t = e.touches[0];
+                touch.startX = t.clientX;
+                touch.startY = t.clientY;
+                touch.startKey = ch.dataset.key;
+                touch.startEl = ch;
+                touch.dragging = false;
+                touch.scrolling = false;
+                touch.longPressActive = false;
+                drag.active = false;
+                drag.dirty = false;
+                if (touch.longPressTimer) clearTimeout(touch.longPressTimer);
+                touch.longPressTimer = setTimeout(() => {
+                    if (!touch.dragging && !touch.scrolling && touch.startKey) {
+                        toggleFavorite(touch.startKey, touch.startEl);
+                        touch.longPressActive = true;
+                    }
+                    touch.longPressTimer = null;
+                }, 500);
+            }, { passive: true }); // passive: allow scroll to work naturally
+
+            row.addEventListener('touchmove', e => {
+                if (!touch.startKey) return;
+                const t = e.touches[0];
+                const dx = Math.abs(t.clientX - touch.startX);
+                const dy = Math.abs(t.clientY - touch.startY);
+
+                if (!touch.dragging && !touch.scrolling) {
+                    if (dy > 8 && dy > dx) {
+                        touch.scrolling = true;
+                        if (touch.longPressTimer) { clearTimeout(touch.longPressTimer); touch.longPressTimer = null; }
+                        return;
+                    } // vertical = scroll
+                    if (dx > 8) {
+                        if (touch.longPressTimer) { clearTimeout(touch.longPressTimer); touch.longPressTimer = null; }
+                        // Horizontal drag — enter sweep mode
+                        touch.dragging = true;
+                        drag.active = true;
+                        drag.marking = !read.has(touch.startKey);
+                        drag.dirty = false;
+                        toggleChapter(touch.startKey, touch.startEl, true);
+                        drag.dirty = true;
+                    }
+                }
+
+                if (touch.dragging) {
+                    e.preventDefault();
+                    const el = document.elementFromPoint(t.clientX, t.clientY);
+                    const ch = el && el.closest('.ch');
+                    if (!ch) return;
+                    const key = ch.dataset.key;
+                    const isRead = read.has(key);
+                    if (drag.marking && !isRead) { toggleChapter(key, ch, true); drag.dirty = true; }
+                    else if (!drag.marking && isRead) { toggleChapter(key, ch, true); drag.dirty = true; }
+                }
+            }, { passive: false });
+
+            row.addEventListener('touchend', e => {
+                if (touch.longPressTimer) { clearTimeout(touch.longPressTimer); touch.longPressTimer = null; }
+                if (!touch.startKey || touch.dragging || touch.scrolling || touch.longPressActive) return;
+                const t = e.changedTouches[0];
+                const dx = Math.abs(t.clientX - touch.startX);
+                const dy = Math.abs(t.clientY - touch.startY);
+                // Pure tap — only mark if finger barely moved
+                if (dx < 8 && dy < 8) toggleChapter(touch.startKey, touch.startEl, false);
+            }, { passive: true });
+
+            updateBookLabel(row);
+            container.appendChild(row);
+        });
+    }
+
+    function animateRing(id, value, total, circumference) {
+        const offset = total > 0 ? circumference * (1 - value / total) : circumference;
+        const el = document.getElementById(id);
+        el.style.transition = 'stroke-dashoffset 0.5s ease';
+        el.setAttribute('stroke-dashoffset', offset.toFixed(1));
+    }
+
+    function updateStats() {
+        let otRead = 0, ntRead = 0, booksComplete = 0;
+
+        BIBLE.OT.forEach(([name, count]) => {
+            let n = 0;
+            for (let i = 1; i <= count; i++) if (read.has(`${name}-${i}`)) n++;
+            otRead += n;
+            if (n === count) booksComplete++;
+        });
+        if (showDeutero) {
+            BIBLE.DEUTERO.forEach(([name, count]) => {
+                let n = 0;
+                for (let i = 1; i <= count; i++) if (read.has(`${name}-${i}`)) n++;
+                otRead += n;
+                if (n === count) booksComplete++;
+            });
+        }
+        BIBLE.NT.forEach(([name, count]) => {
+            let n = 0;
+            for (let i = 1; i <= count; i++) if (read.has(`${name}-${i}`)) n++;
+            ntRead += n;
+            if (n === count) booksComplete++;
+        });
+
+        const totalRead = otRead + ntRead;
+        const remaining  = getTotal() - totalRead;
+        const pct        = Math.round(totalRead / getTotal() * 100);
+
+        // Rings — circumferences: main=2π×58=364.4, mini=2π×21=131.9
+        animateRing('ring-all', totalRead, getTotal(),    364.4);
+        animateRing('ring-ot',  otRead,    getOTTotal(),  131.9);
+        animateRing('ring-nt',  ntRead,    NT_TOTAL,      131.9);
+
+        document.getElementById('pct-all').textContent = pct + '%';
+        document.getElementById('ot-sub').textContent  = `${otRead.toLocaleString()} / ${getOTTotal().toLocaleString()} chapters`;
+        document.getElementById('nt-sub').textContent  = `${ntRead.toLocaleString()} / ${NT_TOTAL.toLocaleString()} chapters`;
+
+        document.getElementById('s-read').textContent  = totalRead.toLocaleString();
+        document.getElementById('s-left').textContent  = remaining.toLocaleString();
+        document.getElementById('s-books').textContent = booksComplete;
+
+        // Year pacing
+        const now       = new Date();
+        const year      = now.getFullYear();
+        const yearStart = new Date(year, 0, 1);
+        const yearEnd   = new Date(year + 1, 0, 1);
+        const totalDays = Math.round((yearEnd - yearStart) / 86400000);
+        const elapsed   = Math.ceil((now - yearStart) / 86400000);
+        const daysLeft  = totalDays - elapsed;
+
+        document.getElementById('s-year').textContent = year;
+
+        if (daysLeft > 0 && remaining > 0) {
+            document.getElementById('s-pace').textContent = Math.ceil(remaining / daysLeft);
+        } else if (remaining === 0) {
+            document.getElementById('s-pace').textContent = '0';
+        } else {
+            document.getElementById('s-pace').textContent = '—';
+        }
+
+        document.getElementById('pace-fill').style.width = pct + '%';
+        document.getElementById('pace-main').textContent =
+            `${totalRead.toLocaleString()} of ${getTotal().toLocaleString()} chapters read`;
+        document.getElementById('pace-sub').textContent =
+            daysLeft > 0
+                ? `${daysLeft} days remaining in ${year}`
+                : `${year} complete`;
+
+        updateGenres();
+        updateCompletedBooks();
+        updateQuickWins();
+        updateStreakDisplay();
+        renderHeatmap();
+        checkMilestones(pct, otRead, ntRead);
+    }
+
+    function confirmReset() {
+        if (confirm('Clear all reading progress? This cannot be undone.')) {
+            read.clear();
+            readDates = {};
+            favorites.clear(); saveFavorites();
+            save();
+            localStorage.removeItem('brt-dates');
+            renderGrid(BIBLE.OT, 'ot-grid');
+            if (showDeutero) renderGrid(BIBLE.DEUTERO, 'deutero-grid');
+            renderGrid(BIBLE.NT, 'nt-grid');
+            updateStats();
+        }
+    }
+
+    // ── Genre progress ────────────────────────────────────────────────────────────
+    function updateGenres() {
+        const container = document.getElementById('genre-bars');
+        if (!container) return;
+        container.innerHTML = '';
+        const genreList = showDeutero
+            ? [...GENRES, { name: 'Deuterocanonical', color: '#5A7A9A', light: '#d8e8f4', books: BIBLE.DEUTERO.map(([n]) => n) }]
+            : GENRES;
+        genreList.forEach(genre => {
+            let total = 0, readCount = 0;
+            genre.books.forEach(name => {
+                const book = getAllBooks().find(([n]) => n === name);
+                if (!book) return;
+                const count = book[1];
+                total += count;
+                for (let i = 1; i <= count; i++) if (read.has(`${name}-${i}`)) readCount++;
+            });
+            const pct = total > 0 ? (readCount / total * 100).toFixed(1) : 0;
+            const row = document.createElement('div');
+            row.className = 'genre-row';
+            row.innerHTML = `
+                <div class="genre-meta">
+                    <span class="genre-name">${genre.name}</span>
+                    <span class="genre-count">${readCount}/${total}</span>
+                </div>
+                <div class="genre-track">
+                    <div class="genre-fill" style="width:${pct}%;background:${genre.color}"></div>
+                </div>`;
+            container.appendChild(row);
+        });
+    }
+
+    // ── Completed books badges ────────────────────────────────────────────────────
+    function updateCompletedBooks() {
+        const container = document.getElementById('completed-books');
+        const countEl   = document.getElementById('books-completed-count');
+        if (!container) return;
+        container.innerHTML = '';
+        let doneCount = 0;
+        getAllBooks().forEach(([name, count]) => {
+            let allRead = count > 0;
+            for (let i = 1; i <= count; i++) { if (!read.has(`${name}-${i}`)) { allRead = false; break; } }
+            if (allRead) doneCount++;
+            const badge = document.createElement('span');
+            badge.className = 'book-badge' + (allRead ? ' complete' : '');
+            badge.textContent = name;
+            badge.title = allRead ? `${name} — complete!` : name;
+            if (allRead) badge.onclick = () => scrollToBook(name);
+            container.appendChild(badge);
+        });
+        if (countEl) countEl.textContent = `${doneCount} / ${showDeutero ? 73 : 66}`;
+    }
+
+    // ── Quick wins ────────────────────────────────────────────────────────────────
+    function updateQuickWins() {
+        const container = document.getElementById('quick-wins');
+        if (!container) return;
+        const incomplete = getAllBooks()
+            .map(([name, count]) => {
+                let readCount = 0;
+                for (let i = 1; i <= count; i++) if (read.has(`${name}-${i}`)) readCount++;
+                return { name, total: count, remaining: count - readCount };
+            })
+            .filter(b => b.remaining > 0)
+            .sort((a, b) => a.remaining - b.remaining)
+            .slice(0, 5);
+
+        if (!incomplete.length) {
+            container.innerHTML = '<p style="font-size:0.82em;color:var(--oc-muted);padding:4px 0">All books complete!</p>';
+            return;
+        }
+        container.innerHTML = incomplete.map(b => `
+            <div class="quickwin-item" onclick="scrollToBook('${b.name.replace(/'/g,"\\'")}')">
+                <span class="qw-name">${b.name}</span>
+                <span class="qw-left${b.remaining === 1 ? ' one' : ''}">${b.remaining === 1 ? 'Just 1 chapter left!' : b.remaining + ' chapters left'}</span>
+            </div>`).join('');
+    }
+
+    function scrollToBook(name) {
+        const el = document.querySelector(`[data-book="${CSS.escape(name)}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── Streak ────────────────────────────────────────────────────────────────────
+    function getStreak() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayKey = localDateKey(today);
+
+        // Current streak: start from today if read, else from yesterday
+        let d = new Date(today);
+        if (!(readDates[todayKey] > 0)) d.setDate(d.getDate() - 1);
+        let current = 0;
+        while (true) {
+            const k = localDateKey(d);
+            if ((readDates[k] || 0) > 0) { current++; d.setDate(d.getDate() - 1); }
+            else break;
+        }
+
+        // Best streak across all dates
+        const sorted = Object.keys(readDates).filter(k => (readDates[k] || 0) > 0).sort();
+        let best = current, run = 0, prev = null;
+        sorted.forEach(k => {
+            if (!prev) { run = 1; }
+            else { run = Math.round((new Date(k) - new Date(prev)) / 86400000) === 1 ? run + 1 : 1; }
+            if (run > best) best = run;
+            prev = k;
+        });
+
+        return { current, best };
+    }
+
+    function updateStreakDisplay() {
+        const { current, best } = getStreak();
+        const se = document.getElementById('s-streak');
+        const be = document.getElementById('s-best');
+        if (se) se.textContent = current || '—';
+        if (be) be.textContent = best || '—';
+    }
+
+    // ── Heatmap ───────────────────────────────────────────────────────────────────
+    function renderHeatmap() {
+        const container = document.getElementById('heatmap');
+        if (!container) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayKey = localDateKey(today);
+        // Start on the Sunday 52 complete weeks before this week's Sunday
+        const start = new Date(today);
+        start.setDate(start.getDate() - today.getDay() - 52 * 7);
+
+        container.innerHTML = '';
+        const d = new Date(start);
+        while (d <= today) {
+            const key = localDateKey(d);
+            const count = readDates[key] || 0;
+            const el = document.createElement('div');
+            el.className = 'heatmap-cell';
+            if (count > 0) el.dataset.level = count <= 2 ? 1 : count <= 5 ? 2 : count <= 9 ? 3 : 4;
+            if (key === todayKey) el.dataset.today = '';
+            const label = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+            el.title = count > 0 ? `${label}: ${count} chapter${count !== 1 ? 's' : ''} read` : label;
+            container.appendChild(el);
+            d.setDate(d.getDate() + 1);
+        }
+        container.scrollLeft = container.scrollWidth;
+    }
+
+    // ── Genre legend ──────────────────────────────────────────────────────────────
+    function renderGenreLegend() {
+        const container = document.getElementById('genre-legend');
+        if (!container) return;
+        const legendList = showDeutero
+            ? [...GENRES, { name: 'Deuterocanonical', color: '#5A7A9A' }]
+            : GENRES;
+        container.innerHTML = legendList.map(g =>
+            `<div class="legend-item"><span class="legend-dot" style="background:${g.color}"></span><span class="legend-name">${g.name}</span></div>`
+        ).join('');
+    }
+
+    // ── Milestone toasts ──────────────────────────────────────────────────────────
+    let shownMilestones = new Set(JSON.parse(localStorage.getItem('brt-milestones') || '[]'));
+    let toastTimer = null;
+
+    function checkMilestones(pct, otRead, ntRead) {
+        const milestones = [
+            { key: 'pct10',  check: pct >= 10,            msg: "You\'ve read 10% of the Bible — great start!" },
+            { key: 'pct25',  check: pct >= 25,            msg: "A quarter of the Bible — keep going!" },
+            { key: 'pct50',  check: pct >= 50,            msg: "Halfway through the whole Bible!" },
+            { key: 'pct75',  check: pct >= 75,            msg: "75% done — the finish line is in sight!" },
+            { key: 'pct100', check: pct >= 100,           msg: "You\'ve read the entire Bible!" },
+            { key: 'nt',     check: ntRead === NT_TOTAL,    msg: "You\'ve finished the New Testament!" },
+            { key: 'ot',     check: otRead === getOTTotal(), msg: "You\'ve finished the Old Testament!" },
+        ];
+        for (const m of milestones) {
+            if (m.check && !shownMilestones.has(m.key)) {
+                shownMilestones.add(m.key);
+                localStorage.setItem('brt-milestones', JSON.stringify([...shownMilestones]));
+                showToast(m.msg);
+                break;
+            }
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('milestone-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 4500);
+    }
+
+    // ── Export / Import ───────────────────────────────────────────────────────────
+    function exportData() {
+        const today = localDateKey();
+        const data = {
+            exported: today,
+            'brt-2':          localStorage.getItem('brt-2')          || '[]',
+            'brt-dates':      localStorage.getItem('brt-dates')      || '{}',
+            'brt-milestones': localStorage.getItem('brt-milestones') || '[]',
+            'brt-theme':      localStorage.getItem('brt-theme')      || 'light',
+            'brt-favorites':  localStorage.getItem('brt-favorites')  || '[]',
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `bible-tracker-backup-${today}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function importData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        // Reset the input so the same file can be chosen again if needed
+        event.target.value = '';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            let data;
+            try { data = JSON.parse(e.target.result); }
+            catch { alert('That file doesn\'t look like a valid backup — please try again.'); return; }
+            if (!data['brt-2'] && !data['brt-dates']) {
+                alert('That file doesn\'t look like a valid backup — please try again.');
+                return;
+            }
+            if (!confirm('This will replace all your current reading progress with the data in this backup file. Are you sure?')) return;
+            if (data['brt-2'])          localStorage.setItem('brt-2',          data['brt-2']);
+            if (data['brt-dates'])      localStorage.setItem('brt-dates',      data['brt-dates']);
+            if (data['brt-milestones']) localStorage.setItem('brt-milestones', data['brt-milestones']);
+            if (data['brt-theme'])      localStorage.setItem('brt-theme',      data['brt-theme']);
+            if (data['brt-favorites'])  localStorage.setItem('brt-favorites',  data['brt-favorites']);
+            location.reload();
+        };
+        reader.readAsText(file);
+    }
+
+    // ── Theme toggle ──────────────────────────────────────────────────────────────
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀︎' : '☽';
+        localStorage.setItem('brt-theme', theme);
+    }
+
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme');
+        const isDark = current === 'dark' ||
+            (!current && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        applyTheme(isDark ? 'light' : 'dark');
+    }
+
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem('brt-theme');
+    if (savedTheme) applyTheme(savedTheme);
+    else {
+        // Reflect system preference in button icon without forcing a theme
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = window.matchMedia('(prefers-color-scheme: dark)').matches ? '☀︎' : '☽';
+    }
+
+    // ── Deuterocanonical toggle ───────────────────────────────────────────────
+    function toggleDeutero() {
+        showDeutero = !showDeutero;
+        localStorage.setItem('brt-deutero', showDeutero);
+        const block     = document.getElementById('deutero-block');
+        const tabBtn    = document.getElementById('deutero-tab-btn');
+        const toggleBtn = document.getElementById('deutero-toggle-btn');
+        if (showDeutero) {
+            renderGrid(BIBLE.DEUTERO, 'deutero-grid');
+            block.style.display = '';
+            const chCount = document.getElementById('deutero-ch-count');
+            if (chCount) chCount.textContent = BIBLE.DEUTERO.reduce((s,[,n]) => s+n, 0) + ' chapters';
+            if (tabBtn)    tabBtn.style.display    = '';
+            if (toggleBtn) toggleBtn.textContent   = '− Hide Deuterocanonical books';
+        } else {
+            block.style.display = 'none';
+            if (tabBtn)    tabBtn.style.display    = 'none';
+            if (toggleBtn) toggleBtn.textContent   = '+ Include Deuterocanonical books';
+        }
+        renderGenreLegend();
+        updateStats();
+    }
+
+    // ── Mobile tab switcher ───────────────────────────────────────────────────
+    function setTab(tab) {
+        if (window.innerWidth > 760) return;
+        document.getElementById('ot-block').style.display      = tab === 'ot'      ? '' : 'none';
+        document.getElementById('deutero-block').style.display = (tab === 'deutero' && showDeutero) ? '' : 'none';
+        document.getElementById('nt-block').style.display      = tab === 'nt'      ? '' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(b =>
+            b.classList.toggle('active', b.getAttribute('data-tab') === tab)
+        );
+    }
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 760) {
+            document.getElementById('ot-block').style.display = '';
+            if (showDeutero) document.getElementById('deutero-block').style.display = '';
+            document.getElementById('nt-block').style.display = '';
+        }
+    });
+
+    // ── How to use panel ──────────────────────────────────────────────────────
+    function openAbout()  {
+        document.getElementById('about-overlay').classList.add('open');
+        document.getElementById('about-panel').classList.add('open');
+    }
+    function closeAbout() {
+        document.getElementById('about-overlay').classList.remove('open');
+        document.getElementById('about-panel').classList.remove('open');
+    }
+
+    // ── About/credits panel ───────────────────────────────────────────────────
+    function openCredits()  {
+        document.getElementById('credits-overlay').classList.add('open');
+        document.getElementById('credits-panel').classList.add('open');
+    }
+    function closeCredits() {
+        document.getElementById('credits-overlay').classList.remove('open');
+        document.getElementById('credits-panel').classList.remove('open');
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAbout(); closeFavourites(); closeCredits(); } });
+
+    // ── Favourites panel ──────────────────────────────────────────────────────
+    function openFavourites() {
+        renderFavouritesPanel();
+        document.getElementById('favs-overlay').classList.add('open');
+        document.getElementById('favs-panel').classList.add('open');
+    }
+    function closeFavourites() {
+        document.getElementById('favs-overlay').classList.remove('open');
+        document.getElementById('favs-panel').classList.remove('open');
+    }
+    function renderFavouritesPanel() {
+        const container = document.getElementById('favs-list');
+        if (!favorites.size) {
+            container.innerHTML = '<div class="favs-empty">No chapters starred yet.<br>Right-click any chapter (or long-press<br>on mobile) to add it here.</div>';
+            return;
+        }
+        const grouped = {};
+        favorites.forEach(key => {
+            const dash = key.lastIndexOf('-');
+            const book = key.slice(0, dash);
+            const ch   = parseInt(key.slice(dash + 1));
+            if (!grouped[book]) grouped[book] = [];
+            grouped[book].push({ key, ch });
+        });
+        const bookOrder = getAllBooks().map(([name]) => name);
+        const sortedBooks = Object.keys(grouped).sort((a, b) => bookOrder.indexOf(a) - bookOrder.indexOf(b));
+        sortedBooks.forEach(book => grouped[book].sort((a, b) => a.ch - b.ch));
+        container.innerHTML = sortedBooks.map(book => `
+            <div class="favs-book-group">
+                <div class="favs-book-heading">${book}</div>
+                ${grouped[book].map(({key, ch}) => `
+                    <div class="favs-item" onclick="scrollToFav('${key.replace(/'/g, "\\'")}')">
+                        <span class="favs-item-name">Chapter ${ch}</span>
+                        <button class="favs-item-unstar" onclick="event.stopPropagation();unstarFromPanel('${key.replace(/'/g, "\\'")}')">✕</button>
+                    </div>`).join('')}
+            </div>`).join('');
+    }
+    function scrollToFav(key) {
+        closeFavourites();
+        setTimeout(() => {
+            const el = document.querySelector(`.ch[data-key="${key}"]`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    }
+    function unstarFromPanel(key) {
+        const el = document.querySelector(`.ch[data-key="${key}"]`);
+        if (el) toggleFavorite(key, el);
+        else { favorites.delete(key); saveFavorites(); renderFavouritesPanel(); }
+    }
+
+    // Init
+    renderGenreLegend();
+    renderGrid(BIBLE.OT, 'ot-grid');
+    renderGrid(BIBLE.NT, 'nt-grid');
+    if (showDeutero) {
+        renderGrid(BIBLE.DEUTERO, 'deutero-grid');
+        document.getElementById('deutero-block').style.display = '';
+        const _dtChCount = document.getElementById('deutero-ch-count');
+        if (_dtChCount) _dtChCount.textContent = BIBLE.DEUTERO.reduce((s,[,n]) => s+n, 0) + ' chapters';
+        const _dtBtn = document.getElementById('deutero-tab-btn');
+        if (_dtBtn) _dtBtn.style.display = '';
+        const _dtToggle = document.getElementById('deutero-toggle-btn');
+        if (_dtToggle) _dtToggle.textContent = '− Hide Deuterocanonical books';
+    }
+    updateStats();
+    setTab('ot');
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#b8860b">
 <meta name="description" content="CCR Church App - Prayer, Schedule, Library, Bible Reading, Giving & More">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,6 +22,7 @@
 <div id="fab-nav" style="display:none;">
   <button class="fab-trigger" id="fabTrigger" aria-label="Open menu">
     <span class="fab-trigger-icon">☰</span>
+    <span class="fab-version-badge" id="fabVersionBadge">v0.2</span>
   </button>
   <div class="fab-menu" id="fabMenu">
     <button class="fab-item" data-page="prayer" aria-label="Prayer">
@@ -75,7 +76,62 @@
   </div>
 </div>
 
+<!-- Version History Modal -->
+<div class="modal-overlay" id="versionModalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="versionModalClose">×</button>
+    <h2 class="modal-title">Version History</h2>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div>
+        <h3 style="font-size:16px;margin-bottom:8px;">v0.2 — March 2026</h3>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Mobile-optimized UI with no-zoom viewport
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Seed data for testing (prayers, bulletin, schedule)
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Firebase configuration structure added
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Side-by-side button layouts
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Transactions tab with full CRUD
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="font-size:16px;margin-bottom:8px;">v0.1 — Initial Build</h3>
+        <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Core app architecture with FAB navigation
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Prayer requests with full CRUD
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Schedule (Events, Volunteering, Order of Service)
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Bulletin page with rich content
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Friends Library integration
+          </li>
+          <li style="padding-left:20px;position:relative;">
+            <span style="position:absolute;left:0;">•</span> Bible tracker, Sermons, Giving Vote
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- JavaScript Modules -->
+<script src="js/seed-data.js"></script>
+<script src="js/firebase.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/prayer.js"></script>
