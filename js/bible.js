@@ -343,7 +343,13 @@ function renderBiblePage() {
 
 function scrollToTestament(testament) {
   const el = document.getElementById(testament === 'OT' ? 'bible-ot-section' : 'bible-nt-section');
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (el) {
+    const summary = document.querySelector('.bible-summary');
+    const tabBar = document.querySelector('.bible-tab-bar');
+    const offset = (summary ? summary.offsetHeight : 0) + (tabBar ? tabBar.offsetHeight : 0) + 8;
+    const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
   document.querySelectorAll('.bible-tab-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.testament === testament);
     b.classList.toggle('btn-primary', b.dataset.testament === testament);
