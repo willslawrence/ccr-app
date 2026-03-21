@@ -3,104 +3,51 @@
    Offline caching for PWA
    ==================================== */
 
-const CACHE_NAME = 'ccr-app-v1';
-const APP_SHELL_CACHE = [
-  '/',
-  '/index.html',
-  '/css/app.css',
-  '/js/app.js',
-  '/js/auth.js',
-  '/js/prayer.js',
-  '/js/schedule.js',
-  '/js/bulletin.js',
-  '/js/bible.js',
-  '/js/library.js',
-  '/js/giving.js',
-  '/js/vote.js',
-  '/js/sermons.js',
-  '/js/settings.js',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap'
-];
+const CACHE_NAME = 'ccr-app-v2';
 
-// Install event - cache app shell
+// Install event - skip waiting immediately
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[SW] Caching app shell');
-        return cache.addAll(APP_SHELL_CACHE);
-      })
-      .then(() => self.skipWaiting())
-  );
+  console.log('[SW] Installing v2...');
+  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean ALL old caches and take control
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log('[SW] Activating v2...');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
-          cacheNames
-            .filter((name) => name !== CACHE_NAME)
-            .map((name) => {
-              console.log('[SW] Deleting old cache:', name);
-              return caches.delete(name);
-            })
+          cacheNames.map((name) => {
+            console.log('[SW] Deleting cache:', name);
+            return caches.delete(name);
+          })
         );
       })
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network first, cache fallback
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  // Skip chrome-extension and other non-http(s) requests
-  if (!event.request.url.startsWith('http')) {
-    return;
-  }
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        // Return cached response if found
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        // Otherwise fetch from network
-        return fetch(event.request)
-          .then((networkResponse) => {
-            // Don't cache if not a valid response
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'error') {
-              return networkResponse;
-            }
-
-            // Cache Google Sheets CSV and other API responses
-            const responseToCache = networkResponse.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return networkResponse;
-          })
-          .catch(() => {
-            // If network fails and not in cache, return offline page
-            if (event.request.mode === 'navigate') {
-              return caches.match('/index.html');
-            }
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Cache successful responses
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
           });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // Offline fallback from cache
+        return caches.match(event.request);
       })
   );
 });
