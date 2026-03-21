@@ -272,8 +272,11 @@ function applyLibraryFilters() {
 function initLibraryPage() {
   if (libraryBooks.length === 0) {
     fetchLibraryData().then(() => {
-      applyLibraryFilters();
+      // Re-render full page now that we have data (pills need book categories)
+      document.getElementById('app').innerHTML = renderLibraryPage();
+      initLibraryPage();
     });
+    return; // Don't attach listeners until data loads
   }
 
   // Tab switching
