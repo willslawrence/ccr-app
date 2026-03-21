@@ -120,8 +120,8 @@ h1, h2, h3, h4, h5, h6 {
 #fab-nav {
   position: fixed;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
   z-index: 1000;
   pointer-events: none;
 }
@@ -129,42 +129,41 @@ h1, h2, h3, h4, h5, h6 {
 .fab-trigger {
   position: fixed;
   right: 0;
-  bottom: 0;
-  width: 90px;
-  height: 90px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 80px;
   border: none;
-  background: linear-gradient(145deg, #e8e8e8, #c8c8c8, #d8d8d8, #b8b8b8);
+  background: linear-gradient(180deg, #e0e0e0, #c0c0c0, #d0d0d0, #b0b0b0);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(255,255,255,0.6);
   border-right: none;
-  border-bottom: none;
-  border-radius: 100% 0 0 0;
+  border-radius: 80px 0 0 80px;
   box-shadow: 
-    0 -2px 20px rgba(0,0,0,0.12),
-    -2px 0 20px rgba(0,0,0,0.12),
-    inset 0 1px 3px rgba(255,255,255,0.8),
-    inset 0 -1px 3px rgba(0,0,0,0.1),
-    0 0 15px rgba(200,200,210,0.3);
+    -3px 0 15px rgba(0,0,0,0.12),
+    0 2px 10px rgba(0,0,0,0.08),
+    inset 1px 1px 3px rgba(255,255,255,0.8),
+    inset -1px -1px 2px rgba(0,0,0,0.1),
+    0 0 20px rgba(200,200,210,0.2);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 0 0 0;
+  padding: 0 4px 0 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
-  transform: none;
 }
 
 .fab-trigger:hover, .fab-trigger:active {
-  width: 95px;
-  height: 95px;
-  background: linear-gradient(145deg, #f0f0f0, #d0d0d0, #e0e0e0, #c0c0c0);
+  width: 46px;
+  height: 86px;
+  background: linear-gradient(180deg, #ececec, #d0d0d0, #e0e0e0, #c0c0c0);
 }
 
 .fab-trigger-icon {
-  font-size: 20px;
+  font-size: 16px;
   transition: transform 0.3s;
 }
 
@@ -174,14 +173,14 @@ h1, h2, h3, h4, h5, h6 {
 
 .fab-version-badge {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  font-size: 9px;
+  bottom: 4px;
+  left: 4px;
+  font-size: 7px;
   font-weight: 700;
   color: var(--accent);
   background: rgba(184,134,11,0.15);
-  padding: 2px 4px;
-  border-radius: 4px;
+  padding: 1px 3px;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -194,7 +193,8 @@ h1, h2, h3, h4, h5, h6 {
 .fab-menu {
   position: fixed;
   right: 0;
-  bottom: 0;
+  top: 50%;
+  transform: translateY(-50%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s;
@@ -257,14 +257,16 @@ h1, h2, h3, h4, h5, h6 {
   opacity: 0.9;
 }
 
-/* FAB Arc Positioning - Tight arc from bottom-right corner */
-.fab-item:nth-child(1) { right: 95px;  bottom: 8px; }   /* Prayer - far right */
-.fab-item:nth-child(2) { right: 88px;  bottom: 68px; }   /* Giving */
-.fab-item:nth-child(3) { right: 65px;  bottom: 120px; }  /* Library */
-.fab-item:nth-child(4) { right: 30px;  bottom: 160px; }  /* Bible */
-.fab-item:nth-child(5) { right: 5px;   bottom: 198px; }  /* Sermons */
-.fab-item:nth-child(6) { right: 140px; bottom: 30px; }   /* Schedule */
-.fab-item:nth-child(7) { right: 140px; bottom: 90px; }   /* More */
+/* FAB Arc Positioning - Even fan from right-center semicircle */
+/* Items spread in a semicircle arc from the right edge, centered vertically */
+/* Arc radius ~120px, 7 items spread evenly from top to bottom */
+.fab-item:nth-child(1) { right: 50px;  top: calc(50% - 195px); }   /* Prayer - top */
+.fab-item:nth-child(2) { right: 85px;  top: calc(50% - 135px); }   /* Giving */
+.fab-item:nth-child(3) { right: 110px; top: calc(50% - 65px); }    /* Library */
+.fab-item:nth-child(4) { right: 120px; top: calc(50% - -5px); }     /* Bible - center */
+.fab-item:nth-child(5) { right: 110px; top: calc(50% + 65px); }    /* Sermons */
+.fab-item:nth-child(6) { right: 85px;  top: calc(50% + 135px); }   /* Schedule */
+.fab-item:nth-child(7) { right: 50px;  top: calc(50% + 195px); }   /* More - bottom */
 
 .fab-menu.active .fab-item:nth-child(1) { transition-delay: 0.05s; }
 .fab-menu.active .fab-item:nth-child(2) { transition-delay: 0.1s; }
