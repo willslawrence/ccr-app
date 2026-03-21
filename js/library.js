@@ -114,6 +114,21 @@ function loadMockLibraryData() {
 
 // ─── HELPERS ───
 
+function isOwnerFav(book) {
+  const val = (book['Owner Fav'] || '').toString().toUpperCase();
+  return val === 'TRUE' || val === 'YES' || val === '1';
+}
+
+function renderStarRating(book) {
+  const rating = parseFloat(book['Goodreads Rating'] || book.Rating || 0);
+  if (!rating) return '';
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.3;
+  let s = '★'.repeat(full);
+  if (half) s += '½';
+  return `<span class="lib-stars">${s}</span> <span style="color:var(--muted);font-size:10px;">${rating.toFixed(1)}</span>`;
+}
+
 function getUniqueValues(field) {
   const values = new Set();
   libraryBooks.forEach(book => {
@@ -133,6 +148,7 @@ function bookMatchesFilters(book) {
     if (type === 'genre' && (book.Genre || '').toLowerCase() === val) return true;
     if (type === 'owner' && (book.Owner || '').toLowerCase() === val) return true;
     if (type === 'status' && (book.Status || '').toLowerCase() === val) return true;
+    if (filter === 'fav' && isOwnerFav(book)) return true;
   }
   return false;
 }
@@ -218,6 +234,7 @@ function renderLibraryPage() {
           ${getUniqueValues('Owner').map(owner => `
             <button class="library-pill ${activeLibraryFilters.has('owner:' + owner.toLowerCase()) ? 'active' : ''}" data-filter="owner:${owner.toLowerCase()}" style="background:rgba(184,134,11,0.08);color:var(--accent);border-color:var(--accent-light);">👤 ${escapeHtml(owner)}</button>
           `).join('')}
+          <button class="library-pill ${activeLibraryFilters.has('fav') ? 'active' : ''}" data-filter="fav" style="background:linear-gradient(135deg,rgba(212,168,75,0.18),rgba(184,134,11,0.10));border-color:var(--accent);color:var(--accent);">⭐ Owner Fav</button>
         </div>
 
         <!-- Books Grid -->
@@ -266,7 +283,8 @@ function renderLibraryBooks() {
     const pages = book.Pages || book['Total Pages'] || '';
 
     return `
-      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}">
+      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}" style="position:relative;">
+        ${isOwnerFav(book) ? '<div class="lib-fav-badge">⭐ Owner Fav</div>' : ''}
         <div class="lib-card-inner">
           <div class="lib-card-cover">
             ${renderBookCover(book, 'small')}
@@ -274,6 +292,7 @@ function renderLibraryBooks() {
           <div class="lib-card-info">
             <h4 class="lib-card-title" title="${escapeHtml(book.Title)}">${escapeHtml(book.Title)}</h4>
             <p class="lib-card-author">by ${escapeHtml(book.Author)}</p>
+            ${renderStarRating(book) ? `<div style="margin-bottom:4px;">${renderStarRating(book)}</div>` : ''}
             <div class="lib-card-badges">
               <span class="badge badge-${statusClass}" style="font-size:9px;padding:2px 6px;">${statusLabel}</span>
               ${book.Owner ? `<span class="badge badge-gold" style="font-size:9px;padding:2px 6px;">👤 ${escapeHtml(book.Owner)}</span>` : ''}
@@ -399,7 +418,11 @@ function openBookModal(idx) {
   if (book.Owner) metaHTML += `<span class="badge badge-gold" style="font-size:10px;padding:3px 8px;">👤 ${escapeHtml(book.Owner)}</span>`;
   if (book.Genre) metaHTML += `<span class="badge badge-muted" style="font-size:10px;padding:3px 8px;">${escapeHtml(book.Genre)}</span>`;
   if (pages) metaHTML += `<span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${escapeHtml(pages)} pages</span>`;
+  if (isOwnerFav(book)) metaHTML += `<span class="lib-fav-badge" style="position:static;font-size:10px;">⭐ Owner Fav</span>`;
   document.getElementById('bookModalMeta').innerHTML = metaHTML;
+  // Stars
+  const starsEl = document.getElementById('bookModalStars');
+  if (starsEl) starsEl.innerHTML = renderStarRating(book);
   // Summary
   document.getElementById('bookModalSummary').textContent = summary;
 

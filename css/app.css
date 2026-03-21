@@ -1458,6 +1458,33 @@ body.dark-theme .theme-toggle-slider:before {
   flex-wrap: wrap;
 }
 
+.lib-fav-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--gold-grad);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(184,134,11,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.lib-stars {
+  background: var(--gold-shine);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
 /* Legacy compact styles (kept for other pages) */
 .book-info-compact {
   flex: 1;
