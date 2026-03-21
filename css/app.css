@@ -3,6 +3,9 @@
    Based on Friends Library aesthetic
    ==================================== */
 
+/* Prevent iOS Safari pinch-to-zoom */
+html { touch-action: manipulation; }
+
 :root {
   /* Colors */
   --bg: #f0f0f0;
