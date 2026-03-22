@@ -368,6 +368,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 auto;
   padding: 24px 20px;
   padding-top: calc(24px + env(safe-area-inset-top, 44px));
+  overflow-x: hidden;
 }
 
 @supports not (padding-top: env(safe-area-inset-top)) {

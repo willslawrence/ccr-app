@@ -37,20 +37,20 @@ function renderSermonsPage() {
               <label class="form-label">Title *</label>
               <input type="text" class="form-input" id="sermonTitle" required placeholder="e.g., The Good Shepherd">
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-group" style="margin-bottom:0;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:100%;">
+              <div class="form-group" style="margin-bottom:0;min-width:0;">
                 <label class="form-label">Speaker *</label>
                 <input type="text" class="form-input" id="sermonSpeaker" required>
               </div>
-              <div class="form-group" style="margin-bottom:0;">
+              <div class="form-group" style="margin-bottom:0;min-width:0;">
                 <label class="form-label">Date *</label>
-                <input type="date" class="form-input" id="sermonDate" required>
+                <input type="date" class="form-input" id="sermonDate" required style="min-width:0;">
               </div>
-              <div class="form-group" style="margin-bottom:0;">
+              <div class="form-group" style="margin-bottom:0;min-width:0;">
                 <label class="form-label">Duration</label>
                 <input type="text" class="form-input" id="sermonDuration" placeholder="e.g., 35:42">
               </div>
-              <div class="form-group" style="margin-bottom:0;">
+              <div class="form-group" style="margin-bottom:0;min-width:0;">
                 <label class="form-label">Scripture Reference</label>
                 <input type="text" class="form-input" id="sermonScripture" placeholder="e.g., John 10:1-18">
               </div>
