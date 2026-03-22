@@ -207,7 +207,7 @@ async function renderGivingPage() {
               charity.description.substring(0, 120) + '...' : charity.description;
 
             return `
-              <div class="giving-charity-card ${isVisible ? '' : 'dimmed'}" data-category="${charity.category}">
+              <div class="giving-charity-card ${isVisible ? '' : 'dimmed'}" data-category="${charity.category}" onclick="openCharityModal('${charity.name.replace(/'/g, "\\'")}')">
                 ${scoreCircle}
                 <div class="charity-card-header">
                   <span class="category-tag cat-${charity.category}">${charity.categoryLabel}</span>
@@ -274,7 +274,7 @@ function openCharityModal(charityName) {
   let content = `
     <div class="modal-header">
       <h2>${escapeHtml(charity.name)}</h2>
-      <button class="modal-close" onclick="document.getElementById('bookDetailModal').style.display='none'">&times;</button>
+      <button class="modal-close" onclick="document.getElementById('bookDetailModal').classList.remove('active')">&times;</button>
     </div>
     <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
   `;
@@ -437,7 +437,9 @@ function openCharityModal(charityName) {
   content += `</div>`;
   
   modalContent.innerHTML = content;
-  modal.style.display = 'block';
+  modal.classList.add('active');
+  // Click outside to close
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('active'); };
 }
 
 // Initialize Giving page
