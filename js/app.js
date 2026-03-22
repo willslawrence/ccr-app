@@ -57,6 +57,10 @@ async function render() {
       app.innerHTML = renderLoginPage();
       initLoginPage();
       break;
+    case 'home':
+      app.innerHTML = renderHomePage();
+      initHomePage();
+      break;
     case 'prayer':
       app.innerHTML = renderPrayerPage();
       await initPrayerPage();
@@ -195,9 +199,9 @@ async function init() {
             }
           }
 
-          // Navigate to prayer page if on login page
+          // Navigate to home page if on login page
           if (AppState.currentPage === 'login') {
-            navigateTo('prayer');
+            navigateTo('home');
           } else {
             render();
           }
