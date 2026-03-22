@@ -225,7 +225,7 @@ function renderSermons() {
     const isPlaying = sermonsState.playingId === sermon.id;
 
     return `
-      <div class="card card-clickable sermon-card" onclick="toggleSermonDetails('${sermon.id}')">
+      <div class="card card-clickable sermon-card" onclick="openSermonModal('${sermon.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
           <div style="flex:1;min-width:0;">
             <div class="card-meta" style="font-size:11px;">${formatDate(sermon.date)} · ${escapeHtml(sermon.speaker)}</div>
@@ -234,63 +234,68 @@ function renderSermons() {
           </div>
           <div class="badge" style="background:var(--accent);color:white;font-size:10px;padding:3px 8px;flex-shrink:0;margin-left:8px;">${sermon.duration}</div>
         </div>
-
-        <div id="sermonDetails_${sermon.id}" style="display:${isPlaying ? 'block' : 'none'};margin-top:16px;padding-top:16px;border-top:1px solid var(--border);" onclick="event.stopPropagation();">
-          ${sermon.description ? `
-            <div style="margin-bottom:16px;">
-              <strong>Description:</strong>
-              <p style="margin:8px 0 0 0;line-height:1.6;">${escapeHtml(sermon.description)}</p>
-            </div>
-          ` : ''}
-
-          <div style="margin-bottom:16px;">
-            <strong>Audio Player:</strong>
-            <div style="margin-top:8px;padding:16px;background:var(--bg);border-radius:12px;display:flex;align-items:center;gap:12px;">
-              <button class="btn ${isPlaying ? 'btn-outline' : 'btn-primary'}" style="font-size:24px;width:48px;height:48px;padding:0;border-radius:50%;" onclick="togglePlaySermon('${sermon.id}')">
-                ${isPlaying ? '⏸' : '▶'}
-              </button>
-              <div style="flex:1;">
-                <div style="height:4px;background:var(--border);border-radius:2px;position:relative;">
-                  <div style="position:absolute;top:0;left:0;height:100%;width:${isPlaying ? '45%' : '0%'};background:var(--accent);border-radius:2px;transition:width 0.3s;"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px;color:var(--muted);">
-                  <span>${isPlaying ? '15:23' : '0:00'}</span>
-                  <span>${sermon.duration}</span>
-                </div>
-              </div>
-              <button class="btn btn-outline" style="font-size:20px;width:40px;height:40px;padding:0;border-radius:50%;" onclick="downloadSermon('${sermon.id}')">
-                ⬇
-              </button>
-            </div>
-            <div style="margin-top:8px;padding:8px 12px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--muted);">
-              <strong>Mock Audio Player:</strong> In production, this would be a real HTML5 audio player connected to Firebase Storage.
-              The play/pause button and progress bar would control actual audio playback.
-            </div>
-          </div>
-
-          ${isEditor() ? `
-            <div class="btn-group">
-              <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editSermon('${sermon.id}')">✏️ Edit</button>
-              <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteSermon('${sermon.id}')">🗑️ Delete</button>
-            </div>
-          ` : ''}
-        </div>
       </div>
     `;
   }).join('') + '</div>';
 }
 
-function toggleSermonDetails(id) {
-  const details = document.getElementById(`sermonDetails_${id}`);
-  const isVisible = details.style.display === 'block';
+function openSermonModal(id) {
+  const sermon = sermonsState.sermons.find(s => s.id === id);
+  if (!sermon) return;
 
-  // Close all other details
-  document.querySelectorAll('[id^="sermonDetails_"]').forEach(el => {
-    el.style.display = 'none';
-  });
+  const modal = document.getElementById('bookDetailModal');
+  if (!modal) return;
 
-  // Toggle this one
-  details.style.display = isVisible ? 'none' : 'block';
+  const modalContent = modal.querySelector('.modal');
+  modalContent.innerHTML = `
+    <button class="modal-close" onclick="document.getElementById('bookDetailModal').classList.remove('active')">×</button>
+    <div style="margin-bottom:16px;">
+      <div class="card-meta" style="font-size:12px;">${formatDate(sermon.date)} · ${escapeHtml(sermon.speaker)}</div>
+      <h2 style="font-size:20px;font-weight:700;margin-top:4px;">${escapeHtml(sermon.title)}</h2>
+      ${sermon.scriptureRef ? `<div class="text-muted" style="font-size:13px;margin-top:4px;">📖 ${escapeHtml(sermon.scriptureRef)}</div>` : ''}
+      <div class="badge" style="background:var(--accent);color:white;margin-top:8px;display:inline-block;">${sermon.duration}</div>
+    </div>
+
+    ${sermon.description ? `
+      <div style="margin-bottom:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <strong>Description:</strong>
+        <p style="margin:8px 0 0 0;line-height:1.6;color:var(--text);">${escapeHtml(sermon.description)}</p>
+      </div>
+    ` : ''}
+
+    <div style="margin-bottom:20px;">
+      <strong>Audio Player:</strong>
+      <div style="margin-top:8px;padding:16px;background:var(--surface);border-radius:12px;display:flex;align-items:center;gap:12px;">
+        <button class="btn btn-primary" style="font-size:24px;width:48px;height:48px;padding:0;border-radius:50%;" onclick="togglePlaySermon('${sermon.id}')">
+          ▶
+        </button>
+        <div style="flex:1;">
+          <div style="height:4px;background:var(--border);border-radius:2px;position:relative;">
+            <div style="position:absolute;top:0;left:0;height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.3s;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px;color:var(--muted);">
+            <span>0:00</span>
+            <span>${sermon.duration}</span>
+          </div>
+        </div>
+        <button class="btn btn-outline" style="font-size:20px;width:40px;height:40px;padding:0;border-radius:50%;" onclick="downloadSermon('${sermon.id}')">
+          ⬇
+        </button>
+      </div>
+    </div>
+
+    ${isEditor() ? `
+      <div class="btn-group" style="padding-top:16px;border-top:1px solid var(--border);">
+        <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="document.getElementById('bookDetailModal').classList.remove('active');editSermon('${sermon.id}')">✏️ Edit</button>
+        <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="document.getElementById('bookDetailModal').classList.remove('active');deleteSermon('${sermon.id}')">🗑️ Delete</button>
+      </div>
+    ` : ''}
+  `;
+
+  modal.classList.add('active');
+
+  // Click outside to close
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('active'); };
 }
 
 function togglePlaySermon(id) {
