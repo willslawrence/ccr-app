@@ -81,6 +81,19 @@ const OT_CHAPTERS = OT_BOOKS.reduce((s, b) => s + b.chapters, 0);
 const NT_CHAPTERS = NT_BOOKS.reduce((s, b) => s + b.chapters, 0);
 const TOTAL_CHAPTERS = OT_CHAPTERS + NT_CHAPTERS;
 
+// Genre definitions for stats panel
+const BIBLE_GENRES = [
+  { name: 'Pentateuch', color: '#C05535', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
+  { name: 'History', color: '#6B62A8', books: ['Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther'] },
+  { name: 'Poetry & Wisdom', color: '#A83878', books: ['Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon'] },
+  { name: 'Major Prophets', color: '#28827A', books: ['Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel'] },
+  { name: 'Minor Prophets', color: '#9A6228', books: ['Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
+  { name: 'Gospels & Acts', color: '#38885A', books: ['Matthew','Mark','Luke','John','Acts'] },
+  { name: "Paul's Letters", color: '#3E68B8', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon'] },
+  { name: 'General Epistles', color: '#AA3A3A', books: ['Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
+  { name: 'Revelation', color: '#6A42A8', books: ['Revelation'] },
+];
+
 // ====================================
 // IN-MEMORY CACHE + DEBOUNCED SAVE
 // ====================================
@@ -382,6 +395,66 @@ function updateBibleStats(data) {
   if (sStreak) sStreak.textContent = data.streak.current || '—';
 }
 
+// Calculate genre stats
+function calculateGenreStats(data) {
+  return BIBLE_GENRES.map(genre => {
+    let totalChapters = 0;
+    let readChapters = 0;
+    
+    genre.books.forEach(bookName => {
+      const book = BIBLE_BOOKS.find(b => b.name === bookName);
+      if (book) {
+        totalChapters += book.chapters;
+        const readInBook = (data.chaptersRead[book.abbr] || []).length;
+        readChapters += readInBook;
+      }
+    });
+    
+    const percentage = totalChapters > 0 ? Math.round((readChapters / totalChapters) * 100) : 0;
+    
+    return {
+      name: genre.name,
+      color: genre.color,
+      totalChapters,
+      readChapters,
+      percentage
+    };
+  });
+}
+
+// Toggle genre stats panel
+function toggleGenreStats() {
+  const panel = document.getElementById('genre-stats-panel');
+  const btn = document.querySelector('.genre-stats-btn');
+  
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    btn.classList.add('active');
+    
+    // Update stats
+    const genreStats = calculateGenreStats(_bibleCache);
+    const statsHtml = genreStats.map(stat => `
+      <div class="genre-row">
+        <div class="genre-info">
+          <span class="genre-name" style="color: ${stat.color};">${stat.name}</span>
+          <span class="genre-numbers">${stat.readChapters}/${stat.totalChapters} (${stat.percentage}%)</span>
+        </div>
+        <div class="genre-bar">
+          <div class="genre-fill" style="width: ${stat.percentage}%; background: ${stat.color};"></div>
+        </div>
+      </div>
+    `).join('');
+    
+    panel.innerHTML = `
+      <h4 style="margin-bottom: 12px; font-size: 0.9em; font-weight: 700;">📊 Progress by Genre</h4>
+      ${statsHtml}
+    `;
+  } else {
+    panel.style.display = 'none';
+    btn.classList.remove('active');
+  }
+}
+
 function getBookProgressSync(bookAbbr, data) {
   const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
   const read = data.chaptersRead[bookAbbr] || [];
@@ -433,76 +506,63 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
 
-        <!-- Compact Summary -->
-        <div class="bible-summary card" style="display:flex;gap:14px;padding:14px 16px;align-items:center;flex-wrap:wrap;margin-bottom:0;border-radius:0 0 12px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
-        <!-- Main ring -->
-        <div style="display:flex;gap:12px;align-items:center;flex-shrink:0;">
-          <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
-            <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:72px;height:72px;">
-              <circle cx="70" cy="70" r="58" fill="none" stroke="var(--border)" stroke-width="11"/>
-              <circle id="bible-ring-all" cx="70" cy="70" r="58" fill="none"
-                      stroke="var(--accent)" stroke-width="11" stroke-linecap="round"
-                      stroke-dasharray="${(overallPercent / 100) * 364.4} 364.4" stroke-dashoffset="0"/>
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <span id="bible-pct-all" style="font-size:1em;font-weight:700;color:var(--accent);line-height:1;">${overallPercent}%</span>
-              <span style="font-size:0.42em;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Complete</span>
-            </div>
-          </div>
-          <!-- OT / NT mini rings -->
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <svg width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg);flex-shrink:0;">
-                <circle cx="26" cy="26" r="21" fill="none" stroke="var(--border)" stroke-width="7"/>
-                <circle id="bible-ring-ot" cx="26" cy="26" r="21" fill="none"
-                        stroke="var(--purple)" stroke-width="7" stroke-linecap="round"
-                        stroke-dasharray="${(otPct / 100) * 131.9} 131.9"/>
+        <!-- Compact Stats Summary -->
+        <div class="bible-stats-compact">
+          <!-- Main progress circle -->
+          <div class="main-progress">
+            <div style="position:relative;width:60px;height:60px;flex-shrink:0;">
+              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:60px;height:60px;">
+                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--border)" stroke-width="11"/>
+                <circle id="bible-ring-all" cx="70" cy="70" r="58" fill="none"
+                        stroke="var(--accent)" stroke-width="11" stroke-linecap="round"
+                        stroke-dasharray="${(overallPercent / 100) * 364.4} 364.4" stroke-dashoffset="0"/>
               </svg>
-              <div>
-                <div style="font-size:0.68em;font-weight:600;">Old Testament</div>
-                <div id="bible-ot-sub" style="font-size:0.58em;color:var(--muted);">${otRead} / ${OT_CHAPTERS}</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <svg width="52" height="52" viewBox="0 0 52 52" style="transform:rotate(-90deg);flex-shrink:0;">
-                <circle cx="26" cy="26" r="21" fill="none" stroke="var(--border)" stroke-width="7"/>
-                <circle id="bible-ring-nt" cx="26" cy="26" r="21" fill="none"
-                        stroke="var(--green)" stroke-width="7" stroke-linecap="round"
-                        stroke-dasharray="${(ntPct / 100) * 131.9} 131.9"/>
-              </svg>
-              <div>
-                <div style="font-size:0.68em;font-weight:600;">New Testament</div>
-                <div id="bible-nt-sub" style="font-size:0.58em;color:var(--muted);">${ntRead} / ${NT_CHAPTERS}</div>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span id="bible-pct-all" style="font-size:0.85em;font-weight:700;color:var(--accent);line-height:1;">${overallPercent}%</span>
+                <span style="font-size:0.35em;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Complete</span>
               </div>
             </div>
           </div>
+          
+          <!-- Testament stats -->
+          <div class="testament-stats">
+            <div class="testament-row">
+              <span class="testament-label">OT:</span>
+              <span id="bible-ot-sub" class="testament-numbers">${otRead}/${OT_CHAPTERS}</span>
+            </div>
+            <div class="testament-row">
+              <span class="testament-label">NT:</span>
+              <span id="bible-nt-sub" class="testament-numbers">${ntRead}/${NT_CHAPTERS}</span>
+            </div>
+          </div>
+          
+          <!-- Quick stats grid -->
+          <div class="quick-stats">
+            <div class="quick-stat">
+              <span id="bible-s-read" class="stat-number">${data.stats.totalChapters}</span>
+              <span class="stat-label">Read</span>
+            </div>
+            <div class="quick-stat">
+              <span id="bible-s-books" class="stat-number">${data.stats.booksCompleted}</span>
+              <span class="stat-label">Books</span>
+            </div>
+            <div class="quick-stat">
+              <span id="bible-s-streak" class="stat-number">${data.streak.current || '—'}</span>
+              <span class="stat-label">Streak</span>
+            </div>
+          </div>
         </div>
-        <!-- Stat cards -->
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;flex:1;min-width:0;">
-          <div style="background:var(--bg);border-radius:8px;padding:8px 6px;text-align:center;">
-            <div id="bible-s-read" style="font-size:1.1em;font-weight:700;color:var(--accent);line-height:1.1;">${data.stats.totalChapters}</div>
-            <div style="font-size:0.56em;color:var(--muted);margin-top:3px;">Chapters read</div>
-          </div>
-          <div style="background:var(--bg);border-radius:8px;padding:8px 6px;text-align:center;">
-            <div id="bible-s-left" style="font-size:1.1em;font-weight:700;line-height:1.1;">${(TOTAL_CHAPTERS - data.stats.totalChapters).toLocaleString()}</div>
-            <div style="font-size:0.56em;color:var(--muted);margin-top:3px;">To go</div>
-          </div>
-          <div style="background:var(--bg);border-radius:8px;padding:8px 6px;text-align:center;">
-            <div id="bible-s-books" style="font-size:1.1em;font-weight:700;line-height:1.1;">${data.stats.booksCompleted}</div>
-            <div style="font-size:0.56em;color:var(--muted);margin-top:3px;">Books done</div>
-          </div>
-          <div style="background:var(--bg);border-radius:8px;padding:8px 6px;text-align:center;">
-            <div id="bible-s-streak" style="font-size:1.1em;font-weight:700;color:var(--accent);line-height:1.1;">${data.streak.current || '—'}</div>
-            <div style="font-size:0.56em;color:var(--muted);margin-top:3px;">Day streak</div>
-          </div>
-        </div>
-      </div>
-      </div><!-- end page-sticky-banner -->
 
-      <!-- OT / NT scroll buttons -->
-      <div class="bible-tab-bar" style="display:flex;gap:8px;margin-bottom:16px;padding:8px 0 4px;">
-        <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">Old Testament</button>
-        <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">New Testament</button>
+        <!-- Navigation Buttons -->
+        <div class="btn-group bible-nav-buttons">
+          <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">OT</button>
+          <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">NT</button>
+          <button class="btn btn-outline genre-stats-btn" onclick="toggleGenreStats()">📊 Stats</button>
+        </div>
+        
+        <!-- Genre Stats Panel -->
+        <div id="genre-stats-panel" class="genre-stats-panel" style="display:none;">
+        </div>
       </div>
 
       <!-- All books listed in order, chapters auto-visible -->
@@ -558,19 +618,6 @@ function initBiblePage() {
 
   // Touch-drag chapter selection
   initChapterDragSelection();
-
-  // Book swipe removed — drag-select for chapters is preferred
-
-  // Position tab bar below sticky summary
-  const summary = document.querySelector('.bible-summary');
-  const tabBar = document.querySelector('.bible-tab-bar');
-  if (summary && tabBar) {
-    const updateTabBarTop = () => {
-      tabBar.style.top = summary.offsetHeight + 'px';
-    };
-    updateTabBarTop();
-    window.addEventListener('resize', updateTabBarTop);
-  }
 
   // Scroll spy for OT/NT tab highlight
   const observer = new IntersectionObserver((entries) => {
