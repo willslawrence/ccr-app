@@ -220,8 +220,13 @@ function renderLibraryPage() {
           </button>
         </div>
 
-        <!-- Filter Pills (toggle visibility) -->
-        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;padding-top:8px;">
+      </div><!-- end page-sticky-banner -->
+
+      <!-- Books Tab -->
+      <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
+
+        <!-- Filter Pills (scroll with content) -->
+        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;margin-bottom:16px;">
           <button class="library-pill ${!hasActiveFilters ? 'active' : ''}" data-filter="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
           ${getUniqueValues('Category').map(cat => `
             <button class="library-pill ${activeLibraryFilters.has('cat:' + cat.toLowerCase()) ? 'active' : ''}" data-filter="cat:${cat.toLowerCase()}" style="${getCategoryColor(cat)}">${escapeHtml(cat)}</button>
@@ -234,10 +239,6 @@ function renderLibraryPage() {
           `).join('')}
           <button class="library-pill ${activeLibraryFilters.has('fav') ? 'active' : ''}" data-filter="fav" style="background:linear-gradient(135deg,rgba(212,168,75,0.18),rgba(184,134,11,0.10));border-color:var(--accent);color:var(--accent);">⭐ Owner Fav</button>
         </div>
-      </div><!-- end page-sticky-banner -->
-
-      <!-- Books Tab -->
-      <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
 
         <!-- Books Grid -->
         <div class="library-books-grid" id="libraryGrid">
