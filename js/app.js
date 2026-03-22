@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '1.6.8';
+const APP_VERSION = '1.6.9';
 
 // Global state
 const AppState = {
@@ -72,7 +72,7 @@ async function render() {
       await initPrayerPage();
       break;
     case 'giving':
-      app.innerHTML = renderGivingPage();
+      app.innerHTML = await renderGivingPage();
       initGivingPage();
       break;
     case 'library':

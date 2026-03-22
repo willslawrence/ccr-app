@@ -253,7 +253,7 @@ function openCharityModal(charityName) {
   
   // Reuse existing bookDetailModal
   const modal = document.getElementById('bookDetailModal');
-  const modalContent = modal.querySelector('.modal-content');
+  const modalContent = modal.querySelector('.modal');
   
   // Build modal content
   let content = `
