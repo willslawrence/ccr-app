@@ -2574,6 +2574,78 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   padding-top: 16px;
 }
 
+/* Testament card layout - new Bible structure */
+.bible-book-section { 
+  padding: 12px 0; 
+  border-bottom: 1px solid var(--border); 
+}
+
+.bible-book-section:last-child { 
+  border-bottom: none; 
+}
+
+.bible-book-bar { 
+  height: 4px; 
+  background: var(--surface); 
+  border-radius: 2px; 
+  margin: 6px 0 8px; 
+  overflow: hidden; 
+}
+
+.bible-book-bar-fill { 
+  height: 100%; 
+  border-radius: 2px; 
+  transition: width 0.3s; 
+}
+
+.bible-chapter-grid { 
+  display: grid; 
+  grid-template-columns: repeat(10, 1fr); 
+  gap: 4px; 
+}
+
+.chapter-btn { 
+  width: 100%; 
+  aspect-ratio: 1; 
+  border: 1px solid var(--border); 
+  border-radius: 6px; 
+  background: var(--card); 
+  color: var(--text); 
+  font-size: 12px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  transition: all 0.15s; 
+  -webkit-tap-highlight-color: transparent; 
+  padding: 0; 
+}
+
+.chapter-btn.read { 
+  background: var(--gold-grad); 
+  color: white; 
+  border-color: transparent; 
+}
+
+.bible-book-section.locked .chapter-btn { 
+  opacity: 0.4; 
+  pointer-events: none; 
+}
+
+.bible-lock-btn { 
+  background: none; 
+  border: none; 
+  font-size: 14px; 
+  cursor: pointer; 
+  padding: 2px; 
+  opacity: 0.5; 
+}
+
+.bible-lock-btn.locked { 
+  opacity: 1; 
+}
+
 /* ====================================
    CHARITY CARDS (GIVING DASHBOARD)
    ==================================== */

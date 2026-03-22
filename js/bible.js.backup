@@ -1,6 +1,6 @@
 /* ====================================
    BIBLE READING TRACKER PAGE
-   Testament Cards, Book Locks, Sticky Header
+   Port of Chapter by Chapter functionality
    ==================================== */
 
 // Bible data structure (66 books, no deuterocanonical)
@@ -210,48 +210,41 @@ window.toggleBookLock = function(abbr) {
   }
   localStorage.setItem('bible_locked_books', JSON.stringify([..._lockedBooks]));
   
-  // Update UI - refresh the book section
-  updateBookSection(abbr);
-}
-
-// Update a single book section within its testament card
-function updateBookSection(bookAbbr) {
-  const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
-  if (!book || !_bibleCache) return;
-
-  const bookSection = document.querySelector(`.bible-book-section[data-book="${bookAbbr}"]`);
-  if (!bookSection) return;
-
-  const progress = getBookProgressSync(book.abbr, _bibleCache);
-  const isLocked = _lockedBooks.has(book.abbr);
-  
-  bookSection.className = `bible-book-section ${isLocked ? 'locked' : ''}`;
-  
-  // Update progress counter
-  const progressElement = bookSection.querySelector('.bible-book-progress');
-  if (progressElement) {
-    progressElement.textContent = `${progress.read}/${progress.total}`;
+  // Update UI - re-render the entire book card to update lock button icon
+  if (_bibleCache) {
+    const book = BIBLE_BOOKS.find(b => b.abbr === abbr);
+    const card = document.querySelector(`.book-card[data-book="${abbr}"]`);
+    if (card && book) {
+      const progress = getBookProgressSync(book.abbr, _bibleCache);
+      const isCompleted = progress.percent === 100;
+      const isLocked = _lockedBooks.has(book.abbr);
+      
+      const newHtml = `
+        <div class="book-header">
+          <span class="book-name">${book.name}</span>
+          <div class="book-header-right">
+            <span class="book-progress">${progress.read}/${progress.total}</span>
+            ${isCompleted ? `<button class="bible-lock-btn" onclick="toggleBookLock('${book.abbr}')" title="${isLocked ? 'Unlock book' : 'Lock book'}">${isLocked ? '🔓' : '🔒'}</button>` : ''}
+          </div>
+        </div>
+        <div class="book-progress-bar">
+          <div class="book-progress-fill" style="width: ${progress.percent}%"></div>
+        </div>
+        <div class="chapter-grid" style="display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px;">
+          ${Array.from({length: book.chapters}, (_, i) => {
+            const chapterNum = i + 1;
+            const read = (_bibleCache.chaptersRead[book.abbr] || []).includes(chapterNum);
+            return `<button class="chapter-btn ${read ? 'read' : ''}"
+                            data-book="${book.abbr}"
+                            data-chapter="${chapterNum}">${chapterNum}</button>`;
+          }).join('')}
+        </div>
+      `;
+      
+      card.innerHTML = newHtml;
+      card.className = `book-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
+    }
   }
-  
-  // Update progress bar
-  const barFill = bookSection.querySelector('.bible-book-bar-fill');
-  if (barFill) {
-    barFill.style.width = `${progress.percent}%`;
-  }
-  
-  // Update lock button
-  const lockBtn = bookSection.querySelector('.bible-lock-btn');
-  if (lockBtn) {
-    lockBtn.className = `bible-lock-btn ${isLocked ? 'locked' : ''}`;
-  }
-  
-  // Update chapter buttons
-  const chapterButtons = bookSection.querySelectorAll('.chapter-btn');
-  chapterButtons.forEach(btn => {
-    const chapterNum = parseInt(btn.dataset.chapter);
-    const read = (_bibleCache.chaptersRead[book.abbr] || []).includes(chapterNum);
-    btn.classList.toggle('read', read);
-  });
 }
 
 // Toggle chapter read status — instant UI, debounced save
@@ -281,13 +274,54 @@ function toggleChapter(bookAbbr, chapterNum) {
   // Instant UI update
   const btn = document.querySelector(`.chapter-btn[data-book="${bookAbbr}"][data-chapter="${chapterNum}"]`);
   if (btn) btn.classList.toggle('read');
-  updateBookSection(bookAbbr);
+  updateBookCard(bookAbbr, data);
   updateBibleStats(data);
 }
 
-// Update a single book card's progress display (legacy compatibility)
+// Mark entire book as read/unread
+function toggleWholeBook(bookAbbr) {
+  if (!_bibleCache) return;
+  const data = _bibleCache;
+  const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
+  if (!book) return;
+
+  const currentRead = data.chaptersRead[bookAbbr] || [];
+  const allRead = currentRead.length === book.chapters;
+
+  if (allRead) {
+    // Unmark all
+    data.chaptersRead[bookAbbr] = [];
+  } else {
+    // Mark all chapters as read
+    data.chaptersRead[bookAbbr] = Array.from({length: book.chapters}, (_, i) => i + 1);
+    updateStreak(data);
+  }
+
+  recomputeBibleStats(data);
+  scheduleBibleSave();
+
+  // Update all chapter buttons for this book
+  document.querySelectorAll(`.chapter-btn[data-book="${bookAbbr}"]`).forEach(btn => {
+    const ch = parseInt(btn.dataset.chapter);
+    btn.classList.toggle('read', data.chaptersRead[bookAbbr].includes(ch));
+  });
+  updateBookCard(bookAbbr, data);
+  updateBibleStats(data);
+}
+
+// Update a single book card's progress display
 function updateBookCard(bookAbbr, data) {
-  updateBookSection(bookAbbr);
+  const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
+  if (!book) return;
+  const read = (data.chaptersRead[bookAbbr] || []).length;
+  const pct = Math.round((read / book.chapters) * 100);
+  const card = document.querySelector(`.book-card[data-book="${bookAbbr}"]`);
+  if (card) {
+    card.querySelector('.book-progress').textContent = `${read}/${book.chapters}`;
+    const fill = card.querySelector('.book-progress-fill');
+    if (fill) fill.style.width = pct + '%';
+    card.classList.toggle('completed', pct === 100);
+  }
 }
 
 // ====================================
@@ -346,7 +380,7 @@ function initChapterDragSelection() {
       // Final save after drag
       recomputeBibleStats(_bibleCache);
       scheduleBibleSave();
-      updateBookSection(_dragState.bookAbbr);
+      updateBookCard(_dragState.bookAbbr, _bibleCache);
       updateBibleStats(_bibleCache);
       _dragState = null;
     }
@@ -378,6 +412,11 @@ function applyDragChapter(bookAbbr, chapterNum, markAsRead) {
   const btn = document.querySelector(`.chapter-btn[data-book="${bookAbbr}"][data-chapter="${chapterNum}"]`);
   if (btn) btn.classList.toggle('read', markAsRead);
 }
+
+// ====================================
+// SWIPE BOOK CARD TO COMPLETE
+// ====================================
+// Book swipe handler removed — drag-select for chapters is sufficient
 
 function updateBibleStats(data) {
   const overallPercent = Math.round((data.stats.totalChapters / TOTAL_CHAPTERS) * 100);
@@ -413,6 +452,12 @@ function updateBibleStats(data) {
   if (sBooks) sBooks.textContent = data.stats.booksCompleted;
   const sStreak = document.getElementById('bible-s-streak');
   if (sStreak) sStreak.textContent = data.streak.current || '—';
+  
+  // Testament sub-labels (for any legacy displays)
+  const otSub = document.getElementById('bible-ot-sub');
+  if (otSub) otSub.textContent = `${otRead} / ${OT_CHAPTERS}`;
+  const ntSub = document.getElementById('bible-nt-sub');
+  if (ntSub) ntSub.textContent = `${ntRead} / ${NT_CHAPTERS}`;
 }
 
 // Calculate genre stats
@@ -465,7 +510,7 @@ function calculateGenreStats(data) {
 }
 
 // Toggle stats panel (global function for onclick handlers)
-window.toggleBibleStats = function() {
+window.toggleBibleStatsPanel = function() {
   const panel = document.getElementById('bibleStatsPanel');
   
   if (panel.style.display === 'none' || !panel.style.display) {
@@ -504,26 +549,30 @@ function getBookProgressSync(bookAbbr, data) {
   };
 }
 
-// Render books in testament card format
-function renderTestamentBooks(books, data) {
+function renderBooksList(books, data) {
   return books.map(book => {
     const progress = getBookProgressSync(book.abbr, data);
+    const isCompleted = progress.percent === 100;
     const isLocked = _lockedBooks.has(book.abbr);
     return `
-      <div class="bible-book-section ${isLocked ? 'locked' : ''}" data-book="${book.abbr}">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <strong style="font-size:15px;">${book.name}</strong>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="bible-book-progress" style="color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;">${progress.read}/${progress.total}</span>
-            <button class="bible-lock-btn ${isLocked ? 'locked' : ''}" onclick="toggleBookLock('${book.abbr}')" title="Lock/unlock">🔒</button>
+      <div class="book-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}" data-book="${book.abbr}">
+        <div class="book-header">
+          <span class="book-name">${book.name}</span>
+          <div class="book-header-right">
+            <span class="book-progress">${progress.read}/${progress.total}</span>
+            ${isCompleted ? `<button class="bible-lock-btn" onclick="toggleBookLock('${book.abbr}')" title="${isLocked ? 'Unlock book' : 'Lock book'}">${isLocked ? '🔓' : '🔒'}</button>` : ''}
           </div>
         </div>
-        <div class="bible-book-bar"><div class="bible-book-bar-fill" style="width:${progress.percent}%;background:var(--gold-grad);"></div></div>
-        <div class="bible-chapter-grid">
+        <div class="book-progress-bar">
+          <div class="book-progress-fill" style="width: ${progress.percent}%"></div>
+        </div>
+        <div class="chapter-grid" style="display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px;">
           ${Array.from({length: book.chapters}, (_, i) => {
             const chapterNum = i + 1;
             const read = (data.chaptersRead[book.abbr] || []).includes(chapterNum);
-            return `<button class="chapter-btn ${read ? 'read' : ''}" data-book="${book.abbr}" data-chapter="${chapterNum}">${chapterNum}</button>`;
+            return `<button class="chapter-btn ${read ? 'read' : ''}"
+                            data-book="${book.abbr}"
+                            data-chapter="${chapterNum}">${chapterNum}</button>`;
           }).join('')}
         </div>
       </div>
@@ -531,7 +580,7 @@ function renderTestamentBooks(books, data) {
   }).join('');
 }
 
-// Render Bible page with testament cards
+// Render Bible page
 async function renderBiblePage() {
   const data = await loadBibleProgress();
   const overallPercent = Math.round((data.stats.totalChapters / TOTAL_CHAPTERS) * 100);
@@ -545,14 +594,14 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
         <div class="btn-group">
-          <button onclick="scrollToTestament('OT')">Old Testament</button>
-          <button onclick="scrollToTestament('NT')">New Testament</button>
-          <button onclick="toggleBibleStats()">📊 Stats</button>
+          <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">Old Testament</button>
+          <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">New Testament</button>
+          <button class="btn btn-outline" onclick="toggleBibleStatsPanel()">📊 Stats</button>
         </div>
       </div>
 
-      <!-- Stats panel (hidden by default) -->
-      <div id="bibleStatsPanel" style="display:none;">
+      <!-- Stats panel (hidden by default, toggled by Stats button) -->
+      <div id="bibleStatsPanel" class="bible-stats-panel" style="display:none;">
         <!-- Three circular progress indicators -->
         <div class="bible-progress-circles">
           <div class="bible-progress-circle">
@@ -606,56 +655,80 @@ async function renderBiblePage() {
         </div>
       </div>
 
-      <!-- Old Testament Card -->
+      <!-- All books listed in order, chapters auto-visible -->
       <div id="bible-ot-section">
-        <div class="card" style="margin-bottom:16px;">
-          ${renderTestamentBooks(OT_BOOKS, data)}
+        <h3 style="font-size:0.8em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:12px;">Old Testament · ${OT_CHAPTERS} chapters</h3>
+        <div class="books-list">
+          ${renderBooksList(OT_BOOKS, data)}
         </div>
       </div>
 
-      <!-- New Testament Card -->
-      <div id="bible-nt-section">
-        <div class="card" style="margin-bottom:16px;">
-          ${renderTestamentBooks(NT_BOOKS, data)}
+      <div id="bible-nt-section" style="margin-top:24px;">
+        <h3 style="font-size:0.8em;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:12px;">New Testament · ${NT_CHAPTERS} chapters</h3>
+        <div class="books-list">
+          ${renderBooksList(NT_BOOKS, data)}
         </div>
       </div>
     </div>
   `;
 }
 
-// Scroll to testament section
 window.scrollToTestament = function(testament) {
   const el = document.getElementById(testament === 'OT' ? 'bible-ot-section' : 'bible-nt-section');
   if (el) {
-    const banner = document.querySelector('.page-sticky-banner');
-    const offset = banner ? banner.offsetHeight + 8 : 8;
+    const summary = document.querySelector('.bible-summary');
+    const tabBar = document.querySelector('.bible-tab-bar');
+    const offset = (summary ? summary.offsetHeight : 0) + (tabBar ? tabBar.offsetHeight : 0) + 8;
     const y = el.getBoundingClientRect().top + window.pageYOffset - offset;
     window.scrollTo({ top: y, behavior: 'smooth' });
   }
+  document.querySelectorAll('.bible-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.testament === testament);
+    b.classList.toggle('btn-primary', b.dataset.testament === testament);
+    b.classList.toggle('btn-outline', b.dataset.testament !== testament);
+  });
 };
 
 // Initialize Bible page
 function initBiblePage() {
   // Chapter button clicks (for non-touch / single taps)
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.chapter-btn');
-    if (!btn) return;
-    
-    e.stopPropagation();
-    // Skip if touch/drag handler already processed this
-    if (_dragState || _touchHandledChapter) {
-      _touchHandledChapter = false;
-      return;
-    }
-    
-    const bookAbbr = btn.dataset.book;
-    // Skip if book is locked
-    if (_lockedBooks.has(bookAbbr)) return;
-    
-    const chapterNum = parseInt(btn.dataset.chapter);
-    toggleChapter(bookAbbr, chapterNum);
+  document.querySelectorAll('.chapter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Skip if touch/drag handler already processed this
+      if (_dragState || _touchHandledChapter) {
+        _touchHandledChapter = false;
+        return;
+      }
+      const bookAbbr = btn.dataset.book;
+      
+      // Skip if book is locked
+      if (_lockedBooks.has(bookAbbr)) return;
+      
+      const chapterNum = parseInt(btn.dataset.chapter);
+      toggleChapter(bookAbbr, chapterNum);
+    });
   });
 
   // Touch-drag chapter selection
   initChapterDragSelection();
+
+  // Scroll spy for OT/NT tab highlight
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const testament = entry.target.id === 'bible-nt-section' ? 'NT' : 'OT';
+        document.querySelectorAll('.bible-tab-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.testament === testament);
+          b.classList.toggle('btn-primary', b.dataset.testament === testament);
+          b.classList.toggle('btn-outline', b.dataset.testament !== testament);
+        });
+      }
+    });
+  }, { rootMargin: '-100px 0px -80% 0px' });
+
+  const otSection = document.getElementById('bible-ot-section');
+  const ntSection = document.getElementById('bible-nt-section');
+  if (otSection) observer.observe(otSection);
+  if (ntSection) observer.observe(ntSection);
 }
