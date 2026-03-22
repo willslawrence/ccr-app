@@ -344,54 +344,7 @@ function applyDragChapter(bookAbbr, chapterNum, markAsRead) {
 // ====================================
 // SWIPE BOOK CARD TO COMPLETE
 // ====================================
-function initBookSwipeHandlers() {
-  document.querySelectorAll('.book-card').forEach(card => {
-    const bookAbbr = card.dataset.book;
-    let startX = 0;
-    let currentX = 0;
-    let swiping = false;
-
-    card.addEventListener('touchstart', (e) => {
-      // Only start swipe from the header area, not chapter buttons
-      if (e.target.closest('.chapter-btn')) return;
-      startX = e.touches[0].clientX;
-      currentX = startX;
-      swiping = true;
-    }, { passive: true });
-
-    card.addEventListener('touchmove', (e) => {
-      if (!swiping) return;
-      currentX = e.touches[0].clientX;
-      const delta = currentX - startX;
-      if (delta < 0) return; // only right swipe
-
-      // Visual feedback
-      if (delta > 20) {
-        const progress = Math.min(delta / 100, 1);
-        card.style.transform = `translateX(${Math.min(delta, 80)}px)`;
-        card.style.opacity = 1 - (progress * 0.3);
-      }
-    }, { passive: true });
-
-    card.addEventListener('touchend', () => {
-      if (!swiping) return;
-      swiping = false;
-
-      const delta = currentX - startX;
-      card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-      card.style.transform = 'translateX(0)';
-      card.style.opacity = '1';
-
-      setTimeout(() => {
-        card.style.transition = '';
-      }, 300);
-
-      if (delta > 80) {
-        toggleWholeBook(bookAbbr);
-      }
-    });
-  });
-}
+// Book swipe handler removed — drag-select for chapters is sufficient
 
 function updateBibleStats(data) {
   const overallPercent = Math.round((data.stats.totalChapters / TOTAL_CHAPTERS) * 100);
@@ -606,8 +559,7 @@ function initBiblePage() {
   // Touch-drag chapter selection
   initChapterDragSelection();
 
-  // Swipe book card right to mark complete
-  initBookSwipeHandlers();
+  // Book swipe removed — drag-select for chapters is preferred
 
   // Position tab bar below sticky summary
   const summary = document.querySelector('.bible-summary');
