@@ -451,12 +451,12 @@ function openBookModal(idx) {
           <label class="form-label">Your Name</label>
           <input type="text" class="form-input" id="bookModalCheckoutName" placeholder="Enter your name...">
         </div>
-        <div style="display:flex;gap:8px;align-items:flex-end;">
-          <div class="form-group" style="flex:1;margin-bottom:0;">
-            <label class="form-label">Due Back</label>
-            <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}" style="min-height:40px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Due Back</label>
+          <div style="display:flex;gap:8px;align-items:stretch;">
+            <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}" style="flex:1;margin:0;padding:8px 12px;font-size:14px;height:40px;box-sizing:border-box;">
+            <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="white-space:nowrap;padding:8px 16px;font-size:14px;height:40px;box-sizing:border-box;">📤 Check Out</button>
           </div>
-          <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="min-height:40px;white-space:nowrap;padding:8px 16px;">📤 Check Out</button>
         </div>
         <p style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">Please coordinate with the owner to get the book. Update the site when you return it.</p>
       </div>
