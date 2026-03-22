@@ -3,17 +3,18 @@
    Offline caching for PWA
    ==================================== */
 
-const CACHE_NAME = 'ccr-app-v2';
+const CACHE_NAME = 'ccr-app-v3';
+const APP_VERSION = '1.1.1';
 
 // Install event - skip waiting immediately
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v2...');
+  console.log('[SW] Installing v3 (app ' + APP_VERSION + ')...');
   self.skipWaiting();
 });
 
 // Activate event - clean ALL old caches and take control
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating v2...');
+  console.log('[SW] Activating v3...');
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
