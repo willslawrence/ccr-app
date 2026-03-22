@@ -911,17 +911,17 @@ html, body {
   }
 
   .modal-overlay {
-    padding: 0;
-    align-items: flex-end;
+    padding: 16px;
+    align-items: center;
+    justify-content: center;
   }
 
   .modal {
-    max-height: 92vh;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    max-height: 80vh;
+    border-radius: 16px;
     margin: 0;
-    width: 100%;
-    max-width: 100%;
+    width: 85%;
+    max-width: 85%;
   }
 
   /* Library cards - single column on small phones */

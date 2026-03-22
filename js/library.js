@@ -64,8 +64,19 @@ async function fetchLibraryData() {
 }
 
 function parseLibraryCSV(csvText) {
+  // Normalize CSV headers to simple field names
+  const HEADER_MAP = {
+    'Book Owner': 'Owner',
+    'Owner Email': 'OwnerEmail',
+    'Owner Fav': 'OwnerFav',
+    'Total Pages': 'Pages',
+    'Cover URL': 'CoverURL',
+    'Goodreads Rating': 'Rating',
+  };
+
   const lines = csvText.split('\n').filter(line => line.trim());
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const rawHeaders = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+  const headers = rawHeaders.map(h => HEADER_MAP[h] || h);
 
   libraryBooks = [];
   for (let i = 1; i < lines.length; i++) {
@@ -115,7 +126,7 @@ function loadMockLibraryData() {
 // ─── HELPERS ───
 
 function isOwnerFav(book) {
-  const val = (book['Owner Fav'] || '').toString().toUpperCase();
+  const val = (book.OwnerFav || book['Owner Fav'] || '').toString().toUpperCase();
   return val === 'TRUE' || val === 'YES' || val === '1';
 }
 
@@ -187,7 +198,7 @@ function renderBookCover(book, size) {
   const h = size === 'large' ? 175 : 88;
   const radius = size === 'large' ? 12 : 8;
   const fontSize = size === 'large' ? 48 : 24;
-  const coverUrl = book['Cover URL'] || '';
+  const coverUrl = book.CoverURL || book['Cover URL'] || '';
   if (coverUrl) {
     return `<img src="${escapeHtml(coverUrl)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fontSize}px;background:var(--gold-grad);color:white;font-weight:700;border-radius:${radius}px;\\'>${escapeHtml(book.Title)[0] || '?'}</div>'">`;
   }
@@ -210,14 +221,9 @@ function renderLibraryPage() {
           <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📋 Checked Out</button>
         </div>
 
-        <!-- Search + Filter on same line -->
-        <div style="display:flex;gap:8px;align-items:center;">
-          <div class="library-search-bar" style="flex:1;margin-bottom:0;">
-            <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${escapeHtml(librarySearchQuery)}" style="padding:8px 12px;font-size:13px;min-height:36px;">
-          </div>
-          <button class="btn btn-outline" id="libraryFilterToggle" style="font-size:12px;padding:6px 12px;min-height:36px;flex-shrink:0;margin:0;">
-            🔽 Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ')' : ''}
-          </button>
+        <!-- Search -->
+        <div class="library-search-bar" style="margin-bottom:0;">
+          <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${escapeHtml(librarySearchQuery)}" style="padding:8px 12px;font-size:13px;min-height:36px;">
         </div>
 
       </div><!-- end page-sticky-banner -->
@@ -225,19 +231,26 @@ function renderLibraryPage() {
       <!-- Books Tab -->
       <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
 
-        <!-- Filter Pills (scroll with content) -->
-        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+        <!-- Always-visible Owner + Fav filters -->
+        <div class="library-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
           <button class="library-pill ${!hasActiveFilters ? 'active' : ''}" data-filter="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
+          ${getUniqueValues('Owner').map(owner => `
+            <button class="library-pill ${activeLibraryFilters.has('owner:' + owner.toLowerCase()) ? 'active' : ''}" data-filter="owner:${owner.toLowerCase()}" style="background:rgba(184,134,11,0.08);color:var(--accent);border-color:var(--accent-light);">👤 ${escapeHtml(owner)}</button>
+          `).join('')}
+          <button class="library-pill ${activeLibraryFilters.has('fav') ? 'active' : ''}" data-filter="fav" style="background:linear-gradient(135deg,rgba(212,168,75,0.18),rgba(184,134,11,0.10));border-color:var(--accent);color:var(--accent);">⭐ Owner Fav</button>
+          <button class="library-pill" id="libraryFilterToggle" style="background:var(--surface);color:var(--muted);border-color:var(--border);">
+            🔽 More${hasActiveFilters && (activeLibraryFilters.size - [...activeLibraryFilters].filter(f => f.startsWith('owner:') || f === 'fav').length) > 0 ? ' (' + (activeLibraryFilters.size - [...activeLibraryFilters].filter(f => f.startsWith('owner:') || f === 'fav').length) + ')' : ''}
+          </button>
+        </div>
+
+        <!-- Expandable Category + Genre filters -->
+        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;margin-bottom:8px;">
           ${getUniqueValues('Category').map(cat => `
             <button class="library-pill ${activeLibraryFilters.has('cat:' + cat.toLowerCase()) ? 'active' : ''}" data-filter="cat:${cat.toLowerCase()}" style="${getCategoryColor(cat)}">${escapeHtml(cat)}</button>
           `).join('')}
           ${getUniqueValues('Genre').map(genre => `
             <button class="library-pill ${activeLibraryFilters.has('genre:' + genre.toLowerCase()) ? 'active' : ''}" data-filter="genre:${genre.toLowerCase()}" style="background:rgba(74,122,181,0.10);color:var(--blue);border-color:#93c5fd;">${escapeHtml(genre)}</button>
           `).join('')}
-          ${getUniqueValues('Owner').map(owner => `
-            <button class="library-pill ${activeLibraryFilters.has('owner:' + owner.toLowerCase()) ? 'active' : ''}" data-filter="owner:${owner.toLowerCase()}" style="background:rgba(184,134,11,0.08);color:var(--accent);border-color:var(--accent-light);">👤 ${escapeHtml(owner)}</button>
-          `).join('')}
-          <button class="library-pill ${activeLibraryFilters.has('fav') ? 'active' : ''}" data-filter="fav" style="background:linear-gradient(135deg,rgba(212,168,75,0.18),rgba(184,134,11,0.10));border-color:var(--accent);color:var(--accent);">⭐ Owner Fav</button>
         </div>
 
         <!-- Books Grid -->
@@ -549,7 +562,17 @@ function initBookModalActions(idx) {
         totalPages,
         status: 'reading'
       });
-      msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.</div>';
+
+      // Notify the book owner via email
+      const ownerEmail = book.OwnerEmail || '';
+      const ownerName = book.Owner || '';
+      if (ownerEmail) {
+        const subject = encodeURIComponent(`📚 Book Checkout: ${book.Title}`);
+        const body = encodeURIComponent(`Hi ${ownerName},\n\n${name} has checked out your book "${book.Title}" from the CCR Friends Library.\n\nDue back: ${formatDate(dueBack)}\n\nPlease coordinate with ${name} to get the book to them.\n\nThanks!\nCCR Friends Library`);
+        window.open(`mailto:${ownerEmail}?subject=${subject}&body=${body}`, '_blank');
+      }
+
+      msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.' + (ownerEmail ? ' An email notification has been opened for ' + escapeHtml(ownerName) + '.' : '') + '</div>';
       setTimeout(() => {
         closeBookModal();
         document.getElementById('app').innerHTML = renderLibraryPage();
@@ -671,7 +694,8 @@ function applyLibraryFilters() {
 
   const toggle = document.getElementById('libraryFilterToggle');
   if (toggle) {
-    toggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ' active)' : ''}`;
+    const catGenreCount = [...activeLibraryFilters].filter(f => f.startsWith('cat:') || f.startsWith('genre:')).length;
+    toggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} More${catGenreCount > 0 ? ' (' + catGenreCount + ')' : ''}`;
   }
 }
 
@@ -756,7 +780,8 @@ function initLibraryPage() {
       libraryFiltersVisible = !libraryFiltersVisible;
       filterPills.style.display = libraryFiltersVisible ? 'flex' : 'none';
       const hasActive = activeLibraryFilters.size > 0;
-      filterToggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActive ? ' (' + activeLibraryFilters.size + ' active)' : ''}`;
+      const catGenreCount = [...activeLibraryFilters].filter(f => f.startsWith('cat:') || f.startsWith('genre:')).length;
+      filterToggle.textContent = `${libraryFiltersVisible ? '🔼' : '🔽'} More${catGenreCount > 0 ? ' (' + catGenreCount + ')' : ''}`;
     });
   }
 
