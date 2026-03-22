@@ -469,7 +469,7 @@ function openBookModal(idx) {
           <label class="form-label">Due Back</label>
           <div style="display:flex;gap:8px;align-items:stretch;">
             <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}" style="flex:1;margin:0;padding:8px 12px;font-size:14px;box-sizing:border-box;">
-            <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="white-space:nowrap;padding:0 16px;font-size:14px;box-sizing:border-box;">📤 Check Out</button>
+            <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="white-space:nowrap;padding:0 16px;font-size:14px;box-sizing:border-box;max-width:100%;">📤 Check Out</button>
           </div>
         </div>
         <p style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">Please coordinate with the owner to get the book. Update the site when you return it.</p>

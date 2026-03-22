@@ -504,6 +504,23 @@ function getBookProgressSync(bookAbbr, data) {
   };
 }
 
+// Calculate books finished (all chapters read)
+function getBooksFinished(data) {
+  return BIBLE_BOOKS.filter(book => {
+    const read = data.chaptersRead[book.abbr] || [];
+    return read.length === book.chapters;
+  }).length;
+}
+
+// Calculate chapters per day needed to finish this year
+function getChaptersPerDay(data) {
+  const remaining = TOTAL_CHAPTERS - data.stats.totalChapters;
+  const now = new Date();
+  const endOfYear = new Date(now.getFullYear(), 11, 31);
+  const daysLeft = Math.max(1, Math.ceil((endOfYear - now) / (1000 * 60 * 60 * 24)));
+  return Math.ceil(remaining / daysLeft);
+}
+
 // Render books in testament card format
 function renderTestamentBooks(books, data) {
   return books.map(book => {
@@ -545,9 +562,9 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
         <div class="btn-group">
-          <button onclick="scrollToTestament('OT')">Old Testament</button>
-          <button onclick="scrollToTestament('NT')">New Testament</button>
-          <button onclick="toggleBibleStats()">📊 Stats</button>
+          <button class="btn btn-outline" onclick="scrollToTestament('OT')">Old Testament</button>
+          <button class="btn btn-outline" onclick="scrollToTestament('NT')">New Testament</button>
+          <button class="btn btn-primary" onclick="toggleBibleStats()">📊 Stats</button>
         </div>
       </div>
 
@@ -599,10 +616,33 @@ async function renderBiblePage() {
           </div>
         </div>
 
-        <!-- Genre progress bars -->
-        <div class="bible-genre-stats">
-          <h4 style="margin: 16px 0 12px 0; font-size: 0.9em; font-weight: 700;">Progress by Genre</h4>
-          <div id="genreProgressBars"></div>
+        <!-- Reading Stats Cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px;">
+          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
+            <div style="font-size:20px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">${data.stats.totalChapters}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters Read</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
+            <div style="font-size:20px;font-weight:700;color:var(--muted);font-family:'JetBrains Mono',monospace;">${TOTAL_CHAPTERS - data.stats.totalChapters}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters To Go</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
+            <div style="font-size:20px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">${getBooksFinished(data)}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Books Finished</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
+            <div style="font-size:20px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">${getChaptersPerDay(data)}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters/Day</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
+            <div style="font-size:20px;font-weight:700;color:var(--orange);font-family:'JetBrains Mono',monospace;">${data.streak || 0}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Day Streak</div>
+          </div>
+          ${data.bestStreak ? `
+          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
+            <div style="font-size:20px;font-weight:700;color:var(--purple);font-family:'JetBrains Mono',monospace;">${data.bestStreak}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Best Streak</div>
+          </div>` : ''}
         </div>
       </div>
 

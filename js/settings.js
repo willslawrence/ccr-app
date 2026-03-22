@@ -8,54 +8,45 @@ function renderSettingsPage() {
   return `
     <div class="page">
       <div class="page-sticky-banner">
-        <div class="page-header">
-          <h1 class="page-title">⚙️ Settings</h1>
-          <p class="page-subtitle">Manage your preferences and account</p>
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h1 class="page-title">⚙️ Settings</h1>
+            <p class="page-subtitle">Manage your preferences and account</p>
+          </div>
+          <button id="themeToggle" style="width:44px;height:44px;border:none;border-radius:12px;background:var(--surface);color:var(--muted);font-size:20px;cursor:pointer;transition:all 0.2s;">🌙</button>
         </div>
       </div>
 
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="margin-bottom:16px;">Profile</h3>
-        <div style="display:grid;gap:12px;">
-          <div>
-            <div class="text-muted" style="font-size:13px;margin-bottom:4px;">Name</div>
-            <div style="font-weight:500;">${escapeHtml(user.name)}</div>
-          </div>
-          <div>
-            <div class="text-muted" style="font-size:13px;margin-bottom:4px;">Email</div>
-            <div style="font-weight:500;">${escapeHtml(user.email)}</div>
-          </div>
-          <div>
-            <div class="text-muted" style="font-size:13px;margin-bottom:4px;">Role</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div class="card" style="padding:12px;">
+          <h3 style="margin-bottom:12px;font-size:16px;">Profile</h3>
+          <div style="display:grid;gap:8px;">
             <div>
-              ${user.role === 'admin' ? '<span class="badge" style="background:var(--purple);color:white;">Admin</span>' : ''}
-              ${user.role === 'editor' ? '<span class="badge" style="background:var(--blue);color:white;">Editor</span>' : ''}
-              ${user.role === 'member' ? '<span class="badge" style="background:var(--green);color:white;">Member</span>' : ''}
+              <div class="text-muted" style="font-size:12px;margin-bottom:2px;">Name</div>
+              <div style="font-weight:500;font-size:14px;">${escapeHtml(user.name)}</div>
+            </div>
+            <div>
+              <div class="text-muted" style="font-size:12px;margin-bottom:2px;">Email</div>
+              <div style="font-weight:500;font-size:14px;">${escapeHtml(user.email)}</div>
+            </div>
+            <div>
+              <div class="text-muted" style="font-size:12px;margin-bottom:2px;">Role</div>
+              <div>
+                ${user.role === 'admin' ? '<span class="badge" style="background:var(--purple);color:white;font-size:11px;">Admin</span>' : ''}
+                ${user.role === 'editor' ? '<span class="badge" style="background:var(--blue);color:white;font-size:11px;">Editor</span>' : ''}
+                ${user.role === 'member' ? '<span class="badge" style="background:var(--green);color:white;font-size:11px;">Member</span>' : ''}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="margin-bottom:16px;">Appearance</h3>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-weight:500;margin-bottom:4px;">Dark Mode</div>
-            <div class="text-muted" style="font-size:13px;">Toggle between light and dark theme</div>
+        <div class="card" style="padding:12px;">
+          <h3 style="margin-bottom:12px;font-size:16px;">About</h3>
+          <div style="display:grid;gap:6px;font-size:13px;">
+            <div><strong>App Name:</strong> CCR Church App</div>
+            <div><strong>Version:</strong> 1.8.0</div>
+            <div><strong>Build:</strong> ${new Date().getFullYear()}.03</div>
           </div>
-          <label class="theme-toggle">
-            <input type="checkbox" id="themeToggle">
-            <span class="theme-toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="margin-bottom:16px;">About</h3>
-        <div style="display:grid;gap:8px;font-size:14px;">
-          <div><strong>App Name:</strong> CCR Church App</div>
-          <div><strong>Version:</strong> 1.0.0</div>
-          <div><strong>Build:</strong> ${new Date().getFullYear()}.03</div>
         </div>
       </div>
 
@@ -82,12 +73,32 @@ function setupThemeToggle() {
   const currentTheme = localStorage.getItem('ccr_theme') || 'light';
 
   // Set initial state
-  toggle.checked = currentTheme === 'dark';
+  if (currentTheme === 'dark') {
+    toggle.textContent = '☀️';
+    toggle.style.background = 'var(--accent)';
+    toggle.style.color = 'white';
+  } else {
+    toggle.textContent = '🌙';
+    toggle.style.background = 'var(--surface)';
+    toggle.style.color = 'var(--muted)';
+  }
 
   // Listen for changes
-  toggle.addEventListener('change', (e) => {
-    const newTheme = e.target.checked ? 'dark' : 'light';
+  toggle.addEventListener('click', () => {
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
+    
+    if (newTheme === 'dark') {
+      toggle.textContent = '☀️';
+      toggle.style.background = 'var(--accent)';
+      toggle.style.color = 'white';
+    } else {
+      toggle.textContent = '🌙';
+      toggle.style.background = 'var(--surface)';
+      toggle.style.color = 'var(--muted)';
+    }
+    
+    localStorage.setItem('ccr_theme', newTheme);
   });
 }
 

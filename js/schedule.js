@@ -704,26 +704,26 @@ function renderOoSTab() {
           <div class="empty-sub">Create this week's OoS</div>
         </div>
       ` : `
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-header">
+        <div class="card" style="margin-bottom:16px;padding:10px 12px;">
+          <div class="card-header" style="margin-bottom:8px;">
             <div style="flex:1;">
-              <div class="card-title">Order of Service</div>
-              <div class="card-meta">${formatDate(currentOoS.date)}</div>
+              <div class="card-title" style="font-size:14px;">Order of Service</div>
+              <div class="card-meta" style="font-size:11px;">${formatDate(currentOoS.date)}</div>
             </div>
           </div>
 
-          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-            <div style="margin-bottom:16px;">
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+            <div style="margin-bottom:12px;font-size:12px;">
               <strong>Venue:</strong> ${escapeHtml(currentOoS.venueName)}
               ${currentOoS.venueUrl ? `<br><a href="${escapeHtml(currentOoS.venueUrl)}" target="_blank" style="color:var(--accent);text-decoration:none;">📍 View on Google Maps 🔗</a>` : ''}
             </div>
 
-            <div style="margin-top:16px;">
-              <strong>Service Items:</strong>
-              <div style="margin-top:8px;display:grid;gap:8px;">
+            <div style="margin-top:12px;">
+              <strong style="font-size:12px;">Service Items:</strong>
+              <div style="margin-top:6px;display:grid;gap:6px;">
                 ${currentOoS.items.map((item, idx) => `
-                  <div style="display:flex;gap:12px;align-items:start;">
-                    <span style="color:var(--muted);font-weight:bold;min-width:20px;">${idx + 1}.</span>
+                  <div style="display:flex;gap:8px;align-items:start;font-size:12px;">
+                    <span style="color:var(--muted);font-weight:bold;min-width:16px;">${idx + 1}.</span>
                     <div style="flex:1;">
                       ${item.time ? `<span style="font-weight:bold;">${escapeHtml(item.time)}</span> — ` : ''}
                       ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" style="color:var(--accent);text-decoration:none;">${escapeHtml(item.title)} 🔗</a>` : escapeHtml(item.title)}
@@ -734,9 +734,9 @@ function renderOoSTab() {
             </div>
 
             ${currentOoS.childrenSection ? `
-              <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:8px;">
-                <strong>Children's Section:</strong>
-                <p style="margin:8px 0 0 0;">${escapeHtml(currentOoS.childrenSection)}</p>
+              <div style="margin-top:12px;padding:8px;background:var(--bg);border-radius:6px;">
+                <strong style="font-size:12px;">Children's Section:</strong>
+                <p style="margin:6px 0 0 0;font-size:12px;">${escapeHtml(currentOoS.childrenSection)}</p>
               </div>
             ` : ''}
           </div>

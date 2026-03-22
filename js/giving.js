@@ -35,14 +35,14 @@ async function loadTransactions() {
   }
 }
 
-// Calculate totals
+// Calculate totals (exclude transfers from balance)
 function calculateTotals() {
   const totalIn = givingState.transactions
-    .filter(t => t.amount > 0)
+    .filter(t => t.category === 'Incoming')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalOut = Math.abs(givingState.transactions
-    .filter(t => t.amount < 0)
+    .filter(t => t.category === 'Expenses')
     .reduce((sum, t) => sum + t.amount, 0));
 
   const balance = totalIn - totalOut;
@@ -83,11 +83,11 @@ async function renderGivingPage() {
         <div class="card" style="margin-bottom:20px;">
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center;">
             <div>
-              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total In</div>
+              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Incoming Total</div>
               <div class="mono" style="font-size:24px;font-weight:700;color:var(--green);">$${totals.totalIn.toLocaleString()}</div>
             </div>
             <div>
-              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total Out</div>
+              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Expenses Total</div>
               <div class="mono" style="font-size:24px;font-weight:700;color:var(--red);">$${totals.totalOut.toLocaleString()}</div>
             </div>
             <div>
@@ -118,9 +118,9 @@ async function renderGivingPage() {
                 <label class="form-label">Category *</label>
                 <select class="form-select" id="transCategory" required>
                   <option value="">Select category...</option>
-                  <option value="Tithe">Tithe</option>
-                  <option value="Offering">Offering</option>
-                  <option value="Expense">Expense</option>
+                  <option value="Incoming">Incoming</option>
+                  <option value="Expenses">Expenses</option>
+                  <option value="Transfers">Transfers</option>
                 </select>
               </div>
               <div class="form-group">
@@ -195,7 +195,7 @@ async function renderGivingPage() {
           ${(GIVING_CHARITIES || []).map(charity => {
             const isVisible = activeGivingCat === 'all' || charity.category === activeGivingCat || (charity.categories && charity.categories.some(c => c.cat === activeGivingCat));
             const statusBadge = charity.status === 'given' ? 
-              '<span class="status-badge status-given">✓ Given</span>' : 
+              '<span class="status-badge status-given" style="position:absolute;top:auto;bottom:8px;right:8px;">✓ Given</span>' : 
               '<span class="status-badge status-new">★ New</span>';
             const scoreCircle = charity.score === 100 ? 
               '<div class="score-circle score-100">100</div>' : 
@@ -207,17 +207,15 @@ async function renderGivingPage() {
               charity.description.substring(0, 120) + '...' : charity.description;
 
             return `
-              <div class="giving-charity-card ${isVisible ? '' : 'dimmed'}" data-category="${charity.category}" onclick="openCharityModal('${charity.name.replace(/'/g, "\\'")}')">
+              <div class="giving-charity-card ${isVisible ? '' : 'dimmed'}" data-category="${charity.category}">
                 ${scoreCircle}
                 <div class="charity-card-header">
                   <span class="category-tag cat-${charity.category}">${charity.categoryLabel}</span>
-                  ${statusBadge}
                 </div>
                 <h3 class="charity-name">${escapeHtml(charity.name)}</h3>
                 <p class="charity-desc">${escapeHtml(shortDesc)}</p>
                 <div class="charity-footer">
-                  <div class="charity-amount">${charity.amount}</div>
-                  <div class="click-details">Click for details</div>
+                  <div class="charity-amount">${charity.amount} ${statusBadge}</div>
                 </div>
               </div>
             `;
@@ -228,20 +226,37 @@ async function renderGivingPage() {
   `;
 }
 
-// Filter charities by category
+// Filter charities by category (single-select)
 function filterGivingCategory(cat) {
-  activeGivingCat = cat;
-  
-  // Update button states
+  // Deselect all other buttons
   document.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.cat === cat);
+    btn.classList.remove('active');
   });
   
-  // Filter cards
-  document.querySelectorAll('.giving-charity-card').forEach(card => {
-    const cardCat = card.dataset.category;
-    const isVisible = cat === 'all' || cardCat === cat;
+  // Select clicked button
+  document.querySelector(`.cat-btn[data-cat="${cat}"]`).classList.add('active');
+  
+  activeGivingCat = cat;
+  
+  const grid = document.getElementById('charityGrid');
+  const cards = Array.from(document.querySelectorAll('.giving-charity-card'));
+  
+  // Sort cards: matching category first, then others
+  cards.sort((a, b) => {
+    const aMatches = cat === 'all' || a.dataset.category === cat;
+    const bMatches = cat === 'all' || b.dataset.category === cat;
+    
+    if (aMatches && !bMatches) return -1;
+    if (!aMatches && bMatches) return 1;
+    return 0;
+  });
+  
+  // Clear and re-append in new order
+  cards.forEach(card => grid.removeChild(card));
+  cards.forEach(card => {
+    const isVisible = cat === 'all' || card.dataset.category === cat;
     card.classList.toggle('dimmed', !isVisible);
+    grid.appendChild(card);
   });
 }
 

@@ -364,22 +364,22 @@ function renderBulletinDisplay() {
     const isLatest = bulletin.published && bulletin.id === latestPublishedId;
 
     return `
-      <div class="card" style="margin-bottom:20px;${isLatest ? 'border:2px solid var(--accent);' : ''}${!bulletin.published ? 'border:1px dashed var(--muted);opacity:0.8;' : ''}">
+      <div class="card" style="margin-bottom:14px;${isLatest ? 'border:2px solid var(--accent);' : ''}${!bulletin.published ? 'border:1px dashed var(--muted);opacity:0.8;' : ''}">
         <div class="card-header">
           <div style="flex:1;">
-            <div class="card-title">${formatDate(bulletin.date)}</div>
+            <div class="card-title" style="font-size:15px;">${formatDate(bulletin.date)}</div>
             <div class="card-meta">
-              ${!bulletin.published ? '<span class="badge" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);font-size:11px;padding:3px 10px;">📝 Draft</span>' : ''}
-              ${isLatest ? '<span class="badge" style="background:var(--accent);color:white;font-size:11px;padding:3px 10px;">Latest</span>' : ''}
+              ${!bulletin.published ? '<span class="badge" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);font-size:10px;padding:2px 8px;">📝 Draft</span>' : ''}
+              ${isLatest ? '<span class="badge" style="background:var(--accent);color:white;font-size:10px;padding:2px 8px;">Latest</span>' : ''}
             </div>
           </div>
         </div>
 
-        <div style="margin-top:16px;">
+        <div style="margin-top:12px;">
           ${bulletin.sections.map(section => `
-            <div style="margin-bottom:20px;">
-              ${section.heading ? `<h3 style="font-size:16px;font-weight:600;margin-bottom:8px;color:var(--accent);">${escapeHtml(section.heading)}</h3>` : ''}
-              <div style="line-height:1.6;">${formatMarkdown(section.content)}</div>
+            <div style="margin-bottom:16px;">
+              ${section.heading ? `<h3 style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--accent);">${escapeHtml(section.heading)}</h3>` : ''}
+              <div style="line-height:1.5;font-size:13px;">${formatMarkdown(section.content)}</div>
             </div>
           `).join('')}
         </div>

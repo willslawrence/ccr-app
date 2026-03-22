@@ -130,17 +130,18 @@ function renderVotePage() {
         <p class="page-subtitle">Approval voting · Select options you support in each category</p>
 
         <div class="btn-group" style="margin-bottom:0;">
-          <button class="btn btn-primary" data-votetab="active">🗳️ Active Poll</button>
+          <button class="btn btn-primary" data-votetab="active">🗳️ Closed Poll</button>
           <button class="btn btn-outline" data-votetab="past">📊 Past Polls</button>
+          ${isAdmin() ? '<button class="btn btn-outline" id="newPollBtn">+ New Poll</button>' : ''}
         </div>
       </div>
 
       <!-- Active Poll Tab -->
       <div class="vote-tab-content" id="voteTabActive">
         <div class="card vote-name-section">
-          <label class="form-label">Your Name</label>
-          <div class="vote-hint">Enter your name to identify your vote</div>
-          <input type="text" class="form-input vote-name-input" id="voterName" placeholder="First and Last name" autocomplete="name">
+          <label class="form-label">Name or pseudonym</label>
+          <div class="vote-hint">Enter your name or pseudonym to identify your vote</div>
+          <input type="text" class="form-input vote-name-input" id="voterName" placeholder="Name or pseudonym" autocomplete="name">
         </div>
 
         <div class="vote-voter-count card">
@@ -346,6 +347,14 @@ function initVotePage() {
   const submitBtn = document.getElementById('voteSubmitBtn');
   if (submitBtn) {
     submitBtn.addEventListener('click', voteSubmit);
+  }
+
+  // New Poll button (admin only)
+  const newPollBtn = document.getElementById('newPollBtn');
+  if (newPollBtn) {
+    newPollBtn.addEventListener('click', () => {
+      alert('New Poll feature coming soon - admins will be able to create new voting sessions.');
+    });
   }
 
   // Load data and start auto-refresh

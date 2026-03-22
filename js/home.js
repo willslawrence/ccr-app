@@ -21,6 +21,8 @@ function renderHomePage() {
   return `
     <div class="page home-page">
       <div class="home-header">
+        <h1 class="page-title" style="font-size:36px;margin-bottom:4px;">CCR</h1>
+        <p class="page-subtitle" style="margin-bottom:20px;">Community Church App</p>
         <h1 class="home-greeting">Hey ${escapeHtml(userName)} 👋</h1>
         <p class="home-subtitle">What would you like to do?</p>
       </div>
