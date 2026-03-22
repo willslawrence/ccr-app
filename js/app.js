@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.2';
 
 // Global state
 const AppState = {
@@ -51,6 +51,10 @@ async function render() {
     fabNav.style.display = 'none';
   } else {
     fabNav.style.display = 'block';
+    // Check for new bulletin badge
+    if (typeof checkBulletinBadge === 'function') {
+      loadBulletins().then(() => checkBulletinBadge()).catch(() => {});
+    }
   }
 
   // Route to page renderer
@@ -199,6 +203,11 @@ async function init() {
               console.log('First user detected - initializing seed data');
               await initializeSeedData();
             }
+          }
+
+          // Request notification permission
+          if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
           }
 
           // Navigate to home page if on login page

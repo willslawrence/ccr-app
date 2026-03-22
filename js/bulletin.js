@@ -69,6 +69,7 @@ function renderBulletinPage() {
 async function initBulletinPage() {
   await loadBulletins();
   renderBulletinDisplay();
+  markBulletinSeen();
 
   const newBtn = document.getElementById('newBulletinBtn');
   const searchBtn = document.getElementById('searchBulletinBtn');
@@ -240,9 +241,86 @@ async function handleBulletinSubmit(e) {
     await loadBulletins();
     cancelBulletinEdit();
     renderBulletinDisplay();
+
+    // If published, notify users
+    if (published) {
+      const latestPublished = bulletinState.bulletins.find(b => b.published);
+      if (latestPublished) {
+        // Store the published timestamp so we can detect new bulletins
+        const publishKey = latestPublished.id + '_' + (latestPublished.updatedAt || latestPublished.createdAt);
+        localStorage.setItem('ccr_bulletin_latest', publishKey);
+        // Send browser notification
+        sendBulletinNotification(latestPublished);
+      }
+    }
   } catch (error) {
     console.error('Error saving bulletin:', error);
     alert('Failed to save bulletin: ' + error.message);
+  }
+}
+
+// ─── NOTIFICATION & BADGE ───
+
+function sendBulletinNotification(bulletin) {
+  if (!('Notification' in window)) return;
+
+  if (Notification.permission === 'granted') {
+    const firstSection = bulletin.sections && bulletin.sections[0];
+    const body = firstSection ? firstSection.heading || 'New content available' : 'New content available';
+    new Notification('📋 New Bulletin — ' + formatDate(bulletin.date), {
+      body: body,
+      icon: 'img/icon-192.png',
+      tag: 'bulletin-update'
+    });
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        sendBulletinNotification(bulletin);
+      }
+    });
+  }
+}
+
+function checkBulletinBadge() {
+  const latestPublished = bulletinState.bulletins.find(b => b.published);
+  if (!latestPublished) {
+    clearBulletinBadge();
+    return;
+  }
+
+  const ts = latestPublished.updatedAt || latestPublished.createdAt;
+  const publishKey = latestPublished.id + '_' + (ts instanceof Object ? JSON.stringify(ts) : ts);
+  const lastSeen = localStorage.getItem('ccr_bulletin_seen');
+
+  if (lastSeen !== publishKey) {
+    showBulletinBadge();
+  } else {
+    clearBulletinBadge();
+  }
+}
+
+function showBulletinBadge() {
+  // Add badge to FAB nav bulletin button
+  const fabItem = document.querySelector('.fab-item[data-page="bulletin"]');
+  if (fabItem && !fabItem.querySelector('.fab-badge')) {
+    const badge = document.createElement('span');
+    badge.className = 'fab-badge';
+    badge.textContent = '•';
+    fabItem.appendChild(badge);
+  }
+}
+
+function clearBulletinBadge() {
+  document.querySelectorAll('.fab-item[data-page="bulletin"] .fab-badge').forEach(b => b.remove());
+}
+
+function markBulletinSeen() {
+  const latestPublished = bulletinState.bulletins.find(b => b.published);
+  if (latestPublished) {
+    const ts = latestPublished.updatedAt || latestPublished.createdAt;
+    const publishKey = latestPublished.id + '_' + (ts instanceof Object ? JSON.stringify(ts) : ts);
+    localStorage.setItem('ccr_bulletin_seen', publishKey);
+    clearBulletinBadge();
   }
 }
 
