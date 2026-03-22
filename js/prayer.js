@@ -1,5 +1,5 @@
 /* ====================================
-   PRAYER REQUESTS PAGE
+   PRAYER REQUESTS PAGE - Firestore
    ==================================== */
 
 let prayerState = {
@@ -62,8 +62,8 @@ function renderPrayerPage() {
   `;
 }
 
-function initPrayerPage() {
-  loadPrayers();
+async function initPrayerPage() {
+  await loadPrayers();
   renderPrayers();
 
   const addBtn = document.getElementById('addPrayerBtn');
@@ -105,24 +105,37 @@ function initPrayerPage() {
   });
 }
 
-function loadPrayers() {
-  prayerState.prayers = JSON.parse(localStorage.getItem('ccr_prayers') || '[]');
+async function loadPrayers() {
+  try {
+    const snapshot = await db.collection('prayers')
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    prayerState.prayers = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      // Convert Firestore Timestamps to ISO strings for consistency
+      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
+      answeredAt: doc.data().answeredAt?.toDate?.()?.toISOString() || doc.data().answeredAt
+    }));
+  } catch (error) {
+    console.error('Error loading prayers:', error);
+    prayerState.prayers = [];
+  }
 }
 
-function savePrayers() {
-  localStorage.setItem('ccr_prayers', JSON.stringify(prayerState.prayers));
-}
-
-function addPrayer() {
+async function addPrayer() {
   const user = getCurrentUser();
   const shortDesc = document.getElementById('prayerShortDesc').value.trim();
   const longDesc = document.getElementById('prayerLongDesc').value.trim();
   const anonymous = document.getElementById('prayerAnonymous').checked;
 
   const prayer = {
-    id: 'prayer_' + Date.now(),
+    text: shortDesc,
     shortDesc,
     longDesc,
+    author: anonymous ? 'Anonymous' : user.name,
+    authorId: user.uid,
     submittedBy: user.uid,
     submitterName: anonymous ? 'Anonymous' : user.name,
     anonymous,
@@ -130,16 +143,21 @@ function addPrayer() {
     answeredAt: null,
     prayingCount: 0,
     prayedBy: [],
-    createdAt: new Date().toISOString()
+    createdAt: firebase.firestore.Timestamp.now()
   };
 
-  prayerState.prayers.unshift(prayer);
-  savePrayers();
+  try {
+    await db.collection('prayers').add(prayer);
+    await loadPrayers();
 
-  document.getElementById('prayerFormElement').reset();
-  prayerState.showAddForm = false;
-  document.getElementById('addPrayerForm').style.display = 'none';
-  renderPrayers();
+    document.getElementById('prayerFormElement').reset();
+    prayerState.showAddForm = false;
+    document.getElementById('addPrayerForm').style.display = 'none';
+    renderPrayers();
+  } catch (error) {
+    console.error('Error adding prayer:', error);
+    alert('Failed to add prayer request. Please try again.');
+  }
 }
 
 function togglePrayer(id) {
@@ -147,38 +165,54 @@ function togglePrayer(id) {
   renderPrayers();
 }
 
-function prayForRequest(id) {
+async function prayForRequest(id) {
   const user = getCurrentUser();
   const prayer = prayerState.prayers.find(p => p.id === id);
   if (!prayer) return;
 
   if (!prayer.prayedBy.includes(user.uid)) {
-    prayer.prayedBy.push(user.uid);
-    prayer.prayingCount++;
-    savePrayers();
-    renderPrayers();
+    try {
+      await db.collection('prayers').doc(id).update({
+        prayedBy: firebase.firestore.FieldValue.arrayUnion(user.uid),
+        prayingCount: firebase.firestore.FieldValue.increment(1)
+      });
+      await loadPrayers();
+      renderPrayers();
+    } catch (error) {
+      console.error('Error praying for request:', error);
+      alert('Failed to update prayer count. Please try again.');
+    }
   }
 }
 
-function markAnswered(id) {
-  const prayer = prayerState.prayers.find(p => p.id === id);
-  if (!prayer) return;
-
-  prayer.answered = true;
-  prayer.answeredAt = new Date().toISOString();
-  savePrayers();
-  renderPrayers();
+async function markAnswered(id) {
+  try {
+    await db.collection('prayers').doc(id).update({
+      answered: true,
+      answeredAt: firebase.firestore.Timestamp.now()
+    });
+    await loadPrayers();
+    renderPrayers();
+  } catch (error) {
+    console.error('Error marking prayer as answered:', error);
+    alert('Failed to mark as answered. Please try again.');
+  }
 }
 
-function deletePrayer(id) {
+async function deletePrayer(id) {
   if (!confirm('Delete this prayer request?')) return;
 
-  prayerState.prayers = prayerState.prayers.filter(p => p.id !== id);
-  savePrayers();
-  renderPrayers();
+  try {
+    await db.collection('prayers').doc(id).delete();
+    await loadPrayers();
+    renderPrayers();
+  } catch (error) {
+    console.error('Error deleting prayer:', error);
+    alert('Failed to delete prayer. Please try again.');
+  }
 }
 
-function editPrayer(id) {
+async function editPrayer(id) {
   const prayer = prayerState.prayers.find(p => p.id === id);
   if (!prayer) return;
 
@@ -188,10 +222,18 @@ function editPrayer(id) {
   const longDesc = prompt('Longer description:', prayer.longDesc);
   if (longDesc === null) return;
 
-  prayer.shortDesc = shortDesc.trim();
-  prayer.longDesc = longDesc.trim();
-  savePrayers();
-  renderPrayers();
+  try {
+    await db.collection('prayers').doc(id).update({
+      shortDesc: shortDesc.trim(),
+      longDesc: longDesc.trim(),
+      text: shortDesc.trim()
+    });
+    await loadPrayers();
+    renderPrayers();
+  } catch (error) {
+    console.error('Error editing prayer:', error);
+    alert('Failed to edit prayer. Please try again.');
+  }
 }
 
 function renderPrayers() {

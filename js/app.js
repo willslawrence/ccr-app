@@ -35,7 +35,7 @@ function updateFABHighlight(page) {
 }
 
 // Render current page
-function render() {
+async function render() {
   const app = document.getElementById('app');
   const fabNav = document.getElementById('fab-nav');
 
@@ -59,7 +59,7 @@ function render() {
       break;
     case 'prayer':
       app.innerHTML = renderPrayerPage();
-      initPrayerPage();
+      await initPrayerPage();
       break;
     case 'giving':
       app.innerHTML = renderGivingPage();
@@ -70,20 +70,20 @@ function render() {
       initLibraryPage();
       break;
     case 'bible':
-      app.innerHTML = renderBiblePage();
+      app.innerHTML = await renderBiblePage();
       initBiblePage();
       break;
     case 'sermons':
       app.innerHTML = renderSermonsPage();
-      initSermonsPage();
+      await initSermonsPage();
       break;
     case 'schedule':
       app.innerHTML = renderSchedulePage();
-      initSchedulePage();
+      await initSchedulePage();
       break;
     case 'bulletin':
       app.innerHTML = renderBulletinPage();
-      initBulletinPage();
+      await initBulletinPage();
       break;
     case 'vote':
       app.innerHTML = renderVotePage();
@@ -156,13 +156,9 @@ function initFAB() {
 }
 
 // Initialize app
-function init() {
-  // Check for saved user
-  const savedUser = localStorage.getItem('ccr_user');
-  if (savedUser) {
-    AppState.currentUser = JSON.parse(savedUser);
-    AppState.currentPage = 'prayer'; // Default home page
-  }
+async function init() {
+  // Initialize Firebase
+  initFirebase();
 
   // Apply saved theme
   const theme = localStorage.getItem('ccr_theme') || 'light';
@@ -174,8 +170,57 @@ function init() {
   initVersionModal();
   initFAB();
 
-  // Initial render
-  render();
+  // Set up Firebase auth state listener
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+      // User is signed in - fetch their profile from Firestore
+      try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          AppState.currentUser = {
+            uid: user.uid,
+            name: userData.name || user.displayName || user.email,
+            email: user.email,
+            role: userData.role || 'member'
+          };
+          console.log('User signed in:', AppState.currentUser);
+
+          // Initialize seed data if this is the first user
+          if (userData.role === 'admin') {
+            const usersCount = await db.collection('users').get();
+            if (usersCount.size === 1) {
+              console.log('First user detected - initializing seed data');
+              await initializeSeedData();
+            }
+          }
+
+          // Navigate to prayer page if on login page
+          if (AppState.currentPage === 'login') {
+            navigateTo('prayer');
+          } else {
+            render();
+          }
+        } else {
+          console.error('User document not found in Firestore');
+          AppState.currentUser = null;
+          navigateTo('login');
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        AppState.currentUser = null;
+        navigateTo('login');
+      }
+    } else {
+      // User is signed out
+      AppState.currentUser = null;
+      if (AppState.currentPage !== 'login') {
+        navigateTo('login');
+      } else {
+        render();
+      }
+    }
+  });
 }
 
 // Run on load

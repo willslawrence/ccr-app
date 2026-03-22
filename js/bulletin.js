@@ -64,8 +64,8 @@ function renderBulletinPage() {
   `;
 }
 
-function initBulletinPage() {
-  loadBulletins();
+async function initBulletinPage() {
+  await loadBulletins();
   renderBulletinDisplay();
 
   const newBtn = document.getElementById('newBulletinBtn');
@@ -93,21 +93,31 @@ function initBulletinPage() {
   });
 }
 
-function loadBulletins() {
-  bulletinState.bulletins = JSON.parse(localStorage.getItem('ccr_bulletins') || '[]');
+async function loadBulletins() {
+  try {
+    const snapshot = await db.collection('bulletins').orderBy('date', 'desc').get();
 
-  // Sort by date, newest first
-  bulletinState.bulletins.sort((a, b) => new Date(b.date) - new Date(a.date));
+    bulletinState.bulletins = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamps to ISO strings
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+      };
+    });
 
-  // Set current bulletin to most recent published one
-  const publishedBulletins = bulletinState.bulletins.filter(b => b.published);
-  if (publishedBulletins.length > 0) {
-    bulletinState.currentBulletinId = publishedBulletins[0].id;
+    // Set current bulletin to most recent published one
+    const publishedBulletins = bulletinState.bulletins.filter(b => b.published);
+    if (publishedBulletins.length > 0) {
+      bulletinState.currentBulletinId = publishedBulletins[0].id;
+    }
+  } catch (error) {
+    console.error('Error loading bulletins:', error);
+    alert('Failed to load bulletins: ' + error.message);
+    bulletinState.bulletins = [];
   }
-}
-
-function saveBulletins() {
-  localStorage.setItem('ccr_bulletins', JSON.stringify(bulletinState.bulletins));
 }
 
 function renderBulletinEditor() {
@@ -189,7 +199,7 @@ function removeSection(idx) {
   renderSections(sections);
 }
 
-function handleBulletinSubmit(e) {
+async function handleBulletinSubmit(e) {
   e.preventDefault();
 
   const date = document.getElementById('bulletinDate').value;
@@ -205,32 +215,33 @@ function handleBulletinSubmit(e) {
 
   const user = getCurrentUser();
 
-  if (bulletinState.editingId) {
-    // Update existing bulletin
-    const bulletin = bulletinState.bulletins.find(b => b.id === bulletinState.editingId);
-    if (bulletin) {
-      bulletin.date = date;
-      bulletin.sections = sections;
-      bulletin.published = published;
-      bulletin.updatedAt = new Date().toISOString();
+  try {
+    if (bulletinState.editingId) {
+      // Update existing bulletin
+      await db.collection('bulletins').doc(bulletinState.editingId).update({
+        date,
+        sections,
+        published,
+        updatedAt: firebase.firestore.Timestamp.now()
+      });
+    } else {
+      // Create new bulletin
+      await db.collection('bulletins').add({
+        date,
+        sections,
+        published,
+        createdBy: user.uid,
+        createdAt: firebase.firestore.Timestamp.now()
+      });
     }
-  } else {
-    // Create new bulletin
-    const bulletin = {
-      id: 'bulletin_' + Date.now(),
-      date,
-      sections,
-      published,
-      createdBy: user.uid,
-      createdAt: new Date().toISOString()
-    };
-    bulletinState.bulletins.unshift(bulletin);
-  }
 
-  saveBulletins();
-  loadBulletins();
-  cancelBulletinEdit();
-  renderBulletinDisplay();
+    await loadBulletins();
+    cancelBulletinEdit();
+    renderBulletinDisplay();
+  } catch (error) {
+    console.error('Error saving bulletin:', error);
+    alert('Failed to save bulletin: ' + error.message);
+  }
 }
 
 function cancelBulletinEdit() {
@@ -307,13 +318,17 @@ function editBulletin(id) {
   renderBulletinEditor();
 }
 
-function deleteBulletin(id) {
+async function deleteBulletin(id) {
   if (!confirm('Delete this bulletin?')) return;
 
-  bulletinState.bulletins = bulletinState.bulletins.filter(b => b.id !== id);
-  saveBulletins();
-  loadBulletins();
-  renderBulletinDisplay();
+  try {
+    await db.collection('bulletins').doc(id).delete();
+    await loadBulletins();
+    renderBulletinDisplay();
+  } catch (error) {
+    console.error('Error deleting bulletin:', error);
+    alert('Failed to delete bulletin: ' + error.message);
+  }
 }
 
 /* ====================================

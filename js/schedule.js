@@ -34,8 +34,8 @@ function renderSchedulePage() {
   `;
 }
 
-function initSchedulePage() {
-  loadScheduleData();
+async function initSchedulePage() {
+  await loadScheduleData();
   renderScheduleContent();
 
   document.getElementById('eventsTabBtn').addEventListener('click', () => {
@@ -67,16 +67,47 @@ function initSchedulePage() {
   }
 }
 
-function loadScheduleData() {
-  scheduleState.events = JSON.parse(localStorage.getItem('ccr_events') || '[]');
-  scheduleState.volunteerSchedule = JSON.parse(localStorage.getItem('ccr_volunteer_schedule') || '[]');
-  scheduleState.orderOfService = JSON.parse(localStorage.getItem('ccr_order_of_service') || '[]');
-}
+async function loadScheduleData() {
+  try {
+    // Load events from Firestore
+    const eventsSnapshot = await db.collection('events').orderBy('date', 'asc').get();
+    scheduleState.events = eventsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamps to ISO strings
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+      };
+    });
 
-function saveScheduleData() {
-  localStorage.setItem('ccr_events', JSON.stringify(scheduleState.events));
-  localStorage.setItem('ccr_volunteer_schedule', JSON.stringify(scheduleState.volunteerSchedule));
-  localStorage.setItem('ccr_order_of_service', JSON.stringify(scheduleState.orderOfService));
+    // Load volunteer schedule from Firestore
+    const volunteerSnapshot = await db.collection('schedule_volunteers').orderBy('date', 'desc').get();
+    scheduleState.volunteerSchedule = volunteerSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt
+      };
+    });
+
+    // Load order of service from Firestore
+    const oosSnapshot = await db.collection('order_of_service').orderBy('date', 'desc').get();
+    scheduleState.orderOfService = oosSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+      };
+    });
+  } catch (error) {
+    console.error('Error loading schedule data from Firestore:', error);
+    alert('Failed to load schedule data. Please try again.');
+  }
 }
 
 function renderScheduleContent() {
@@ -169,7 +200,7 @@ function renderEventsTab() {
             ${canEdit ? `
               <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
                 <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editEvent('${event.id}')">✏️ Edit</button>
-                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteEvent('${event.id}')">🗑️ Delete</button>
+                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteEvent('${event.id}'))()">🗑️ Delete</button>
               </div>
             ` : ''}
           </div>
@@ -203,14 +234,14 @@ function initEventsTab() {
   }
 
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      saveEvent();
+      await saveEvent();
     });
   }
 }
 
-function saveEvent() {
+async function saveEvent() {
   const title = document.getElementById('eventTitle').value.trim();
   const date = document.getElementById('eventDate').value;
   const time = document.getElementById('eventTime').value;
@@ -218,36 +249,57 @@ function saveEvent() {
   const description = document.getElementById('eventDescription').value.trim();
   const user = getCurrentUser();
 
-  if (scheduleState.editingId) {
-    // Edit existing event
-    const event = scheduleState.events.find(e => e.id === scheduleState.editingId);
-    if (event) {
-      event.title = title;
-      event.date = date;
-      event.time = time;
-      event.location = location;
-      event.description = description;
-      event.updatedAt = new Date().toISOString();
-    }
-  } else {
-    // Add new event
-    const event = {
-      id: 'event_' + Date.now(),
-      title,
-      date,
-      time,
-      location,
-      description,
-      createdBy: user.uid,
-      createdAt: new Date().toISOString()
-    };
-    scheduleState.events.push(event);
-  }
+  try {
+    if (scheduleState.editingId) {
+      // Update existing event in Firestore
+      await db.collection('events').doc(scheduleState.editingId).update({
+        title,
+        date,
+        time,
+        location,
+        description,
+        updatedAt: firebase.firestore.Timestamp.now()
+      });
 
-  saveScheduleData();
-  scheduleState.showAddForm = false;
-  scheduleState.editingId = null;
-  renderScheduleContent();
+      // Update local state
+      const event = scheduleState.events.find(e => e.id === scheduleState.editingId);
+      if (event) {
+        event.title = title;
+        event.date = date;
+        event.time = time;
+        event.location = location;
+        event.description = description;
+        event.updatedAt = new Date().toISOString();
+      }
+    } else {
+      // Add new event to Firestore
+      const eventData = {
+        title,
+        date,
+        time,
+        location,
+        description,
+        createdBy: user.uid,
+        createdAt: firebase.firestore.Timestamp.now()
+      };
+
+      const docRef = await db.collection('events').add(eventData);
+
+      // Add to local state
+      scheduleState.events.push({
+        id: docRef.id,
+        ...eventData,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    scheduleState.showAddForm = false;
+    scheduleState.editingId = null;
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error saving event:', error);
+    alert('Failed to save event. Please try again.');
+  }
 }
 
 function editEvent(id) {
@@ -266,11 +318,20 @@ function editEvent(id) {
   document.getElementById('eventTitle').focus();
 }
 
-function deleteEvent(id) {
+async function deleteEvent(id) {
   if (!confirm('Delete this event?')) return;
-  scheduleState.events = scheduleState.events.filter(e => e.id !== id);
-  saveScheduleData();
-  renderScheduleContent();
+
+  try {
+    // Delete from Firestore
+    await db.collection('events').doc(id).delete();
+
+    // Remove from local state
+    scheduleState.events = scheduleState.events.filter(e => e.id !== id);
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    alert('Failed to delete event. Please try again.');
+  }
 }
 
 /* ====================================
@@ -365,7 +426,7 @@ function renderVolunteeringTab() {
             ${canEdit ? `
               <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
                 <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editVolunteerWeek('${week.id}')">✏️ Edit</button>
-                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteVolunteerWeek('${week.id}')">🗑️ Delete</button>
+                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteVolunteerWeek('${week.id}'))()">🗑️ Delete</button>
               </div>
             ` : ''}
           </div>
@@ -399,14 +460,14 @@ function initVolunteeringTab() {
   }
 
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      saveVolunteerWeek();
+      await saveVolunteerWeek();
     });
   }
 }
 
-function saveVolunteerWeek() {
+async function saveVolunteerWeek() {
   const date = document.getElementById('volDate').value;
   const location = document.getElementById('volLocation').value.trim();
   const setupCleanup = document.getElementById('volSetup').value.trim();
@@ -416,38 +477,63 @@ function saveVolunteerWeek() {
   const songs = document.getElementById('volSongs').value.trim();
   const passageTheme = document.getElementById('volPassage').value.trim();
 
-  if (scheduleState.editingId) {
-    const week = scheduleState.volunteerSchedule.find(w => w.id === scheduleState.editingId);
-    if (week) {
-      week.date = date;
-      week.location = location;
-      week.setupCleanup = setupCleanup;
-      week.gospel = gospel;
-      week.kids = kids;
-      week.it = it;
-      week.songs = songs;
-      week.passageTheme = passageTheme;
-    }
-  } else {
-    const week = {
-      id: 'volunteer_' + Date.now(),
-      date,
-      location,
-      setupCleanup,
-      gospel,
-      kids,
-      it,
-      songs,
-      passageTheme,
-      createdAt: new Date().toISOString()
-    };
-    scheduleState.volunteerSchedule.push(week);
-  }
+  try {
+    if (scheduleState.editingId) {
+      // Update existing volunteer week in Firestore
+      await db.collection('schedule_volunteers').doc(scheduleState.editingId).update({
+        date,
+        location,
+        setupCleanup,
+        gospel,
+        kids,
+        it,
+        songs,
+        passageTheme
+      });
 
-  saveScheduleData();
-  scheduleState.showAddForm = false;
-  scheduleState.editingId = null;
-  renderScheduleContent();
+      // Update local state
+      const week = scheduleState.volunteerSchedule.find(w => w.id === scheduleState.editingId);
+      if (week) {
+        week.date = date;
+        week.location = location;
+        week.setupCleanup = setupCleanup;
+        week.gospel = gospel;
+        week.kids = kids;
+        week.it = it;
+        week.songs = songs;
+        week.passageTheme = passageTheme;
+      }
+    } else {
+      // Add new volunteer week to Firestore
+      const weekData = {
+        date,
+        location,
+        setupCleanup,
+        gospel,
+        kids,
+        it,
+        songs,
+        passageTheme,
+        createdAt: firebase.firestore.Timestamp.now()
+      };
+
+      const docRef = await db.collection('schedule_volunteers').add(weekData);
+
+      // Add to local state
+      scheduleState.volunteerSchedule.push({
+        id: docRef.id,
+        ...weekData,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    scheduleState.showAddForm = false;
+    scheduleState.editingId = null;
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error saving volunteer week:', error);
+    alert('Failed to save volunteer week. Please try again.');
+  }
 }
 
 function editVolunteerWeek(id) {
@@ -469,11 +555,20 @@ function editVolunteerWeek(id) {
   document.getElementById('volDate').focus();
 }
 
-function deleteVolunteerWeek(id) {
+async function deleteVolunteerWeek(id) {
   if (!confirm('Delete this week?')) return;
-  scheduleState.volunteerSchedule = scheduleState.volunteerSchedule.filter(w => w.id !== id);
-  saveScheduleData();
-  renderScheduleContent();
+
+  try {
+    // Delete from Firestore
+    await db.collection('schedule_volunteers').doc(id).delete();
+
+    // Remove from local state
+    scheduleState.volunteerSchedule = scheduleState.volunteerSchedule.filter(w => w.id !== id);
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error deleting volunteer week:', error);
+    alert('Failed to delete volunteer week. Please try again.');
+  }
 }
 
 /* ====================================
@@ -658,7 +753,7 @@ function renderOoSTab() {
           ${canEdit ? `
             <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
               <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editOoS('${currentOoS.id}')">✏️ Edit</button>
-              <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteOoS('${currentOoS.id}')">🗑️ Delete</button>
+              <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteOoS('${currentOoS.id}'))()">🗑️ Delete</button>
             </div>
           ` : ''}
         </div>
@@ -673,7 +768,7 @@ function renderOoSTab() {
               ${canEdit ? `
                 <div class="btn-group" style="margin-top:12px;">
                   <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="viewOoS('${oos.id}')">👁️ View</button>
-                  <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteOoS('${oos.id}')">🗑️ Delete</button>
+                  <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteOoS('${oos.id}'))()">🗑️ Delete</button>
                 </div>
               ` : ''}
             </div>
@@ -708,9 +803,9 @@ function initOoSTab() {
   }
 
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      saveOoS();
+      await saveOoS();
     });
   }
 }
@@ -743,7 +838,7 @@ function addOoSSongRow() {
   container.appendChild(row);
 }
 
-function saveOoS() {
+async function saveOoS() {
   const date = document.getElementById('oosDate').value;
   const venueName = document.getElementById('oosVenueName').value.trim();
   const venueUrl = document.getElementById('oosVenueUrl').value.trim();
@@ -778,33 +873,56 @@ function saveOoS() {
     items.splice(insertAt, 0, ...songs);
   }
 
-  if (scheduleState.editingId) {
-    const oos = scheduleState.orderOfService.find(o => o.id === scheduleState.editingId);
-    if (oos) {
-      oos.date = date;
-      oos.venueName = venueName;
-      oos.venueUrl = venueUrl;
-      oos.items = items;
-      oos.childrenSection = childrenSection;
-      oos.updatedAt = new Date().toISOString();
-    }
-  } else {
-    const oos = {
-      id: 'oos_' + Date.now(),
-      date,
-      venueName,
-      venueUrl,
-      items,
-      childrenSection,
-      createdAt: new Date().toISOString()
-    };
-    scheduleState.orderOfService.push(oos);
-  }
+  try {
+    if (scheduleState.editingId) {
+      // Update existing Order of Service in Firestore
+      await db.collection('order_of_service').doc(scheduleState.editingId).update({
+        date,
+        venueName,
+        venueUrl,
+        items,
+        childrenSection,
+        updatedAt: firebase.firestore.Timestamp.now()
+      });
 
-  saveScheduleData();
-  scheduleState.showAddForm = false;
-  scheduleState.editingId = null;
-  renderScheduleContent();
+      // Update local state
+      const oos = scheduleState.orderOfService.find(o => o.id === scheduleState.editingId);
+      if (oos) {
+        oos.date = date;
+        oos.venueName = venueName;
+        oos.venueUrl = venueUrl;
+        oos.items = items;
+        oos.childrenSection = childrenSection;
+        oos.updatedAt = new Date().toISOString();
+      }
+    } else {
+      // Add new Order of Service to Firestore
+      const oosData = {
+        date,
+        venueName,
+        venueUrl,
+        items,
+        childrenSection,
+        createdAt: firebase.firestore.Timestamp.now()
+      };
+
+      const docRef = await db.collection('order_of_service').add(oosData);
+
+      // Add to local state
+      scheduleState.orderOfService.push({
+        id: docRef.id,
+        ...oosData,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    scheduleState.showAddForm = false;
+    scheduleState.editingId = null;
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error saving Order of Service:', error);
+    alert('Failed to save Order of Service. Please try again.');
+  }
 }
 
 function editOoS(id) {
@@ -856,11 +974,20 @@ function editOoS(id) {
   document.getElementById('oosDate').focus();
 }
 
-function deleteOoS(id) {
+async function deleteOoS(id) {
   if (!confirm('Delete this Order of Service?')) return;
-  scheduleState.orderOfService = scheduleState.orderOfService.filter(o => o.id !== id);
-  saveScheduleData();
-  renderScheduleContent();
+
+  try {
+    // Delete from Firestore
+    await db.collection('order_of_service').doc(id).delete();
+
+    // Remove from local state
+    scheduleState.orderOfService = scheduleState.orderOfService.filter(o => o.id !== id);
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error deleting Order of Service:', error);
+    alert('Failed to delete Order of Service. Please try again.');
+  }
 }
 
 function viewOoS(id) {

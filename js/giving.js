@@ -10,17 +10,28 @@ let givingState = {
   editingId: null
 };
 
-// Load transactions from localStorage
-function loadTransactions() {
-  givingState.transactions = JSON.parse(localStorage.getItem('ccr_transactions') || '[]');
-
-  // Sort by date, newest first
-  givingState.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-}
-
-// Save transactions
-function saveTransactions() {
-  localStorage.setItem('ccr_transactions', JSON.stringify(givingState.transactions));
+// Load transactions from Firestore
+async function loadTransactions() {
+  try {
+    const snapshot = await db.collection('transactions').orderBy('date', 'desc').get();
+    givingState.transactions = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamp to ISO string
+        date: data.date instanceof firebase.firestore.Timestamp
+          ? data.date.toDate().toISOString().split('T')[0]
+          : data.date,
+        createdAt: data.createdAt instanceof firebase.firestore.Timestamp
+          ? data.createdAt.toDate().toISOString()
+          : data.createdAt
+      };
+    });
+  } catch (error) {
+    console.error('Error loading transactions:', error);
+    givingState.transactions = [];
+  }
 }
 
 // Calculate totals
@@ -78,8 +89,8 @@ function getTotalAllocation() {
 }
 
 // Render Giving page
-function renderGivingPage() {
-  loadTransactions();
+async function renderGivingPage() {
+  await loadTransactions();
   const totals = calculateTotals();
   const totalAllocation = getTotalAllocation();
 
@@ -224,15 +235,15 @@ function renderGivingPage() {
 }
 
 // Initialize Giving page
-function initGivingPage() {
-  loadTransactions();
+async function initGivingPage() {
+  await loadTransactions();
 
   // Tab switching
   document.querySelectorAll('button[data-tab]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       currentGivingTab = btn.dataset.tab;
-      document.getElementById('app').innerHTML = renderGivingPage();
-      initGivingPage();
+      document.getElementById('app').innerHTML = await renderGivingPage();
+      await initGivingPage();
     });
   });
 
@@ -262,47 +273,49 @@ function initGivingPage() {
   // Form submit
   const form = document.getElementById('transactionFormElement');
   if (form) {
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      saveTransaction();
+      await saveTransaction();
     });
   }
 }
 
 // Save transaction
-function saveTransaction() {
-  const date = document.getElementById('transDate').value;
-  const description = document.getElementById('transDesc').value.trim();
-  const category = document.getElementById('transCategory').value;
-  const amount = parseFloat(document.getElementById('transAmount').value);
+async function saveTransaction() {
+  try {
+    const date = document.getElementById('transDate').value;
+    const description = document.getElementById('transDesc').value.trim();
+    const category = document.getElementById('transCategory').value;
+    const amount = parseFloat(document.getElementById('transAmount').value);
 
-  if (givingState.editingId) {
-    // Edit existing
-    const trans = givingState.transactions.find(t => t.id === givingState.editingId);
-    if (trans) {
-      trans.date = date;
-      trans.description = description;
-      trans.category = category;
-      trans.amount = amount;
+    if (givingState.editingId) {
+      // Edit existing
+      await db.collection('transactions').doc(givingState.editingId).update({
+        date,
+        description,
+        category,
+        amount,
+        updatedAt: firebase.firestore.Timestamp.now()
+      });
+    } else {
+      // Add new
+      await db.collection('transactions').add({
+        date,
+        description,
+        category,
+        amount,
+        createdAt: firebase.firestore.Timestamp.now()
+      });
     }
-  } else {
-    // Add new
-    const transaction = {
-      id: 'trans_' + Date.now(),
-      date,
-      description,
-      category,
-      amount,
-      createdAt: new Date().toISOString()
-    };
-    givingState.transactions.unshift(transaction);
-  }
 
-  saveTransactions();
-  givingState.showAddForm = false;
-  givingState.editingId = null;
-  document.getElementById('app').innerHTML = renderGivingPage();
-  initGivingPage();
+    givingState.showAddForm = false;
+    givingState.editingId = null;
+    document.getElementById('app').innerHTML = await renderGivingPage();
+    await initGivingPage();
+  } catch (error) {
+    console.error('Error saving transaction:', error);
+    alert('Error saving transaction. Please try again.');
+  }
 }
 
 // Edit transaction
@@ -322,11 +335,15 @@ function editTransaction(id) {
 }
 
 // Delete transaction
-function deleteTransaction(id) {
+async function deleteTransaction(id) {
   if (!confirm('Delete this transaction?')) return;
 
-  givingState.transactions = givingState.transactions.filter(t => t.id !== id);
-  saveTransactions();
-  document.getElementById('app').innerHTML = renderGivingPage();
-  initGivingPage();
+  try {
+    await db.collection('transactions').doc(id).delete();
+    document.getElementById('app').innerHTML = await renderGivingPage();
+    await initGivingPage();
+  } catch (error) {
+    console.error('Error deleting transaction:', error);
+    alert('Error deleting transaction. Please try again.');
+  }
 }

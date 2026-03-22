@@ -84,8 +84,8 @@ function renderSermonsPage() {
   `;
 }
 
-function initSermonsPage() {
-  loadSermons();
+async function initSermonsPage() {
+  await loadSermons();
   renderSermons();
 
   const uploadBtn = document.getElementById('uploadSermonBtn');
@@ -125,58 +125,74 @@ function initSermonsPage() {
 
   const form = document.getElementById('sermonForm');
   if (form) {
-    form.addEventListener('submit', handleSermonUpload);
+    form.addEventListener('submit', async (e) => {
+      await handleSermonUpload(e);
+    });
   }
 }
 
-function loadSermons() {
-  sermonsState.sermons = JSON.parse(localStorage.getItem('ccr_sermons') || '[]');
-
-  // Sort by date, newest first
-  sermonsState.sermons.sort((a, b) => new Date(b.date) - new Date(a.date));
+async function loadSermons() {
+  try {
+    const snapshot = await db.collection('sermons').orderBy('date', 'desc').get();
+    sermonsState.sermons = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamp to ISO string
+        date: data.date instanceof firebase.firestore.Timestamp
+          ? data.date.toDate().toISOString().split('T')[0]
+          : data.date,
+        createdAt: data.createdAt instanceof firebase.firestore.Timestamp
+          ? data.createdAt.toDate().toISOString()
+          : data.createdAt
+      };
+    });
+  } catch (error) {
+    console.error('Error loading sermons:', error);
+    sermonsState.sermons = [];
+  }
 }
 
-function saveSermons() {
-  localStorage.setItem('ccr_sermons', JSON.stringify(sermonsState.sermons));
-}
-
-function handleSermonUpload(e) {
+async function handleSermonUpload(e) {
   e.preventDefault();
 
-  const title = document.getElementById('sermonTitle').value.trim();
-  const speaker = document.getElementById('sermonSpeaker').value.trim();
-  const date = document.getElementById('sermonDate').value;
-  const duration = document.getElementById('sermonDuration').value.trim();
-  const scripture = document.getElementById('sermonScripture').value.trim();
-  const description = document.getElementById('sermonDescription').value.trim();
-  const audioFile = document.getElementById('sermonAudioFile').files[0];
-  const user = getCurrentUser();
+  try {
+    const title = document.getElementById('sermonTitle').value.trim();
+    const speaker = document.getElementById('sermonSpeaker').value.trim();
+    const date = document.getElementById('sermonDate').value;
+    const duration = document.getElementById('sermonDuration').value.trim();
+    const scripture = document.getElementById('sermonScripture').value.trim();
+    const description = document.getElementById('sermonDescription').value.trim();
+    const audioFile = document.getElementById('sermonAudioFile').files[0];
+    const user = getCurrentUser();
 
-  // Mock audio URL (in production, this would be Firebase Storage URL)
-  const mockAudioUrl = audioFile ? `https://storage.firebase.app/sermons/${audioFile.name}` : '';
+    // Mock audio URL (in production, this would be Firebase Storage URL)
+    const mockAudioUrl = audioFile ? `https://storage.firebase.app/sermons/${audioFile.name}` : '';
 
-  const sermon = {
-    id: 'sermon_' + Date.now(),
-    title,
-    speaker,
-    date,
-    duration: duration || 'Unknown',
-    scriptureRef: scripture,
-    description,
-    audioUrl: mockAudioUrl,
-    audioFileName: audioFile ? audioFile.name : '',
-    uploadedBy: user.uid,
-    uploaderName: user.name,
-    createdAt: new Date().toISOString()
-  };
+    await db.collection('sermons').add({
+      title,
+      speaker,
+      date,
+      duration: duration || 'Unknown',
+      scriptureRef: scripture,
+      description,
+      audioUrl: mockAudioUrl,
+      audioFileName: audioFile ? audioFile.name : '',
+      uploadedBy: user.uid,
+      uploaderName: user.name,
+      createdAt: firebase.firestore.Timestamp.now()
+    });
 
-  sermonsState.sermons.unshift(sermon);
-  saveSermons();
-
-  sermonsState.showUploadForm = false;
-  document.getElementById('sermonUploadForm').style.display = 'none';
-  document.getElementById('sermonForm').reset();
-  renderSermons();
+    sermonsState.showUploadForm = false;
+    document.getElementById('sermonUploadForm').style.display = 'none';
+    document.getElementById('sermonForm').reset();
+    await loadSermons();
+    renderSermons();
+  } catch (error) {
+    console.error('Error uploading sermon:', error);
+    alert('Error uploading sermon. Please try again.');
+  }
 }
 
 function renderSermons() {
@@ -293,35 +309,48 @@ function downloadSermon(id) {
   alert(`Download functionality:\n\nIn production, this would download the audio file from:\n${sermon.audioUrl}\n\nFile: ${sermon.audioFileName}`);
 }
 
-function editSermon(id) {
-  const sermon = sermonsState.sermons.find(s => s.id === id);
-  if (!sermon) return;
+async function editSermon(id) {
+  try {
+    const sermon = sermonsState.sermons.find(s => s.id === id);
+    if (!sermon) return;
 
-  const title = prompt('Title:', sermon.title);
-  if (title === null) return;
+    const title = prompt('Title:', sermon.title);
+    if (title === null) return;
 
-  const speaker = prompt('Speaker:', sermon.speaker);
-  if (speaker === null) return;
+    const speaker = prompt('Speaker:', sermon.speaker);
+    if (speaker === null) return;
 
-  const scripture = prompt('Scripture reference:', sermon.scriptureRef);
-  if (scripture === null) return;
+    const scripture = prompt('Scripture reference:', sermon.scriptureRef);
+    if (scripture === null) return;
 
-  const description = prompt('Description:', sermon.description);
-  if (description === null) return;
+    const description = prompt('Description:', sermon.description);
+    if (description === null) return;
 
-  sermon.title = title.trim();
-  sermon.speaker = speaker.trim();
-  sermon.scriptureRef = scripture.trim();
-  sermon.description = description.trim();
+    await db.collection('sermons').doc(id).update({
+      title: title.trim(),
+      speaker: speaker.trim(),
+      scriptureRef: scripture.trim(),
+      description: description.trim(),
+      updatedAt: firebase.firestore.Timestamp.now()
+    });
 
-  saveSermons();
-  renderSermons();
+    await loadSermons();
+    renderSermons();
+  } catch (error) {
+    console.error('Error editing sermon:', error);
+    alert('Error editing sermon. Please try again.');
+  }
 }
 
-function deleteSermon(id) {
+async function deleteSermon(id) {
   if (!confirm('Delete this sermon? This cannot be undone.')) return;
 
-  sermonsState.sermons = sermonsState.sermons.filter(s => s.id !== id);
-  saveSermons();
-  renderSermons();
+  try {
+    await db.collection('sermons').doc(id).delete();
+    await loadSermons();
+    renderSermons();
+  } catch (error) {
+    console.error('Error deleting sermon:', error);
+    alert('Error deleting sermon. Please try again.');
+  }
 }

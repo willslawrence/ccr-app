@@ -109,16 +109,14 @@ function setupSignOut() {
   });
 }
 
-function signOut() {
-  // Clear user data
-  localStorage.removeItem('ccr_user');
-
-  // Reset app state
-  AppState.currentUser = null;
-  AppState.currentPage = 'login';
-
-  // Navigate to login
-  render();
+async function signOut() {
+  try {
+    await firebase.auth().signOut();
+    // Firebase auth state listener will handle the rest
+  } catch (error) {
+    console.error('Sign out error:', error);
+    alert('Failed to sign out. Please try again.');
+  }
 }
 
 /* ====================================

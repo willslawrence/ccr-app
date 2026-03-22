@@ -81,19 +81,33 @@ const OT_CHAPTERS = OT_BOOKS.reduce((s, b) => s + b.chapters, 0);
 const NT_CHAPTERS = NT_BOOKS.reduce((s, b) => s + b.chapters, 0);
 const TOTAL_CHAPTERS = OT_CHAPTERS + NT_CHAPTERS;
 
-// Get user data key
-function getBibleDataKey() {
+// Load Bible progress from Firestore
+async function loadBibleProgress() {
   const user = getCurrentUser();
-  return user ? `bible_data_${user.id}` : 'bible_data_mock';
-}
-
-// Load Bible progress from localStorage
-function loadBibleProgress() {
-  const key = getBibleDataKey();
-  const data = localStorage.getItem(key);
-  if (data) {
-    return JSON.parse(data);
+  if (!user) {
+    return {
+      chaptersRead: {},
+      streak: { current: 0, best: 0, lastRead: null },
+      stats: { totalChapters: 0, booksCompleted: 0 }
+    };
   }
+
+  try {
+    const doc = await db.collection('users').doc(user.uid)
+      .collection('bibleProgress').doc('data').get();
+
+    if (doc.exists) {
+      const data = doc.data();
+      // Convert Firestore Timestamp to string if needed
+      if (data.streak && data.streak.lastRead?.toDate) {
+        data.streak.lastRead = data.streak.lastRead.toDate().toDateString();
+      }
+      return data;
+    }
+  } catch (error) {
+    console.error('Error loading Bible progress:', error);
+  }
+
   return {
     chaptersRead: {},
     streak: { current: 0, best: 0, lastRead: null },
@@ -101,15 +115,22 @@ function loadBibleProgress() {
   };
 }
 
-// Save Bible progress
-function saveBibleProgress(data) {
-  const key = getBibleDataKey();
-  localStorage.setItem(key, JSON.stringify(data));
+// Save Bible progress to Firestore
+async function saveBibleProgress(data) {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  try {
+    await db.collection('users').doc(user.uid)
+      .collection('bibleProgress').doc('data').set(data);
+  } catch (error) {
+    console.error('Error saving Bible progress:', error);
+  }
 }
 
 // Toggle chapter read status
-function toggleChapter(bookAbbr, chapterNum) {
-  const data = loadBibleProgress();
+async function toggleChapter(bookAbbr, chapterNum) {
+  const data = await loadBibleProgress();
 
   if (!data.chaptersRead[bookAbbr]) {
     data.chaptersRead[bookAbbr] = [];
@@ -145,7 +166,7 @@ function toggleChapter(bookAbbr, chapterNum) {
     return read.length === book.chapters;
   }).length;
 
-  saveBibleProgress(data);
+  await saveBibleProgress(data);
 
   // Re-render just the stats and the toggled button instead of full page
   updateBibleStats(data);
@@ -201,8 +222,8 @@ function updateBibleStats(data) {
   if (sStreak) sStreak.textContent = data.streak.current || '—';
 }
 
-function getBookProgress(bookAbbr) {
-  const data = loadBibleProgress();
+async function getBookProgress(bookAbbr) {
+  const data = await loadBibleProgress();
   const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
   const read = data.chaptersRead[bookAbbr] || [];
   return {
@@ -240,8 +261,8 @@ function renderBooksList(books, data) {
 }
 
 // Render Bible page
-function renderBiblePage() {
-  const data = loadBibleProgress();
+async function renderBiblePage() {
+  const data = await loadBibleProgress();
   const overallPercent = Math.round((data.stats.totalChapters / TOTAL_CHAPTERS) * 100);
   const otRead = OT_BOOKS.reduce((s, b) => s + (data.chaptersRead[b.abbr] || []).length, 0);
   const ntRead = NT_BOOKS.reduce((s, b) => s + (data.chaptersRead[b.abbr] || []).length, 0);

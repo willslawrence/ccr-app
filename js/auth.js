@@ -1,5 +1,5 @@
 /* ====================================
-   AUTHENTICATION (Mock for now)
+   AUTHENTICATION with Firebase Auth
    ==================================== */
 
 function renderLoginPage() {
@@ -74,87 +74,68 @@ function initLoginPage() {
   });
 
   // Login form submit
-  loginForm.addEventListener('submit', (e) => {
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
     const errorEl = document.getElementById('loginError');
 
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('ccr_users') || '[]');
-    const user = users.find(u => u.email === email);
-
-    if (!user) {
-      errorEl.textContent = 'No account found with this email.';
+    try {
+      await firebase.auth().signInWithEmailAndPassword(email, password);
+      // Auth state change will handle navigation
+    } catch (error) {
+      console.error('Login error:', error);
+      errorEl.textContent = error.message || 'Login failed. Please try again.';
       errorEl.style.display = 'block';
-      return;
     }
-
-    if (user.password !== password) {
-      errorEl.textContent = 'Incorrect password.';
-      errorEl.style.display = 'block';
-      return;
-    }
-
-    // Login successful
-    const userSession = {
-      uid: user.uid,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    };
-
-    AppState.currentUser = userSession;
-    localStorage.setItem('ccr_user', JSON.stringify(userSession));
-    navigateTo('prayer');
   });
 
   // Signup form submit
-  signupFormElement.addEventListener('submit', (e) => {
+  signupFormElement.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('signupName').value;
+    const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPassword').value;
     const errorEl = document.getElementById('signupError');
 
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem('ccr_users') || '[]');
+    try {
+      // Check if this is the first user (admin)
+      const usersSnapshot = await db.collection('users').limit(1).get();
+      const isFirstUser = usersSnapshot.empty;
+      const role = isFirstUser ? 'admin' : 'member';
 
-    // Check if email already exists
-    if (users.find(u => u.email === email)) {
-      errorEl.textContent = 'An account with this email already exists.';
+      // Create Firebase Auth account
+      const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+
+      // Update Firebase Auth profile with displayName
+      await user.updateProfile({ displayName: name });
+
+      // Create Firestore user document
+      await db.collection('users').doc(user.uid).set({
+        name: name,
+        email: email,
+        role: role,
+        createdAt: firebase.firestore.Timestamp.now()
+      });
+
+      console.log('User created:', user.uid, 'Role:', role);
+      // Auth state change will handle navigation
+    } catch (error) {
+      console.error('Signup error:', error);
+      errorEl.textContent = error.message || 'Signup failed. Please try again.';
       errorEl.style.display = 'block';
-      return;
     }
-
-    // Create new user
-    const newUser = {
-      uid: 'user_' + Date.now(),
-      name,
-      email,
-      password,
-      role: users.length === 0 ? 'admin' : 'member' // First user is admin
-    };
-
-    users.push(newUser);
-    localStorage.setItem('ccr_users', JSON.stringify(users));
-
-    // Auto-login
-    const userSession = {
-      uid: newUser.uid,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role
-    };
-
-    AppState.currentUser = userSession;
-    localStorage.setItem('ccr_user', JSON.stringify(userSession));
-    navigateTo('prayer');
   });
 }
 
-function logout() {
-  AppState.currentUser = null;
-  localStorage.removeItem('ccr_user');
-  navigateTo('login');
+async function logout() {
+  try {
+    await firebase.auth().signOut();
+    AppState.currentUser = null;
+    navigateTo('login');
+  } catch (error) {
+    console.error('Logout error:', error);
+    alert('Failed to sign out. Please try again.');
+  }
 }
