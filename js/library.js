@@ -324,17 +324,26 @@ function renderCheckoutLogs() {
     `;
   }
 
-  // Sort: active first (reading, requested), then returned
-  const sorted = [...logs].sort((a, b) => {
-    const order = { reading: 0, requested: 1, returned: 2 };
-    const sa = order[a.status] ?? 1;
-    const sb = order[b.status] ?? 1;
-    if (sa !== sb) return sa - sb;
-    // Within same status, most recent first
-    return (b.startDate || '').localeCompare(a.startDate || '');
-  });
+  // Split into active and completed
+  const active = logs.filter(l => l.status === 'reading' || l.status === 'requested')
+    .sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
+  const completed = logs.filter(l => l.status === 'returned')
+    .sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
 
-  return `<div class="checkout-log-cards">${sorted.map(log => renderCheckoutCard(log)).join('')}</div>`;
+  let html = '<div class="checkout-log-cards">';
+
+  if (active.length > 0) {
+    html += `<h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text);">📖 Currently Checked Out</h3>`;
+    html += active.map(log => renderCheckoutCard(log)).join('');
+  }
+
+  if (completed.length > 0) {
+    html += `<h3 style="font-size:14px;font-weight:600;margin:${active.length > 0 ? '24px' : '0'} 0 12px;color:var(--muted);">✅ Completed</h3>`;
+    html += completed.map(log => renderCheckoutCard(log)).join('');
+  }
+
+  html += '</div>';
+  return html;
 }
 
 function renderCheckoutCard(log) {
