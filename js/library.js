@@ -451,11 +451,13 @@ function openBookModal(idx) {
           <label class="form-label">Your Name</label>
           <input type="text" class="form-input" id="bookModalCheckoutName" placeholder="Enter your name...">
         </div>
-        <div class="form-group">
-          <label class="form-label">Due Back Date</label>
-          <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}">
+        <div style="display:flex;gap:8px;align-items:flex-end;">
+          <div class="form-group" style="flex:1;margin-bottom:0;">
+            <label class="form-label">Due Back</label>
+            <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}" style="min-height:40px;">
+          </div>
+          <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="min-height:40px;white-space:nowrap;padding:8px 16px;">📤 Check Out</button>
         </div>
-        <button class="btn btn-primary" style="width:100%;" id="bookModalCheckoutBtn" data-book-idx="${idx}">📤 Check Out</button>
         <p style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">Please coordinate with the owner to get the book. Update the site when you return it.</p>
       </div>
       <div class="book-modal-msg" id="bookModalMsg"></div>`;
