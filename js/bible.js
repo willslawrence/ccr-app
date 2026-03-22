@@ -81,8 +81,17 @@ const OT_CHAPTERS = OT_BOOKS.reduce((s, b) => s + b.chapters, 0);
 const NT_CHAPTERS = NT_BOOKS.reduce((s, b) => s + b.chapters, 0);
 const TOTAL_CHAPTERS = OT_CHAPTERS + NT_CHAPTERS;
 
-// Load Bible progress from Firestore
+// ====================================
+// IN-MEMORY CACHE + DEBOUNCED SAVE
+// ====================================
+let _bibleCache = null;
+let _bibleSaveTimer = null;
+let _bibleSaving = false;
+
+// Load Bible progress from Firestore (or cache)
 async function loadBibleProgress() {
+  if (_bibleCache) return _bibleCache;
+
   const user = getCurrentUser();
   if (!user) {
     return {
@@ -98,25 +107,48 @@ async function loadBibleProgress() {
 
     if (doc.exists) {
       const data = doc.data();
-      // Convert Firestore Timestamp to string if needed
       if (data.streak && data.streak.lastRead?.toDate) {
         data.streak.lastRead = data.streak.lastRead.toDate().toDateString();
       }
+      _bibleCache = data;
       return data;
     }
   } catch (error) {
     console.error('Error loading Bible progress:', error);
   }
 
-  return {
+  _bibleCache = {
     chaptersRead: {},
     streak: { current: 0, best: 0, lastRead: null },
     stats: { totalChapters: 0, booksCompleted: 0 }
   };
+  return _bibleCache;
 }
 
-// Save Bible progress to Firestore
+// Debounced save — waits 500ms after last change before writing to Firestore
+function scheduleBibleSave() {
+  if (_bibleSaveTimer) clearTimeout(_bibleSaveTimer);
+  _bibleSaveTimer = setTimeout(() => flushBibleSave(), 500);
+}
+
+async function flushBibleSave() {
+  if (!_bibleCache || _bibleSaving) return;
+  const user = getCurrentUser();
+  if (!user) return;
+
+  _bibleSaving = true;
+  try {
+    await db.collection('users').doc(user.uid)
+      .collection('bibleProgress').doc('data').set(_bibleCache);
+  } catch (error) {
+    console.error('Error saving Bible progress:', error);
+  }
+  _bibleSaving = false;
+}
+
+// Save Bible progress (immediate for explicit saves)
 async function saveBibleProgress(data) {
+  _bibleCache = data;
   const user = getCurrentUser();
   if (!user) return;
 
@@ -128,9 +160,37 @@ async function saveBibleProgress(data) {
   }
 }
 
-// Toggle chapter read status
-async function toggleChapter(bookAbbr, chapterNum) {
-  const data = await loadBibleProgress();
+// Update streak helper
+function updateStreak(data) {
+  const today = new Date().toDateString();
+  if (data.streak.lastRead !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (data.streak.lastRead === yesterday.toDateString()) {
+      data.streak.current++;
+    } else {
+      data.streak.current = 1;
+    }
+    data.streak.lastRead = today;
+    if (data.streak.current > data.streak.best) {
+      data.streak.best = data.streak.current;
+    }
+  }
+}
+
+// Recompute stats helper
+function recomputeBibleStats(data) {
+  data.stats.totalChapters = Object.values(data.chaptersRead).flat().length;
+  data.stats.booksCompleted = BIBLE_BOOKS.filter(book => {
+    const read = data.chaptersRead[book.abbr] || [];
+    return read.length === book.chapters;
+  }).length;
+}
+
+// Toggle chapter read status — instant UI, debounced save
+function toggleChapter(bookAbbr, chapterNum) {
+  if (!_bibleCache) return;
+  const data = _bibleCache;
 
   if (!data.chaptersRead[bookAbbr]) {
     data.chaptersRead[bookAbbr] = [];
@@ -141,40 +201,54 @@ async function toggleChapter(bookAbbr, chapterNum) {
     data.chaptersRead[bookAbbr].splice(index, 1);
   } else {
     data.chaptersRead[bookAbbr].push(chapterNum);
-
-    const today = new Date().toDateString();
-    if (data.streak.lastRead !== today) {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      if (data.streak.lastRead === yesterday.toDateString()) {
-        data.streak.current++;
-      } else {
-        data.streak.current = 1;
-      }
-
-      data.streak.lastRead = today;
-      if (data.streak.current > data.streak.best) {
-        data.streak.best = data.streak.current;
-      }
-    }
+    updateStreak(data);
   }
 
-  data.stats.totalChapters = Object.values(data.chaptersRead).flat().length;
-  data.stats.booksCompleted = BIBLE_BOOKS.filter(book => {
-    const read = data.chaptersRead[book.abbr] || [];
-    return read.length === book.chapters;
-  }).length;
+  recomputeBibleStats(data);
+  scheduleBibleSave();
 
-  await saveBibleProgress(data);
-
-  // Re-render just the stats and the toggled button instead of full page
-  updateBibleStats(data);
+  // Instant UI update
   const btn = document.querySelector(`.chapter-btn[data-book="${bookAbbr}"][data-chapter="${chapterNum}"]`);
   if (btn) btn.classList.toggle('read');
+  updateBookCard(bookAbbr, data);
+  updateBibleStats(data);
+}
 
-  // Update book progress bar
+// Mark entire book as read/unread
+function toggleWholeBook(bookAbbr) {
+  if (!_bibleCache) return;
+  const data = _bibleCache;
   const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
+  if (!book) return;
+
+  const currentRead = data.chaptersRead[bookAbbr] || [];
+  const allRead = currentRead.length === book.chapters;
+
+  if (allRead) {
+    // Unmark all
+    data.chaptersRead[bookAbbr] = [];
+  } else {
+    // Mark all chapters as read
+    data.chaptersRead[bookAbbr] = Array.from({length: book.chapters}, (_, i) => i + 1);
+    updateStreak(data);
+  }
+
+  recomputeBibleStats(data);
+  scheduleBibleSave();
+
+  // Update all chapter buttons for this book
+  document.querySelectorAll(`.chapter-btn[data-book="${bookAbbr}"]`).forEach(btn => {
+    const ch = parseInt(btn.dataset.chapter);
+    btn.classList.toggle('read', data.chaptersRead[bookAbbr].includes(ch));
+  });
+  updateBookCard(bookAbbr, data);
+  updateBibleStats(data);
+}
+
+// Update a single book card's progress display
+function updateBookCard(bookAbbr, data) {
+  const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
+  if (!book) return;
   const read = (data.chaptersRead[bookAbbr] || []).length;
   const pct = Math.round((read / book.chapters) * 100);
   const card = document.querySelector(`.book-card[data-book="${bookAbbr}"]`);
@@ -184,6 +258,137 @@ async function toggleChapter(bookAbbr, chapterNum) {
     if (fill) fill.style.width = pct + '%';
     card.classList.toggle('completed', pct === 100);
   }
+}
+
+// ====================================
+// TOUCH-DRAG CHAPTER SELECTION
+// ====================================
+let _dragState = null;
+
+function initChapterDragSelection() {
+  const container = document.querySelector('.bible-page');
+  if (!container) return;
+
+  container.addEventListener('touchstart', (e) => {
+    const btn = e.target.closest('.chapter-btn');
+    if (!btn) return;
+
+    const bookAbbr = btn.dataset.book;
+    const chapter = parseInt(btn.dataset.chapter);
+    // Determine mode: if chapter is unread, we're marking as read. If read, unmarking.
+    const isRead = btn.classList.contains('read');
+
+    _dragState = {
+      bookAbbr,
+      markAsRead: !isRead,
+      touchedChapters: new Set([chapter])
+    };
+
+    // Toggle this chapter
+    applyDragChapter(bookAbbr, chapter, !isRead);
+  }, { passive: true });
+
+  container.addEventListener('touchmove', (e) => {
+    if (!_dragState) return;
+
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!el) return;
+
+    const btn = el.closest('.chapter-btn');
+    if (!btn || btn.dataset.book !== _dragState.bookAbbr) return;
+
+    const chapter = parseInt(btn.dataset.chapter);
+    if (_dragState.touchedChapters.has(chapter)) return;
+
+    _dragState.touchedChapters.add(chapter);
+    applyDragChapter(_dragState.bookAbbr, chapter, _dragState.markAsRead);
+  }, { passive: true });
+
+  container.addEventListener('touchend', () => {
+    if (_dragState) {
+      // Final save after drag
+      recomputeBibleStats(_bibleCache);
+      scheduleBibleSave();
+      updateBookCard(_dragState.bookAbbr, _bibleCache);
+      updateBibleStats(_bibleCache);
+      _dragState = null;
+    }
+  });
+}
+
+function applyDragChapter(bookAbbr, chapterNum, markAsRead) {
+  if (!_bibleCache) return;
+  const data = _bibleCache;
+
+  if (!data.chaptersRead[bookAbbr]) {
+    data.chaptersRead[bookAbbr] = [];
+  }
+
+  const index = data.chaptersRead[bookAbbr].indexOf(chapterNum);
+
+  if (markAsRead && index === -1) {
+    data.chaptersRead[bookAbbr].push(chapterNum);
+    updateStreak(data);
+  } else if (!markAsRead && index > -1) {
+    data.chaptersRead[bookAbbr].splice(index, 1);
+  }
+
+  // Instant UI
+  const btn = document.querySelector(`.chapter-btn[data-book="${bookAbbr}"][data-chapter="${chapterNum}"]`);
+  if (btn) btn.classList.toggle('read', markAsRead);
+}
+
+// ====================================
+// SWIPE BOOK CARD TO COMPLETE
+// ====================================
+function initBookSwipeHandlers() {
+  document.querySelectorAll('.book-card').forEach(card => {
+    const bookAbbr = card.dataset.book;
+    let startX = 0;
+    let currentX = 0;
+    let swiping = false;
+
+    card.addEventListener('touchstart', (e) => {
+      // Only start swipe from the header area, not chapter buttons
+      if (e.target.closest('.chapter-btn')) return;
+      startX = e.touches[0].clientX;
+      currentX = startX;
+      swiping = true;
+    }, { passive: true });
+
+    card.addEventListener('touchmove', (e) => {
+      if (!swiping) return;
+      currentX = e.touches[0].clientX;
+      const delta = currentX - startX;
+      if (delta < 0) return; // only right swipe
+
+      // Visual feedback
+      if (delta > 20) {
+        const progress = Math.min(delta / 100, 1);
+        card.style.transform = `translateX(${Math.min(delta, 80)}px)`;
+        card.style.opacity = 1 - (progress * 0.3);
+      }
+    }, { passive: true });
+
+    card.addEventListener('touchend', () => {
+      if (!swiping) return;
+      swiping = false;
+
+      const delta = currentX - startX;
+      card.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+      card.style.transform = 'translateX(0)';
+      card.style.opacity = '1';
+
+      setTimeout(() => {
+        card.style.transition = '';
+      }, 300);
+
+      if (delta > 80) {
+        toggleWholeBook(bookAbbr);
+      }
+    });
+  });
 }
 
 function updateBibleStats(data) {
@@ -381,15 +586,23 @@ function scrollToTestament(testament) {
 
 // Initialize Bible page
 function initBiblePage() {
-  // Chapter button clicks
+  // Chapter button clicks (for non-touch / single taps)
   document.querySelectorAll('.chapter-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
+      // Skip if drag handler already processed this
+      if (_dragState) return;
       const bookAbbr = btn.dataset.book;
       const chapterNum = parseInt(btn.dataset.chapter);
       toggleChapter(bookAbbr, chapterNum);
     });
   });
+
+  // Touch-drag chapter selection
+  initChapterDragSelection();
+
+  // Swipe book card right to mark complete
+  initBookSwipeHandlers();
 
   // Position tab bar below sticky summary
   const summary = document.querySelector('.bible-summary');
