@@ -279,17 +279,20 @@ function renderBulletinDisplay() {
 
   empty.style.display = 'none';
 
+  // Find the first published bulletin to mark as "Latest"
+  const latestPublishedId = bulletins.find(b => b.published)?.id;
+
   display.innerHTML = bulletins.map((bulletin, idx) => {
-    const isRecent = idx === 0;
+    const isLatest = bulletin.published && bulletin.id === latestPublishedId;
 
     return `
-      <div class="card" style="margin-bottom:20px;${isRecent ? 'border:2px solid var(--accent);' : ''}">
+      <div class="card" style="margin-bottom:20px;${isLatest ? 'border:2px solid var(--accent);' : ''}${!bulletin.published ? 'border:1px dashed var(--muted);opacity:0.8;' : ''}">
         <div class="card-header">
           <div style="flex:1;">
             <div class="card-title">${formatDate(bulletin.date)}</div>
             <div class="card-meta">
-              ${!bulletin.published ? '<span class="badge" style="background:var(--muted);">Draft</span>' : ''}
-              ${isRecent && bulletin.published ? '<span class="badge" style="background:var(--accent);color:white;">Latest</span>' : ''}
+              ${!bulletin.published ? '<span class="badge" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);font-size:11px;padding:3px 10px;">📝 Draft</span>' : ''}
+              ${isLatest ? '<span class="badge" style="background:var(--accent);color:white;font-size:11px;padding:3px 10px;">Latest</span>' : ''}
             </div>
           </div>
         </div>
