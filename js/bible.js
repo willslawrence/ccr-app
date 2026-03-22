@@ -397,17 +397,39 @@ function updateBibleStats(data) {
 
 // Calculate genre stats
 function calculateGenreStats(data) {
+  // Create mapping from BIBLE_GENRES names to BIBLE_BOOKS genre field
+  const genreMapping = {
+    'Pentateuch': ['Law'],
+    'History': ['History'],
+    'Poetry & Wisdom': ['Wisdom'],
+    'Major Prophets': ['Major Prophets'],
+    'Minor Prophets': ['Minor Prophets'],
+    'Gospels & Acts': ['Gospels', 'History'], // Acts is in History genre
+    "Paul's Letters": ["Paul's Letters"],
+    'General Epistles': ['General Letters'],
+    'Revelation': ['Prophecy']
+  };
+  
   return BIBLE_GENRES.map(genre => {
     let totalChapters = 0;
     let readChapters = 0;
     
-    genre.books.forEach(bookName => {
-      const book = BIBLE_BOOKS.find(b => b.name === bookName);
-      if (book) {
-        totalChapters += book.chapters;
-        const readInBook = (data.chaptersRead[book.abbr] || []).length;
-        readChapters += readInBook;
+    // Find books by genre mapping or by explicit book name
+    const relevantGenres = genreMapping[genre.name] || [];
+    
+    // Filter books by genre or by name
+    const booksInGenre = BIBLE_BOOKS.filter(book => {
+      // For Gospels & Acts, we need special handling since Acts is in History but should count as Gospels & Acts
+      if (genre.name === 'Gospels & Acts') {
+        return book.genre === 'Gospels' || book.name === 'Acts';
       }
+      return relevantGenres.includes(book.genre);
+    });
+    
+    booksInGenre.forEach(book => {
+      totalChapters += book.chapters;
+      const readInBook = (data.chaptersRead[book.abbr] || []).length;
+      readChapters += readInBook;
     });
     
     const percentage = totalChapters > 0 ? Math.round((readChapters / totalChapters) * 100) : 0;

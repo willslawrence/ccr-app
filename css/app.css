@@ -2354,3 +2354,165 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.2); }
 }
+
+/* ====================================
+   BIBLE PAGE - COMPACT LAYOUT
+   ==================================== */
+
+.bible-stats-compact {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--card);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.main-progress {
+  flex-shrink: 0;
+}
+
+.testament-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.testament-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75em;
+}
+
+.testament-label {
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 24px;
+}
+
+.testament-numbers {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.quick-stats {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.quick-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 45px;
+}
+
+.stat-number {
+  font-size: 1.1em;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.6em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.bible-nav-buttons {
+  margin-bottom: 16px;
+}
+
+.bible-nav-buttons .btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.genre-stats-panel {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.genre-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.genre-row:last-child {
+  margin-bottom: 0;
+}
+
+.genre-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.genre-name {
+  font-weight: 600;
+  font-size: 0.8em;
+}
+
+.genre-numbers {
+  font-size: 0.75em;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.genre-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.genre-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .bible-stats-compact {
+    gap: 12px;
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .testament-stats {
+    order: 1;
+    flex-direction: row;
+    justify-content: space-around;
+    min-width: 0;
+  }
+  
+  .quick-stats {
+    order: 2;
+    justify-content: space-around;
+    gap: 8px;
+  }
+  
+  .main-progress {
+    order: 0;
+    align-self: center;
+  }
+}
