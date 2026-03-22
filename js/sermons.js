@@ -61,7 +61,7 @@ function renderSermonsPage() {
             </div>
             <div class="form-group">
               <label class="form-label">Audio File *</label>
-              <input type="file" class="form-input" id="sermonAudioFile" accept="audio/*" required>
+              <input type="file" class="form-input" id="sermonAudioFile" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.wma,.flac,.caf" required>
               <div style="margin-top:8px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted);">
                 <strong>Note:</strong> Audio upload functionality requires Firebase Storage.
                 For now, this simulates the upload process with mock data.
