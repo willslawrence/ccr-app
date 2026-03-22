@@ -265,23 +265,24 @@ function openSermonModal(id) {
 
     <div style="margin-bottom:20px;">
       <strong>Audio Player:</strong>
-      <div style="margin-top:8px;padding:16px;background:var(--surface);border-radius:12px;display:flex;align-items:center;gap:12px;">
-        <button class="btn btn-primary" style="font-size:24px;width:48px;height:48px;padding:0;border-radius:50%;" onclick="togglePlaySermon('${sermon.id}')">
-          ▶
+      <div style="margin-top:8px;padding:12px;background:var(--surface);border-radius:12px;display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-primary" style="width:44px;height:44px;min-width:44px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;" onclick="togglePlaySermon('${sermon.id}')">
+          ▶︎
         </button>
-        <div style="flex:1;">
+        <div style="flex:1;min-width:0;">
           <div style="height:4px;background:var(--border);border-radius:2px;position:relative;">
             <div style="position:absolute;top:0;left:0;height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.3s;"></div>
           </div>
-          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:12px;color:var(--muted);">
+          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted);">
             <span>0:00</span>
             <span>${sermon.duration}</span>
           </div>
         </div>
-        <button class="btn btn-outline" style="font-size:20px;width:40px;height:40px;padding:0;border-radius:50%;" onclick="downloadSermon('${sermon.id}')">
-          ⬇
+        <button class="btn btn-outline" style="width:36px;height:36px;min-width:36px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;" onclick="downloadSermon('${sermon.id}')">
+          ⬇︎
         </button>
       </div>
+      <div style="margin-top:6px;font-size:11px;color:var(--muted);font-style:italic;">Audio playback coming soon — upload real audio files to enable playback.</div>
     </div>
 
     ${isEditor() ? `
@@ -314,37 +315,63 @@ function downloadSermon(id) {
   alert(`Download functionality:\n\nIn production, this would download the audio file from:\n${sermon.audioUrl}\n\nFile: ${sermon.audioFileName}`);
 }
 
-async function editSermon(id) {
-  try {
-    const sermon = sermonsState.sermons.find(s => s.id === id);
-    if (!sermon) return;
+function editSermon(id) {
+  const sermon = sermonsState.sermons.find(s => s.id === id);
+  if (!sermon) return;
 
-    const title = prompt('Title:', sermon.title);
-    if (title === null) return;
+  // Show edit form in the modal
+  const modal = document.getElementById('bookDetailModal');
+  const modalContent = modal.querySelector('.modal');
+  modalContent.innerHTML = `
+    <button class="modal-close" onclick="document.getElementById('bookDetailModal').classList.remove('active')">×</button>
+    <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">✏️ Edit Sermon</h2>
+    <form id="editSermonForm">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" class="form-input" id="editSermonTitle" value="${escapeHtml(sermon.title)}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Speaker *</label>
+        <input type="text" class="form-input" id="editSermonSpeaker" value="${escapeHtml(sermon.speaker)}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Scripture Reference</label>
+        <input type="text" class="form-input" id="editSermonScripture" value="${escapeHtml(sermon.scriptureRef || '')}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <input type="text" class="form-input" id="editSermonDuration" value="${escapeHtml(sermon.duration || '')}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="editSermonDescription" rows="4">${escapeHtml(sermon.description || '')}</textarea>
+      </div>
+      <div class="btn-group" style="margin-top:16px;">
+        <button type="submit" class="btn btn-primary">💾 Save</button>
+        <button type="button" class="btn btn-outline" onclick="openSermonModal('${id}')">Cancel</button>
+      </div>
+    </form>
+  `;
 
-    const speaker = prompt('Speaker:', sermon.speaker);
-    if (speaker === null) return;
-
-    const scripture = prompt('Scripture reference:', sermon.scriptureRef);
-    if (scripture === null) return;
-
-    const description = prompt('Description:', sermon.description);
-    if (description === null) return;
-
-    await db.collection('sermons').doc(id).update({
-      title: title.trim(),
-      speaker: speaker.trim(),
-      scriptureRef: scripture.trim(),
-      description: description.trim(),
-      updatedAt: firebase.firestore.Timestamp.now()
-    });
-
-    await loadSermons();
-    renderSermons();
-  } catch (error) {
-    console.error('Error editing sermon:', error);
-    alert('Error editing sermon. Please try again.');
-  }
+  document.getElementById('editSermonForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await db.collection('sermons').doc(id).update({
+        title: document.getElementById('editSermonTitle').value.trim(),
+        speaker: document.getElementById('editSermonSpeaker').value.trim(),
+        scriptureRef: document.getElementById('editSermonScripture').value.trim(),
+        duration: document.getElementById('editSermonDuration').value.trim(),
+        description: document.getElementById('editSermonDescription').value.trim(),
+        updatedAt: firebase.firestore.Timestamp.now()
+      });
+      await loadSermons();
+      renderSermons();
+      modal.classList.remove('active');
+    } catch (error) {
+      console.error('Error editing sermon:', error);
+      alert('Error saving. Please try again.');
+    }
+  });
 }
 
 async function deleteSermon(id) {
