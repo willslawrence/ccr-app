@@ -221,20 +221,18 @@ function renderSermons() {
 
   empty.style.display = 'none';
 
-  list.innerHTML = sermons.map(sermon => {
+  list.innerHTML = '<div class="sermon-grid">' + sermons.map(sermon => {
     const isPlaying = sermonsState.playingId === sermon.id;
 
     return `
-      <div class="card card-clickable" style="margin-bottom:12px;" onclick="toggleSermonDetails('${sermon.id}')">
-        <div class="card-header">
-          <div style="flex:1;">
-            <div class="card-meta">${formatDate(sermon.date)} · ${escapeHtml(sermon.speaker)}</div>
-            <div class="card-title">${escapeHtml(sermon.title)}</div>
-            ${sermon.scriptureRef ? `<div class="text-muted" style="font-size:13px;margin-top:4px;">📖 ${escapeHtml(sermon.scriptureRef)}</div>` : ''}
+      <div class="card card-clickable sermon-card" onclick="toggleSermonDetails('${sermon.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div style="flex:1;min-width:0;">
+            <div class="card-meta" style="font-size:11px;">${formatDate(sermon.date)} · ${escapeHtml(sermon.speaker)}</div>
+            <div class="card-title" style="font-size:14px;margin-top:2px;">${escapeHtml(sermon.title)}</div>
+            ${sermon.scriptureRef ? `<div class="text-muted" style="font-size:11px;margin-top:3px;">📖 ${escapeHtml(sermon.scriptureRef)}</div>` : ''}
           </div>
-          <div style="text-align:right;">
-            <div class="badge" style="background:var(--accent);color:white;">${sermon.duration}</div>
-          </div>
+          <div class="badge" style="background:var(--accent);color:white;font-size:10px;padding:3px 8px;flex-shrink:0;margin-left:8px;">${sermon.duration}</div>
         </div>
 
         <div id="sermonDetails_${sermon.id}" style="display:${isPlaying ? 'block' : 'none'};margin-top:16px;padding-top:16px;border-top:1px solid var(--border);" onclick="event.stopPropagation();">
@@ -279,7 +277,7 @@ function renderSermons() {
         </div>
       </div>
     `;
-  }).join('');
+  }).join('') + '</div>';
 }
 
 function toggleSermonDetails(id) {

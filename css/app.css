@@ -367,7 +367,7 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 20px;
-  padding-top: calc(24px + env(safe-area-inset-top, 44px));
+  padding-top: calc(24px + env(safe-area-inset-top, 20px) + 8px);
   overflow-x: hidden;
 }
 
@@ -387,10 +387,10 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   z-index: 20;
   background: var(--bg);
-  padding-top: env(safe-area-inset-top, 44px);
+  padding-top: calc(env(safe-area-inset-top, 20px) + 8px);
   padding-bottom: 16px;
   margin: -24px -20px 16px -20px;
-  margin-top: calc(-24px - env(safe-area-inset-top, 44px));
+  margin-top: calc(-24px - env(safe-area-inset-top, 20px) - 8px);
   padding-left: 20px;
   padding-right: 20px;
   overflow: hidden;
@@ -398,8 +398,8 @@ h1, h2, h3, h4, h5, h6 {
 
 @supports not (padding-top: env(safe-area-inset-top)) {
   .page-sticky-banner {
-    padding-top: 44px;
-    margin-top: -68px;
+    padding-top: 28px;
+    margin-top: -52px;
   }
 }
 
@@ -2309,5 +2309,23 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
 
   .home-greeting {
     font-size: 24px;
+  }
+}
+
+/* ─── SERMON GRID ─── */
+.sermon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.sermon-card {
+  padding: 12px !important;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 380px) {
+  .sermon-grid {
+    grid-template-columns: 1fr;
   }
 }
