@@ -264,6 +264,7 @@ function updateBookCard(bookAbbr, data) {
 // TOUCH-DRAG CHAPTER SELECTION
 // ====================================
 let _dragState = null;
+let _touchHandledChapter = false;
 
 function initChapterDragSelection() {
   const container = document.querySelector('.bible-page');
@@ -286,6 +287,7 @@ function initChapterDragSelection() {
 
     // Toggle this chapter
     applyDragChapter(bookAbbr, chapter, !isRead);
+    _touchHandledChapter = true;
   }, { passive: true });
 
   container.addEventListener('touchmove', (e) => {
@@ -590,8 +592,11 @@ function initBiblePage() {
   document.querySelectorAll('.chapter-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Skip if drag handler already processed this
-      if (_dragState) return;
+      // Skip if touch/drag handler already processed this
+      if (_dragState || _touchHandledChapter) {
+        _touchHandledChapter = false;
+        return;
+      }
       const bookAbbr = btn.dataset.book;
       const chapterNum = parseInt(btn.dataset.chapter);
       toggleChapter(bookAbbr, chapterNum);
