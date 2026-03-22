@@ -27,7 +27,7 @@ function renderSchedulePage() {
             <button class="btn ${scheduleState.currentTab === 'volunteering' ? 'btn-primary' : 'btn-outline'}" id="volunteeringTabBtn">Volunteering</button>
             <button class="btn ${scheduleState.currentTab === 'oos' ? 'btn-primary' : 'btn-outline'}" id="oosTabBtn">Friday OoS</button>
           </div>
-          ${isEditor() ? `<button class="btn btn-primary" id="quickAddBtn" style="flex:none;padding:10px 16px;font-size:13px;min-height:44px;">+</button>` : ''}
+
         </div>
       </div>
 
@@ -40,33 +40,19 @@ async function initSchedulePage() {
   await loadScheduleData();
   renderScheduleContent();
 
-  document.getElementById('eventsTabBtn').addEventListener('click', () => {
-    scheduleState.currentTab = 'events';
+  function switchTab(tab) {
+    scheduleState.currentTab = tab;
+    // Update button styles immediately (no delay)
+    document.getElementById('eventsTabBtn').className = `btn ${tab === 'events' ? 'btn-primary' : 'btn-outline'}`;
+    document.getElementById('volunteeringTabBtn').className = `btn ${tab === 'volunteering' ? 'btn-primary' : 'btn-outline'}`;
+    document.getElementById('oosTabBtn').className = `btn ${tab === 'oos' ? 'btn-primary' : 'btn-outline'}`;
+    // Then render content
     renderScheduleContent();
-  });
-
-  document.getElementById('volunteeringTabBtn').addEventListener('click', () => {
-    scheduleState.currentTab = 'volunteering';
-    renderScheduleContent();
-  });
-
-  document.getElementById('oosTabBtn').addEventListener('click', () => {
-    scheduleState.currentTab = 'oos';
-    renderScheduleContent();
-  });
-
-  const quickAddBtn = document.getElementById('quickAddBtn');
-  if (quickAddBtn) {
-    quickAddBtn.addEventListener('click', () => {
-      if (scheduleState.currentTab === 'events') {
-        document.getElementById('addEventBtn')?.click();
-      } else if (scheduleState.currentTab === 'volunteering') {
-        document.getElementById('addVolunteerBtn')?.click();
-      } else if (scheduleState.currentTab === 'oos') {
-        document.getElementById('addOoSBtn')?.click();
-      }
-    });
   }
+
+  document.getElementById('eventsTabBtn').addEventListener('click', () => switchTab('events'));
+  document.getElementById('volunteeringTabBtn').addEventListener('click', () => switchTab('volunteering'));
+  document.getElementById('oosTabBtn').addEventListener('click', () => switchTab('oos'));
 }
 
 async function loadScheduleData() {
@@ -179,6 +165,7 @@ function renderEventsTab() {
           <div class="empty-icon">📅</div>
           <div class="empty-text">No events scheduled</div>
           <div class="empty-sub">Events will appear here</div>
+          ${canEdit ? '<button class="btn btn-primary" style="margin-top:12px;font-size:13px;" onclick="document.getElementById(\'addEventBtn\').click()">+ New Event</button>' : ''}
         </div>
       ` : sortedEvents.map(event => {
         const eventDate = new Date(event.date);
@@ -201,8 +188,9 @@ function renderEventsTab() {
             ` : ''}
             ${canEdit ? `
               <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editEvent('${event.id}')">✏️ Edit</button>
-                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteEvent('${event.id}'))()">🗑️ Delete</button>
+                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="editEvent('${event.id}')">✏️ Edit</button>
+                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;color:var(--red);" onclick="(async () => await deleteEvent('${event.id}'))()">🗑️ Delete</button>
+                <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="document.getElementById('addEventBtn').click()">+ New</button>
               </div>
             ` : ''}
           </div>
@@ -429,6 +417,7 @@ function renderVolunteeringTab() {
               <div class="btn-group" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
                 <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="editVolunteerWeek('${week.id}')">✏️ Edit</button>
                 <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;color:var(--red);" onclick="(async () => await deleteVolunteerWeek('${week.id}'))()">🗑️ Delete</button>
+                <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="document.getElementById('addVolunteerBtn').click()">+ New</button>
               </div>
             ` : ''}
           </div>
@@ -754,8 +743,9 @@ function renderOoSTab() {
 
           ${canEdit ? `
             <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-              <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editOoS('${currentOoS.id}')">✏️ Edit</button>
-              <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteOoS('${currentOoS.id}'))()">🗑️ Delete</button>
+              <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="editOoS('${currentOoS.id}')">✏️ Edit</button>
+              <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;color:var(--red);" onclick="(async () => await deleteOoS('${currentOoS.id}'))()">🗑️ Delete</button>
+              <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="document.getElementById('addOoSBtn').click()">+ New</button>
             </div>
           ` : ''}
         </div>
