@@ -12,14 +12,16 @@ let sermonsState = {
 function renderSermonsPage() {
   return `
     <div class="page">
-      <div class="page-header">
-        <h1 class="page-title">🎧 Sermons</h1>
-        <p class="page-subtitle">Listen to past sermons and teachings</p>
-      </div>
+      <div class="page-sticky-banner">
+        <div class="page-header">
+          <h1 class="page-title">🎧 Sermons</h1>
+          <p class="page-subtitle">Listen to past sermons and teachings</p>
+        </div>
 
-      <div class="btn-group">
-        ${isEditor() ? '<button class="btn btn-primary" id="uploadSermonBtn">+ Upload Sermon</button>' : ''}
-        <button class="btn btn-outline" id="searchSermonBtn">🔍 Search</button>
+        <div class="btn-group">
+          ${isEditor() ? '<button class="btn btn-primary" id="uploadSermonBtn">+ Upload Sermon</button>' : ''}
+          <button class="btn btn-outline" id="searchSermonBtn">🔍 Search</button>
+        </div>
       </div>
 
       <div class="search-bar" id="sermonSearchBar" style="display:none;">

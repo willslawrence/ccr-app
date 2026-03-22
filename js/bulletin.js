@@ -13,14 +13,16 @@ let bulletinState = {
 function renderBulletinPage() {
   return `
     <div class="page">
-      <div class="page-header">
-        <h1 class="page-title">📰 Bulletin</h1>
-        <p class="page-subtitle">Weekly church bulletin and announcements</p>
-      </div>
+      <div class="page-sticky-banner">
+        <div class="page-header">
+          <h1 class="page-title">📰 Bulletin</h1>
+          <p class="page-subtitle">Weekly church bulletin and announcements</p>
+        </div>
 
-      <div class="btn-group">
-        ${isEditor() ? '<button class="btn btn-primary" id="newBulletinBtn">+ New Bulletin</button>' : ''}
-        <button class="btn btn-outline" id="searchBulletinBtn">🔍 Search</button>
+        <div class="btn-group">
+          ${isEditor() ? '<button class="btn btn-primary" id="newBulletinBtn">+ New Bulletin</button>' : ''}
+          <button class="btn btn-outline" id="searchBulletinBtn">🔍 Search</button>
+        </div>
       </div>
 
       <div class="search-bar" id="bulletinSearchBar" style="display:none;">

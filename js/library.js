@@ -201,12 +201,14 @@ function renderLibraryPage() {
 
   return `
     <div class="page library-page">
-      <h1 class="page-title">Friends Library</h1>
+      <div class="page-sticky-banner">
+        <h1 class="page-title">Friends Library</h1>
 
-      <!-- Tab Buttons -->
-      <div class="btn-group">
-        <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">📚 Books</button>
-        <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📋 Checked Out</button>
+        <!-- Tab Buttons -->
+        <div class="btn-group" style="margin-bottom:0;">
+          <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">📚 Books</button>
+          <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📋 Checked Out</button>
+        </div>
       </div>
 
       <!-- Books Tab -->

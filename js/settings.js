@@ -7,9 +7,11 @@ function renderSettingsPage() {
 
   return `
     <div class="page">
-      <div class="page-header">
-        <h1 class="page-title">⚙️ Settings</h1>
-        <p class="page-subtitle">Manage your preferences and account</p>
+      <div class="page-sticky-banner">
+        <div class="page-header">
+          <h1 class="page-title">⚙️ Settings</h1>
+          <p class="page-subtitle">Manage your preferences and account</p>
+        </div>
       </div>
 
       <div class="card" style="margin-bottom:16px;">

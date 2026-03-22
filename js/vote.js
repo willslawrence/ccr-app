@@ -125,12 +125,14 @@ function renderVotePage() {
 
   return `
     <div class="page vote-page">
-      <h1 class="page-title">Giving Vote</h1>
-      <p class="page-subtitle">Approval voting · Select options you support in each category</p>
+      <div class="page-sticky-banner">
+        <h1 class="page-title">Giving Vote</h1>
+        <p class="page-subtitle">Approval voting · Select options you support in each category</p>
 
-      <div class="btn-group">
-        <button class="btn btn-primary" data-votetab="active">🗳️ Active Poll</button>
-        <button class="btn btn-outline" data-votetab="past">📊 Past Polls</button>
+        <div class="btn-group" style="margin-bottom:0;">
+          <button class="btn btn-primary" data-votetab="active">🗳️ Active Poll</button>
+          <button class="btn btn-outline" data-votetab="past">📊 Past Polls</button>
+        </div>
       </div>
 
       <!-- Active Poll Tab -->

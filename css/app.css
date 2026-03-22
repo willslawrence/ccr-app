@@ -377,7 +377,28 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 0;
+}
+
+/* Sticky banner: header + buttons stay at top on scroll */
+.page-sticky-banner {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  padding-top: env(safe-area-inset-top, 44px);
+  padding-bottom: 16px;
+  margin: -24px -20px 16px -20px;
+  margin-top: calc(-24px - env(safe-area-inset-top, 44px));
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@supports not (padding-top: env(safe-area-inset-top)) {
+  .page-sticky-banner {
+    padding-top: 44px;
+    margin-top: -68px;
+  }
 }
 
 /* ====================================

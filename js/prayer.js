@@ -15,14 +15,16 @@ let prayerState = {
 function renderPrayerPage() {
   return `
     <div class="page">
-      <div class="page-header">
-        <h1 class="page-title">🙏 Prayer Requests</h1>
-        <p class="page-subtitle">Share prayer needs and pray for one another</p>
-      </div>
+      <div class="page-sticky-banner">
+        <div class="page-header">
+          <h1 class="page-title">🙏 Prayer Requests</h1>
+          <p class="page-subtitle">Share prayer needs and pray for one another</p>
+        </div>
 
-      <div class="btn-group">
-        <button class="btn btn-primary" id="addPrayerBtn">+ Add Request</button>
-        <button class="btn btn-outline" id="searchPrayerBtn">🔍 Search</button>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="addPrayerBtn">+ Add Request</button>
+          <button class="btn btn-outline" id="searchPrayerBtn">🔍 Search</button>
+        </div>
       </div>
 
       <div class="search-bar" id="prayerSearchBar" style="display:none;">

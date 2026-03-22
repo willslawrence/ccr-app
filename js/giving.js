@@ -96,12 +96,14 @@ async function renderGivingPage() {
 
   return `
     <div class="page giving-page">
-      <h1 class="page-title">💰 Giving</h1>
+      <div class="page-sticky-banner">
+        <h1 class="page-title">💰 Giving</h1>
 
-      <!-- Tab Buttons (side-by-side at top) -->
-      <div class="btn-group" style="margin-bottom:20px;">
-        <button class="btn ${currentGivingTab === 'transactions' ? 'btn-primary' : 'btn-outline'}" data-tab="transactions">📊 Transactions</button>
-        <button class="btn ${currentGivingTab === 'charities' ? 'btn-primary' : 'btn-outline'}" data-tab="charities">💰 Charities</button>
+        <!-- Tab Buttons (side-by-side at top) -->
+        <div class="btn-group" style="margin-bottom:0;">
+          <button class="btn ${currentGivingTab === 'transactions' ? 'btn-primary' : 'btn-outline'}" data-tab="transactions">📊 Transactions</button>
+          <button class="btn ${currentGivingTab === 'charities' ? 'btn-primary' : 'btn-outline'}" data-tab="charities">💰 Charities</button>
+        </div>
       </div>
 
       <!-- Transactions Tab -->

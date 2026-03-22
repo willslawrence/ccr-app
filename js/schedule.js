@@ -15,18 +15,20 @@ let scheduleState = {
 function renderSchedulePage() {
   return `
     <div class="page">
-      <div class="page-header">
-        <h1 class="page-title">📅 Schedule</h1>
-        <p class="page-subtitle">Events, volunteering, and Order of Service</p>
-      </div>
-
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
-        <div class="btn-group" style="flex:1;margin-bottom:0;">
-          <button class="btn ${scheduleState.currentTab === 'events' ? 'btn-primary' : 'btn-outline'}" id="eventsTabBtn">Events</button>
-          <button class="btn ${scheduleState.currentTab === 'volunteering' ? 'btn-primary' : 'btn-outline'}" id="volunteeringTabBtn">Volunteering</button>
-          <button class="btn ${scheduleState.currentTab === 'oos' ? 'btn-primary' : 'btn-outline'}" id="oosTabBtn">Friday OoS</button>
+      <div class="page-sticky-banner">
+        <div class="page-header">
+          <h1 class="page-title">📅 Schedule</h1>
+          <p class="page-subtitle">Events, volunteering, and Order of Service</p>
         </div>
-        ${isEditor() ? `<button class="btn btn-primary" id="quickAddBtn" style="flex:none;padding:10px 16px;font-size:13px;min-height:44px;">+</button>` : ''}
+
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <div class="btn-group" style="flex:1;margin-bottom:0;">
+            <button class="btn ${scheduleState.currentTab === 'events' ? 'btn-primary' : 'btn-outline'}" id="eventsTabBtn">Events</button>
+            <button class="btn ${scheduleState.currentTab === 'volunteering' ? 'btn-primary' : 'btn-outline'}" id="volunteeringTabBtn">Volunteering</button>
+            <button class="btn ${scheduleState.currentTab === 'oos' ? 'btn-primary' : 'btn-outline'}" id="oosTabBtn">Friday OoS</button>
+          </div>
+          ${isEditor() ? `<button class="btn btn-primary" id="quickAddBtn" style="flex:none;padding:10px 16px;font-size:13px;min-height:44px;">+</button>` : ''}
+        </div>
       </div>
 
       <div id="scheduleContent"></div>

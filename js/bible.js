@@ -270,10 +270,11 @@ async function renderBiblePage() {
 
   return `
     <div class="page bible-page">
-      <h1 class="page-title">📖 Bible Reading</h1>
+      <div class="page-sticky-banner">
+        <h1 class="page-title">📖 Bible Reading</h1>
 
-      <!-- Compact Summary -->
-      <div class="bible-summary card" style="display:flex;gap:14px;padding:14px 16px;align-items:center;flex-wrap:wrap;margin-bottom:0;position:sticky;top:0;z-index:11;border-radius:0 0 12px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+        <!-- Compact Summary -->
+        <div class="bible-summary card" style="display:flex;gap:14px;padding:14px 16px;align-items:center;flex-wrap:wrap;margin-bottom:0;border-radius:0 0 12px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
         <!-- Main ring -->
         <div style="display:flex;gap:12px;align-items:center;flex-shrink:0;">
           <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
@@ -336,9 +337,10 @@ async function renderBiblePage() {
           </div>
         </div>
       </div>
+      </div><!-- end page-sticky-banner -->
 
-      <!-- Sticky OT / NT scroll buttons -->
-      <div class="bible-tab-bar" style="display:flex;gap:8px;margin-bottom:16px;position:sticky;top:120px;z-index:10;background:var(--bg);padding:8px 0 4px;">
+      <!-- OT / NT scroll buttons -->
+      <div class="bible-tab-bar" style="display:flex;gap:8px;margin-bottom:16px;padding:8px 0 4px;">
         <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">Old Testament</button>
         <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">New Testament</button>
       </div>
