@@ -1,0 +1,514 @@
+// Giving Dashboard Charity Data
+// Exported from giving-dashboard/index.html allManualRecipients array
+
+const GIVING_CHARITIES = [
+  // ── CHURCH PLANTING ──
+  {
+    name: "Special Needs Sports Ministry",
+    image: null,
+    status: "given",
+    type: "person",
+    category: "church",
+    categoryLabel: "Church Planting",
+    amount: "SAR 4,391",
+    amountNum: 4391,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Gospel-centered sports outreach in Alexandria, Egypt — using coaching as a bridge to share Christ with vulnerable children at a special needs school, juvenile centres, and boys' homes.",
+    fullDescription: "This ministry uses sports — taekwondo, baseball, basketball, fitness — as a means to share the gospel and make disciples in Alexandria, Egypt. The vision is life transformation through a discipleship model with God as the head coach. They coach at a special needs school, girls' juvenile detention centres, and boys' homes, building trust through sport and pointing children and families to Christ. We sponsor weekly coaching sessions where children with special needs build confidence, confront fears, and experience safe, loving community. The Egyptian economy is squeezing families hard, and some parents are pulling kids from programs — but the team presses on, believing sport opens doors for the gospel that would otherwise stay shut.",
+    link: null,
+    lastUpdate: "3/18/2026",
+    score: null,
+    updateText: "<strong>February 2026 Training Report</strong><br><br><strong>Student K:</strong> K communicates non-verbally and previously preferred sitting near the door and training only on the bicycle. The coach had been gradually encouraging treadmill use at low speeds. On Feb 4th, K trained independently — refused the bicycle and successfully worked on the treadmill. This marks noticeable progress and reduced anxiety toward new equipment.<br><br><strong>Student MG:</strong> MG displays persistent pressure (insistence through repetition) to get what he wants. During the Feb 4th session, part of a machine was intentionally removed for the planned exercise. He repeatedly insisted on restoring it. The coach maintained boundaries and offered a conditional agreement: complete the assigned exercise first. He later requested boxing — was told he must first walk on the treadmill. He completed five minutes with difficulty and was then allowed to box.<br><br><strong>⚠️ Behavioral Note:</strong> At the end of the session, accumulated frustration was expressed through aggressive behavior toward the supervisor. This indicates ongoing challenges in emotional regulation and anger management.<br><br><strong>Overall Assessment:</strong> The session showed positive behavioral progress in overcoming avoidance (K) and improving compliance with structured conditions (MG). However, emotional regulation — particularly anger management — remains an area requiring continued intervention and structured support.<br><br><strong>🙏 Prayer Requests:</strong><br>• Pray for the children — that they would grow in confidence and feel safe and loved<br>• Pray for a girls' juvenile centre in Cairo that recently lost its funding — for new sponsors to step in<br>• Pray for Egyptian families under economic pressure, that they can keep their children in programs<br>• Pray for the coaching team as they serve vulnerable populations across multiple sites",
+    updatePdf: null
+  },
+  {
+    name: "Stan and Tasha",
+    image: 'img/stan-tasha.png',
+    status: "given",
+    type: "person",
+    category: "church",
+    categoryLabel: "Church Planting",
+    amount: "SAR 3,750",
+    amountNum: 3750,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Church planting in Tajikistan as part of a church centred ministry. Engaging Tajiks through English as second language classes, sports clubs, and in regular life as well as being involved in discipleship in the Tajik church.",
+    link: "",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "Hey everyone, thank you so much for praying for our 'outreach week' at our language centre. God was very gracious to answer our prayers. Two new students (brothers) agreed to read the Bible with us. We began reading Genesis 1-3 with them last week. Please pray God would open their eyes to the truth of his way of salvation!<br><br>They're church planting in Tajikistan, engaging Tajiks through ESL classes, sports clubs, and discipleship. They only need a little for this next round of giving."
+  },
+  {
+    name: "Radical",
+    image: 'img/radical.png',
+    status: "given",
+    type: "org",
+    category: "church",
+    categoryLabel: "Church Planting",
+    amount: "SAR 11,739",
+    amountNum: 11739,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Founded by David Platt equipping Christians for global mission. Focuses on helping believers grow, go, and give to make Jesus known everywhere, especially unreached areas. Teaching/mobilization ministry.",
+    link: "https://radical.net",
+    lastUpdate: "",
+    score: null,
+    scoreLabel: "N/R",
+    stats: { programs: "Not rated yet", ceoPay: "Not available", revenue: "$5.75M" },
+    audit: {
+      ein: "27-2343084", location: "radical.net · ECFA Member", score: null, scoreSource: "Insufficient data",
+      programs: ["Bible Teaching — free sermons, podcasts, and resources","Secret Church — intensive study connecting with persecuted believers","Global Missions — equipping churches for unreached people groups","Church Planting — supporting church planting among all nations","Discipleship Resources — training believers worldwide"],
+      mission: "The American church is asleep to the Great Commission — and Radical exists to wake it up. David Platt's conviction: comfortable Christianity costs the unreached everything. Every resource, every event, every dollar is aimed at mobilizing believers to go, give, and sacrifice for the people who have never once heard the name of Jesus.",
+      financials: [
+        {metric:"Revenue",value:"$5.75M"},{metric:"Expenses",value:"$3.69M"},
+        {metric:"Total Assets",value:"$3.52M"},{metric:"Liabilities",value:"$596K (16.9%)",rating:"Moderate",ratingColor:"amber"},
+        {metric:"Program Ratio",value:"Not calculated",rating:"Unrated",ratingColor:"amber"},
+        {metric:"Program Expense Ratio",value:"~73-90% (varies by year)",rating:"Moderate-Good",ratingColor:"amber"}
+      ],
+      leaders: [{name:"David Platt",role:"Chair/Founder",comp:"$0"},{name:"Christopher Hunsberger",role:"CEO/Director",comp:"$159,102"},{name:"Warren Beason",role:"President",comp:"$66,128"},{name:"3 Directors",role:"Various",comp:"$0"}],
+      leaderNote: "Total: ~$225K / $3.69M = 6.1% · David Platt serves as founder and chair with $0 salary · Board members unpaid",
+      governance: ["ECFA member (since 2023)","Board majority independent","Platt takes no salary","Board members unpaid","Consistent filings 2011–2021","Platinum Candid designation","Annual audits by Capin Crouse","Financial statements publicly available on radical.net"],
+      redflags: "Charity Navigator cannot rate yet. Most recent 990 is FY2021 — 3+ years old. Platt faced governance disputes at McLean Bible Church (separate from Radical).",
+      redflagLevel: "amber",
+      critics: [
+        "Most recent 990 is FY2021 — 5 years old. Current financial health is unverifiable.",
+        "David Platt faced serious governance accusations at McLean Bible Church — authoritarianism, secret votes, and congregational splits. Though separate from Radical, it raises leadership questions.",
+        "Charity Navigator cannot rate them due to insufficient data — a red flag for a ministry of this size.",
+        "Revenue dropped from $10.5M (2019) to $5.75M (2021) — a 45% decline with no public explanation.",
+        "No independent program expense ratio available — 'lean operation' is claimed but unproven."
+      ],
+      ambassadors: [
+        "Secret Church events have raised millions for Bible translation and persecuted believers worldwide.",
+        "'Radical' (the book) has mobilized thousands of Christians toward sacrificial giving and missions.",
+        "Consistent IRS filings from 2011–2021 with no asset diversion or governance red flags.",
+        "Candid Platinum designation with audited financial statements published on radical.net."
+      ],
+      verdict: "A pure missions-focused ministry — your dollar funds Gospel teaching, church planting, and missions mobilization.",
+      sources: "Sources: IRS Form 990 (FY2021), ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  // ── ORPHANS, WIDOWS & SOJOURNERS ──
+  {
+    name: "Crisis Aid International",
+    image: 'img/crisis-aid.png',
+    status: "given",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "SAR 2,372",
+    amountNum: 2372,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Provides hunger relief (117M+ meals), clean water (52+ wells), medical care (833K+ recipients), anti-trafficking rescue (3,200+ victims), and emergency disaster relief across 12 countries. Connected to Francis Chan / Crazy Love.",
+    link: "https://crisisaid.org",
+    lastUpdate: "",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "90¢ per $1 to programs", ceoPay: "$0.03 to raise $1", revenue: "$5.88M" },
+    audit: {
+      ein: "30-0060905", location: "St. Louis, MO · Founded 2002 · ECFA Accredited", score: 100, scoreSource: "Charity Navigator FY2024",
+      programs: ["Hunger Relief — 117.6M+ meals distributed","Clean Water — 52+ wells built in rural communities","Medical Care — 833K+ recipients","Anti-Trafficking — 3,200+ victims rescued & supported","Emergency Relief — rapid crisis response"],
+      mission: '"Saving Lives, Saving Souls & Changing Futures." The conviction is simple: you can\'t tell someone Jesus loves them while they\'re starving. Crisis Aid meets the urgent physical need first — food, water, rescue — then shares the Gospel that gives eternal hope. Every well drilled, every meal served, every trafficking victim rescued is an act of worship.',
+      financials: [
+        {metric:"Program Expense Ratio",value:"90.25%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.03 to raise $1",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$5.88M / $5.89M"},
+        {metric:"Liabilities to Assets",value:"2.84%",rating:"Very Low",ratingColor:"green"},
+        {metric:"Working Capital",value:"0.94 years",rating:"Healthy",ratingColor:"green"}
+      ],
+      leaders: [{name:"Patrick Bradley",role:"President/Founder",comp:"$124,767"},{name:"Susan Bradley",role:"Vice President",comp:"$55,978"},{name:"Mike Lemp",role:"Secretary",comp:"$50,785"},{name:"5 Board Directors",role:"Various",comp:"$0 (unpaid)"}],
+      leaderNote: "Total: ~$231K / $5.89M = 3.9% · Benefits: 0% · No bonuses",
+      governance: ["62% independent board (5/8)","Audited w/ oversight committee","No asset diversion","All policies in place","ECFA accredited","990 published on website"],
+      redflags: "None found. No scandals, complaints, or controversies. Consistent filings since 2007. Stable salaries year over year.",
+      redflagLevel: "clean",
+      critics: [
+        "Family-run elements — President (Pat Bradley) and Vice President (Susan Bradley) are married. Board should ensure independent oversight of compensation.",
+        "Relatively small revenue ($5.88M) limits scale of impact compared to larger relief orgs.",
+        "No Charity Navigator rating history before FY2024 — limited track record of third-party evaluation.",
+        "Anti-trafficking claims (3,200+ victims) are self-reported with no independent verification published."
+      ],
+      ambassadors: [
+        "Only ~5% of rated charities achieve a perfect 100 Charity Navigator score.",
+        "Partnered with Francis Chan / Crazy Love — credible evangelical endorsement.",
+        "Consistent filings since 2007. Zero scandals, complaints, or controversies found."
+      ],
+      verdict: "Clean finances, Gospel-centered mission, lean leadership. Founder modestly paid. A strong choice for giving.",
+      sources: "Sources: IRS Form 990 (FY2024), Charity Navigator, ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Lifesong for Orphans",
+    image: 'img/lifesong.png',
+    status: "given",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "SAR 12,372",
+    amountNum: 12372,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Mobilizes the Church to bring joy and purpose to orphans through Gospel-centered care. Supports adoption grants/loans, foster initiatives, and global orphan ministries in 16 countries so vulnerable children experience family and holistic provision.",
+    link: "https://lifesong.org",
+    lastUpdate: "",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "93¢ per $1 to programs", ceoPay: "$0.04 to raise $1", revenue: "$42.8M" },
+    audit: {
+      ein: "35-1902841", location: "Gridley, IL · Founded 2003 · ECFA Accredited", score: 100, scoreSource: "Charity Navigator FY2024",
+      programs: ["Orphan Care — holistic, Gospel-centered care in 16 countries","Education & Discipleship — schools and spiritual formation","Adoption Support — no-cost church adoption funds & grants","Lifesong Farms — vocational training for orphan graduates","Transition Programs — helping orphans become independent adults"],
+      mission: 'James 1:27 — pure religion is looking after orphans. Lifesong believes every child is made in God\'s image and deserves to be known, loved, and given a future. They don\'t just house kids — they disciple them, educate them, and train them for independence. The goal isn\'t charity, it\'s family. They also help churches fund adoptions so more kids land in homes, not institutions.',
+      financials: [
+        {metric:"Program Expense Ratio",value:"93.20%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.04 to raise $1",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$42.8M / $34.4M"},
+        {metric:"Liabilities to Assets",value:"0.73%",rating:"Extremely Low",ratingColor:"green"},
+        {metric:"Working Capital",value:"2.28 years",rating:"Strong",ratingColor:"green"}
+      ],
+      leaders: [{name:"Gary Ringger",role:"President/CEO",comp:"$0 (volunteers)"},{name:"N. Andrew Lehman",role:"Vice President",comp:"$241,522"},{name:"Kory Kaeb",role:"VP Operations",comp:"$225,855"},{name:"7 Board Directors",role:"Various",comp:"$0 (all unpaid)"}],
+      leaderNote: "CEO volunteers. 100% independent board (7/7). Benefits: 2%.",
+      governance: ["100% independent board","Audited w/ oversight committee","No asset diversion","All policies in place","ECFA accredited","Donor-advised fund"],
+      redflags: "None found. No controversies, scandals, or complaints. CEO donates his time. Impeccable record.",
+      redflagLevel: "clean",
+      critics: [
+        "VP compensation ($241K) is above average for a Gridley, IL-based nonprofit — may reflect broader responsibilities but warrants context.",
+        "Working capital of 2.28 years means $78M+ in assets — some donors prefer orgs that deploy funds faster rather than building reserves.",
+        "Revenue ($42.8M) significantly exceeds expenses ($34.4M) — the $8.4M surplus raises questions about pace of deployment.",
+        "Founder-led board dynamics: Gary Ringger founded it and serves as unpaid CEO — governance should ensure he doesn't wield outsized influence despite $0 salary."
+      ],
+      ambassadors: [
+        "Only ~5% of rated charities achieve a perfect 100 Charity Navigator score.",
+        "Zero scandals in 23-year history.",
+        "Indigenous church partnerships across 16 countries — culturally sensitive model.",
+        "Lifesong Farms gives orphan graduates vocational skills for independence — not just care, but a future."
+      ],
+      verdict: "One of the best. Gospel at the center, elite financial efficiency, and gold-standard governance.",
+      sources: "Sources: IRS Form 990 (FY2024), Charity Navigator, ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Send Relief",
+    image: 'img/send-relief.png',
+    status: "given",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "SAR 11,395",
+    amountNum: 11395,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Southern Baptist global compassion ministry (NAMB/IMB partnership) equipping churches to meet tangible needs and share the gospel. Responds to crises, disasters, refugees, trafficking, and community service from neighborhoods to nations.",
+    link: "https://sendrelief.org",
+    lastUpdate: "",
+    score: null,
+    scoreLabel: "N/R",
+    stats: { programs: "Not public", ceoPay: "Not public", revenue: "Under NAMB" },
+    audit: {
+      ein: "75-1977130", location: "Alpharetta, GA · SBC Ministry · ECFA Accredited (via NAMB)", score: null, scoreSource: "Church entity — exempt",
+      programs: ["Crisis Response — disasters, war zones (Ukraine, hurricanes)","Refugee Care — 1M+ refugees across Europe & Middle East","Child & Family Protection — foster care, adoption support","Anti-Trafficking — combating human trafficking globally","Community Strengthening — food banks, ministry centers","Global Hunger Relief — feeding programs worldwide"],
+      mission: 'The church should be first on the scene and last to leave. Send Relief exists because compassion and the Gospel are inseparable — you can\'t preach good news while ignoring suffering in front of you. Every disaster response, refugee welcome, and anti-trafficking operation is rooted in local church partnerships so the help doesn\'t end when the crisis team goes home.',
+      financials: [
+        {metric:"Public IRS Form 990",value:"N/A — church exemption",rating:"Cannot verify",ratingColor:"amber"},
+        {metric:"Revenue",value:"Embedded in NAMB financials",rating:"No breakout",ratingColor:"amber"},
+        {metric:"Independent Audit",value:"Yes — NAMB publishes on sbc.net",rating:"Good",ratingColor:"green"},
+        {metric:"ECFA Accredited",value:"Yes (via NAMB)",rating:"Good",ratingColor:"green"}
+      ],
+      leaders: [{name:"(NAMB leadership)",role:"Send Relief under NAMB",comp:"Not disclosed"}],
+      leaderNote: "Individual compensation not publicly disclosed. SBC trustees provide oversight.",
+      governance: ["ECFA accredited (via NAMB)","Audited financials on SBC website"],
+      redflags: "No independent financials — cannot verify program vs. overhead ratio. Federal grant controversy. SBC Transparency group has requested forensic audit of NAMB spending.",
+      redflagLevel: "amber",
+      critics: [
+        "No public 990 — church exemption means zero independent financial verification. You literally cannot see where your dollar goes.",
+        "SBC has faced major governance crises: sexual abuse cover-up scandal (2019–2022), DOJ investigation, and Executive Committee resignations.",
+        "SBC Transparency group has formally requested a forensic audit of NAMB spending — the parent org of Send Relief.",
+        "Federal grant controversies raised questions about government funding mixing with ministry operations.",
+        "Kevin Ezell (NAMB President) compensation was ~$700K+ including housing — one of the highest in SBC entities. Send Relief operates under his leadership.",
+        "Individual compensation for Send Relief staff is not publicly disclosed — unusual for a ministry receiving millions in donations."
+      ],
+      ambassadors: [
+        "Leverages the largest Protestant missions network in the world (3,500+ IMB missionaries).",
+        "Rapid disaster response via SBC's massive volunteer network (Southern Baptist Disaster Relief).",
+        "Local church partnership model connects relief to ongoing discipleship, not just one-time aid.",
+        "Audited financials published on SBC.net — some transparency exists even without a 990."
+      ],
+      verdict: "Massive SBC infrastructure and proven disaster response. <strong>Financial details aren't public due to church exemption</strong> — review the Critics and Ambassadors sections to weigh this.",
+      sources: "Sources: SBC.net, ECFA (NAMB profile), GuideStar, SBC Transparency · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "PreBorn!",
+    image: 'img/preborn.jpg',
+    status: "new",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    amount: "—",
+    amountNum: 0,
+    potentialAmount: "",
+    frequency: "Potential",
+    description: "Pro-life ministry equipping pregnancy resource centers with free ultrasounds and funding so women can see their baby before deciding. Explicitly Gospel-centered — every appointment includes a Gospel presentation. National network, explosive growth ($1.2M to $34.7M in 7 years).",
+    link: "https://preborn.com",
+    lastUpdate: "Mar 2026",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "87¢ per $1 to programs", ceoPay: "$0.03 to raise $1", revenue: "$34.7M" },
+    audit: {
+      ein: "20-8755673", location: "Indianapolis, IN · Founded ~2010 · ECFA Accredited", score: 100, scoreSource: "Charity Navigator FY2023",
+      programs: ["Free Ultrasounds — equipping pregnancy centers with ultrasound machines","Pregnancy Center Support — funding, training, and advertising for clinics","Counseling & Follow-Up — resources for pregnancy counselors + post-visit contact","Gospel Outreach — sharing the Gospel through pregnancy center interactions","Pro-Life Advocacy — education and awareness campaigns nationwide"],
+      mission: 'Every life matters because every life is made by God. PreBorn believes that when a woman facing an impossible decision sees her baby on that ultrasound screen, truth breaks through. The ultrasound is the vehicle — but the Gospel is the real mission. Every appointment is an invitation to meet Jesus, not just keep a pregnancy. That\'s why they exist: saving babies and saving souls.',
+      financials: [
+        {metric:"Program Expense Ratio",value:"87.20%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.03 to raise $1",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$34.7M / $24.7M"},
+        {metric:"Liabilities to Assets",value:"2.25%",rating:"Very Low",ratingColor:"green"},
+        {metric:"Working Capital",value:"0.83 years",rating:"Healthy",ratingColor:"green"}
+      ],
+      leaders: [{name:"Dan Steiner",role:"Founder/CEO",comp:"~$469K*"},{name:"Stan Lovings II",role:"Chairman",comp:"$0"},{name:"6 Board Members",role:"Various",comp:"$0 (unpaid)"}],
+      leaderNote: "*Total officer comp from 990 = $469,921. Benefits rate: 25%. Board: 6 members (83% independent).",
+      governance: ["83% independent board (5/6)","Audited w/ oversight committee","No asset diversion","All policies in place","ECFA accredited (since 2011)","990 published on website"],
+      redflags: "Minor. $10M surplus in FY2023 needs explanation — could be earmarked for expansion or represents excess fundraising beyond deployment capacity. Benefits rate (25%) above average. No major controversies.",
+      redflagLevel: "amber",
+      critics: [
+        "Revenue ($34.7M) exceeded expenses ($24.7M) by $10M — a 29% surplus. Where is the $10M going? Large surpluses warrant explanation for a donor-funded ministry.",
+        "CEO compensation ~$469K on $34.7M revenue (1.35%) is within range, but the absolute figure is notable. Benefits rate of 25% is on the higher side.",
+        "Pregnancy resource centers (CPCs) face criticism for counseling approaches — some observers argue they pressure vulnerable women and blur the line between medical care and advocacy.",
+        "Self-reported impact metrics ('babies saved') are not independently verified. The causal link between an ultrasound visit and a woman's decision is difficult to measure objectively.",
+        "Explosive growth from $1.2M to $34.7M in 7 years — governance and internal controls need to keep pace. Rapid scaling increases operational risk."
+      ],
+      ambassadors: [
+        "Only ~5% of rated charities achieve a perfect 100 Charity Navigator score.",
+        "15 years of continuous ECFA accreditation (since 2011).",
+        "Consistent IRS filings from 2011–2023. No scandals or governance red flags in any filing.",
+        "Revenue growth from $1.2M to $34.7M in 7 years demonstrates significant donor confidence."
+      ],
+      verdict: "Clean finances, Gospel-centered pro-life mission, strong governance. The $10M surplus and rapid growth warrant monitoring, but the financial metrics are solid.",
+      sources: "Sources: IRS Form 990 (FY2023 filed Aug 2025), Charity Navigator, ProPublica, ECFA, MinistryWatch · Prepared by Po — Mar 2026"
+    }
+  },
+  // ── PERSECUTED CHURCH ──
+  {
+    name: "Open Doors International",
+    image: 'img/open-doors.png',
+    status: "given",
+    type: "org",
+    category: "persecuted",
+    categoryLabel: "Persecuted Church",
+    amount: "SAR 2,558",
+    amountNum: 2558,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Founded in 1955 by Brother Andrew ('God's Smuggler'). Strengthens and equips persecuted Christians in 70+ countries through Bible distribution, church leader training, emergency relief, and the annual World Watch List — the gold standard for tracking Christian persecution globally.",
+    link: "https://opendoorsus.org",
+    lastUpdate: "Feb 2026",
+    score: 75,
+    scoreLabel: "75",
+    stats: { programs: "60¢ per $1 to programs", ceoPay: "$0.23 to raise $1", revenue: "$9.11M" },
+    audit: {
+      ein: "92-1154296", location: "Santa Ana, CA · Founded 1955 · ECFA Accredited", score: 75, scoreSource: "Charity Navigator FY2024",
+      programs: ["World Watch List — annual ranking of 50 countries of persecution","Bible Distribution — Scriptures in 70+ countries","Church Leader Training — equipping pastors in persecuted regions","Emergency Relief — support for displaced Christians","Advocacy & Awareness — mobilizing prayer from the free world"],
+      mission: "Brother Andrew smuggled Bibles behind the Iron Curtain because he believed no believer should suffer alone and without God's Word. That conviction hasn't changed in 70 years. Open Doors exists so the free church remembers the persecuted church — through prayer, Bibles, training, and emergency relief. If your faith could cost you everything, they want you to know someone is standing with you.",
+      financials: [
+        {metric:"Program Expense Ratio",value:"60%",rating:"Below Average",ratingColor:"amber"},
+        {metric:"Fundraising Efficiency",value:"$0.23 to raise $1",rating:"High Cost",ratingColor:"red"},
+        {metric:"Revenue / Expenses",value:"$9.11M / $9.26M"},
+        {metric:"Liabilities to Assets",value:"15%",rating:"Healthy",ratingColor:"green"},
+        {metric:"Working Capital",value:"2.83 months",rating:"Adequate",ratingColor:"green"}
+      ],
+      leaders: [{name:"Ryan Brown",role:"CEO",comp:"$193,871"},{name:"Sarah Cunningham",role:"COO",comp:"$174,196"},{name:"Kevin Wilson",role:"CIO",comp:"$164,823"},{name:"Andrew Richards",role:"Sr. Dir. Partnerships",comp:"$144,051"},{name:"Matthew Dewolf",role:"CFO",comp:"$42,592"},{name:"3 Board Directors",role:"Various",comp:"$0"}],
+      leaderNote: "Total top-5: ~$719K / $9.26M = 7.8% · CEO ratio: 5.7x avg · Benefits: 23%",
+      governance: ["ECFA accredited (2024)","Audited w/ oversight committee","No asset diversion","All policies in place","990 on website"],
+      redflags: "High fundraising costs (22%), low program ratio (60%), very small board (3 members). Complex restructuring — split from Open Doors USA (now GCR) in Jan 2023. New EIN, rebuilding track record.",
+      redflagLevel: "warning",
+      critics: [
+        "60% program ratio is well below the 75% benchmark most watchdogs recommend — 40 cents of every dollar does NOT reach the mission.",
+        "$0.23 to raise $1 is expensive fundraising — healthy orgs spend $0.05–$0.10.",
+        "Only 3 board members — far below governance best practices (minimum 5–7). Concentration of control risk.",
+        "Messy split from Open Doors USA (now GCR) in Jan 2023 — organizational instability, new EIN, rebuilding from scratch.",
+        "Top-5 executive compensation totals $719K on $9.26M revenue (7.8%) — high for a small org with poor program efficiency.",
+        "Benefits ratio at 23% of compensation is notably high.",
+        "The World Watch List, while widely cited, is produced by an advocacy org with a fundraising incentive to emphasize persecution severity. Its methodology is not fully transparent or independently audited. Persecution narratives — particularly around Nigeria and Syria — should be cross-referenced with neutral sources (UN, Reuters, AP) rather than accepted at face value."
+      ],
+      ambassadors: [
+        "World Watch List is widely cited by governments, media, and researchers worldwide.",
+        "FY2024 financials are current and transparent — they file and publish, unlike many peers.",
+        "Operating in 70+ countries where the church faces active persecution — among the hardest mission fields on earth.",
+        "New leadership may improve efficiency as the post-split organization matures."
+      ],
+      verdict: "70 years serving persecuted Christians. <strong>60% program ratio and 22% fundraising costs are below benchmarks</strong> — worth monitoring as the post-split organization matures.",
+      sources: "Sources: IRS Form 990 (FY2024), Charity Navigator, ProPublica, ECFA · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Global Christian Relief",
+    image: 'img/gcr.png',
+    status: "given",
+    type: "org",
+    category: "persecuted",
+    categoryLabel: "Persecuted Church",
+    amount: "SAR 10,000",
+    amountNum: 10000,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Supports persecuted Christians worldwide through emergency aid, trauma care, rebuilding, Bibles, and empowerment. Builds a movement of prayer and support so believers stand firm amid persecution. Formerly Open Doors USA.",
+    link: "https://globalchristianrelief.org",
+    lastUpdate: "",
+    score: -1,
+    scoreLabel: "⚠️",
+    stats: { programs: "Not rated yet", ceoPay: "Not available", revenue: "$33.6M" },
+    audit: {
+      ein: "23-7275342", location: "Santa Ana, CA · Rebranded Jan 2023 · Formerly Open Doors USA", score: null, scoreSource: "Insufficient data",
+      programs: ["Persecuted Church — serving Christians in 70+ countries","Bible Distribution — Scriptures in restricted nations","Emergency Relief — aid to displaced/persecuted believers","Vocational Training — economic empowerment for families","Advocacy & Awareness — raising global awareness of persecution"],
+      mission: "Born from the same legacy as Open Doors — the conviction that Christians suffering for their faith should never be forgotten. GCR carries forward the work of getting Bibles, aid, and hope into the hardest places on earth. The persecuted church isn't a cause to them — it IS the mission. Frontline kingdom work where the cost of following Jesus is highest.",
+      financials: [
+        {metric:"Revenue",value:"$33.6M"},{metric:"Expenses",value:"$28.8M"},
+        {metric:"Total Assets",value:"$12.2M"},{metric:"Liabilities",value:"$2.88M (23.6%)",rating:"Notable",ratingColor:"amber"},
+        {metric:"Program Ratio",value:"Not calculated",rating:"Unrated",ratingColor:"amber"}
+      ],
+      leaders: [{name:"David Curry",role:"President/CEO",comp:"$324,223"},{name:"Tim Muret",role:"Chief Comms Officer",comp:"$253,028"},{name:"Jeff Taylor",role:"Chief of Staff",comp:"$198,345"},{name:"9 Board Directors",role:"Various",comp:"$0 (unpaid)"}],
+      leaderNote: "CEO total comp $324K on $33.6M revenue. 'Other comp' includes retirement/benefits.",
+      governance: ["Board directors unpaid (9)"],
+      redflags: "Organizational split (Jan 2023) after founder died. CEO comp $324K higher than peers. Most recent 990 is 2020. No ECFA accreditation for rebranded entity.",
+      redflagLevel: "warning",
+      critics: [
+        "Most recent 990 is FY2020 — 6 years old. Current financial state is completely unknown.",
+        "Organizational split after Brother Andrew's death raises questions about what the dispute was actually about — money, control, or mission direction?",
+        "No ECFA accreditation for the rebranded GCR entity — they lost that accountability marker in the split.",
+        "CEO comp $324K — while the ratio to revenue (0.97%) is reasonable, the total is high compared to Crisis Aid ($124K) and Lifesong ($0) CEOs doing comparable work.",
+        "Chief Comms Officer at $253K is notably high — suggests significant spending on brand/marketing rather than field operations.",
+        "$2.88M in liabilities (23.6% of assets) is the highest ratio among the orgs on this dashboard.",
+        "'Christian persecution' has become a geopolitical buzzword used to justify military actions in some contexts. GCR's front-page story features Nigerian Christian persecution, but evidence suggests the violence there is not primarily religiously motivated — more Muslims than Christians have died in the broader conflict (per Nigerian government data). Christian aid orgs are among the weakest at fact-checking persecution narratives and risk creating propaganda. Claims should be cross-referenced with neutral sources (UN, Reuters, AP), not just advocacy reports."
+      ],
+      ambassadors: [
+        "Inherits 68 years of Open Doors USA infrastructure, relationships, and field networks.",
+        "David Curry is a visible public advocate, frequently appearing in media and before Congress.",
+        "Revenue exceeds expenses — not running deficits despite the organizational restructuring.",
+        "Serving persecuted Christians is among the most important and dangerous mission fields — few organizations do this work."
+      ],
+      verdict: "Significant scale ($33.6M) with an unpaid board. <strong>Current financials unavailable (last 990 is FY2020)</strong> — the mission is deeply valuable, the question is whether this organization is the best vehicle for it.",
+      sources: "Sources: IRS Form 990 (FY2020), ProPublica, Christianity Today · Prepared by Po — Feb 2026"
+    }
+  },
+  {
+    name: "Help The Persecuted",
+    image: 'img/htp.svg',
+    status: "new",
+    type: "org",
+    category: "persecuted",
+    categoryLabel: "Persecuted Church",
+    amount: "—",
+    amountNum: 0,
+    potentialAmount: "",
+    frequency: "Potential",
+    description: "Rescue, restore, and rebuild the lives of persecuted Christians in the Middle East and North Africa through safe houses, underground church networks, and emergency aid — working toward a vision where the persecuted Church endures, flourishes and multiplies in the most hostile regions.",
+    link: "https://htp.org",
+    lastUpdate: "Mar 2026",
+    score: null,
+    scoreLabel: "N/R",
+    stats: { programs: "Cannot verify", ceoPay: "Unknown", revenue: "$6.4M" },
+    audit: {
+      ein: "83-1799054", location: "Marietta, GA · Founded 2011 · ECFA Accredited", score: null, scoreSource: "Charity Navigator — Not Currently Rated",
+      programs: ["Safe Houses — Secure accommodation for persecuted Christians","Relocation Services — Assistance with emergency evacuation","Trauma Recovery — Pastoral care and counseling support","Emergency Relief Kits — Food, medical supplies, basic necessities","Underground Church Networks — Support for Christian communities in hostile regions"],
+      mission: "Joshua Youssef grew up watching his father, Michael Youssef, serve persecuted believers — so this isn't abstract for him. HTP exists because Christians in the Middle East and North Africa are losing homes, families, and lives for their faith, and someone needs to be there with a safe house, a plan, and a way out. Rescue first, then restore, then rebuild — so the underground church doesn't just survive, it multiplies.",
+      financials: [
+        {metric:"Program Expense Ratio",value:"Cannot verify",rating:"Unknown",ratingColor:"red"},
+        {metric:"Revenue (ECFA)",value:"$6.4M (FY2025)",rating:"Good",ratingColor:"green"},
+        {metric:"Total Expenses (ECFA)",value:"$6.0M (FY2025)",rating:"Good",ratingColor:"green"}
+      ],
+      leaders: [{name:"Joshua Youssef",role:"President & CEO",comp:"Unknown"},{name:"Allan Guinan",role:"Executive Vice President",comp:"Unknown"}],
+      leaderNote: "No compensation data available due to missing 990 filings. ECFA shows revenue vs expenses but not executive compensation breakdown.",
+      governance: ["Board of Directors — 6 members including independent positions","ECFA accredited since August 2019","Excellence in Giving certified","Religious Liberty Partnership member"],
+      redflags: "No public 990 filings — see Critics section for details.",
+      redflagLevel: "warning",
+      critics: [
+        "No Form 990 filings found despite 2019 tax exemption ruling — zero independent financial verification available.",
+        "Cannot verify program ratios or executive compensation — only ECFA summary data exists.",
+        "Operates in geopolitically complex regions with limited independent verification of impact claims.",
+        "Revenue growth from $3.1M to $6.4M requires scrutiny given the lack of public financials."
+      ],
+      ambassadors: [
+        "Dual accountability: both ECFA accredited and Excellence in Giving certified.",
+        "14+ years operational track record (founded 2011).",
+        "Religious Liberty Partnership membership shows peer recognition.",
+        "Independent Chairman (David Dungan) with separation of CEO/Chairman roles."
+      ],
+      verdict: "Strong accountability certifications (ECFA + Excellence in Giving) but <strong>no Form 990 filings publicly available</strong>. Revenue growing ($3.1M→$6.4M). The certifications are reassuring, but independent financial verification would strengthen confidence.",
+      sources: "Sources: ECFA Financial Data (FY2025), Charity Navigator, ProPublica, Excellence in Giving · Prepared by Po — Mar 2026"
+    }
+  },
+  // ── MINISTRY OF THE WORD / GLOBAL CHURCH NEEDS ──
+  {
+    name: "Joyful Joseph",
+    image: 'img/joseph.png',
+    status: "given",
+    type: "person",
+    category: "word",
+    categoryLabel: "Ministry of the Word",
+    categories: [{cat: "word", label: "Ministry of the Word"}, {cat: "global", label: "Global Church Needs"}],
+    amount: "SAR 5,626 ($1,500)",
+    amountNum: 5626,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Seeking funding to take Joseph out of full-time employment for 1 year to grow in Character, Competency, and Convictions for ministry. He's been faithful serving the church and sharing boldly with friends and family. Has a teaching gift that needs time to develop.",
+    link: "",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "<strong>Ministry Trainee Year — 3 Growth Areas:</strong><br><br><strong>1. Character</strong> — Life-on-life mentoring and regular check-ins.<br><br><strong>2. Competency</strong> — Modelling and releasing in all elements of ministry: evangelism, Bible reading, teaching, preaching, and pastoring.<br><br><strong>3. Convictions</strong> — An online theology course.<br><br><strong>Why this is wise:</strong><br>• He has been faithful in serving the gathered church and sharing boldly with friends and family.<br>• His type of employment means a year out won't impact future work opportunities.<br>• He has a teaching gift which needs time to hone — no capacity to develop it in his current job."
+  },
+  {
+    name: "Ridgy Vibrating Ball",
+    image: 'img/daniel-ball-nobg.png',
+    status: "given",
+    type: "need",
+    category: "global",
+    categoryLabel: "Global Church Needs",
+    amount: "SAR 275",
+    amountNum: 275,
+    frequency: "Given",
+    description: "A gift for Daniel. A rechargeable vibrating sensory ball with textured ridges and 3 intensity levels. Great for proprioception, muscle relaxation, and focus. 9cm diameter, silicone rubber, USB rechargeable.",
+    link: "https://specialneedstoys.com/can/proprioception/vibrating-ball.html",
+    link2: "https://www.google.com/search?q=vibrating+ball+special+needs+toys",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "<strong>Ridgy Vibrating Ball — TFH Sensory Specialists</strong><br><br>A handheld textured silicone ball with 3 vibration levels (2,650–3,700 RPM). Designed for sensory exploration, proprioception, and calming.<br><br><strong>Key features:</strong><br>• Textured ridges for tactile feedback<br>• 3 adjustable vibration intensities<br>• Rechargeable via micro USB<br>• Auto-off feature<br>• 9 cm diameter, 14 oz<br><br><strong>Benefits:</strong> Muscle relaxation, deep tissue relief, improved body awareness, focus and engagement, pain management. Great for sensory room setups or standalone use."
+  },
+  // ── LOCAL CHURCH ──
+  {
+    name: "Local Church (Us)",
+    image: 'img/local-church.png',
+    status: "given",
+    type: "org",
+    category: "local",
+    categoryLabel: "Local Church",
+    amount: "SAR 26,800",
+    amountNum: 26800,
+    potentialAmount: "",
+    frequency: "Given — Annual",
+    description: "Our local church. No fundraising costs. 70% of budget goes to external programs and missions beyond the local body. Assets: ~SAR 2,000.",
+    link: "",
+    lastUpdate: "",
+    score: null,
+    scoreLabel: "N/A",
+    givenLabel: "Year to Date Received",
+    potentialLabel: "Year to Date Expenses",
+    potentialAmount: "SAR 8,700",
+    stats: { programs: "70% to external", ceoPay: "$0.00 to raise $1", revenue: "SAR 26,800 / 8,700" }
+  },
+  {
+    name: "Projector",
+    image: 'img/projector-epson.png',
+    status: "new",
+    type: "want",
+    category: "local",
+    categoryLabel: "Local Church",
+    amount: "SAR 1,500",
+    amountNum: 1500,
+    potentialAmount: "",
+    frequency: "1,500 received — needs ~329 more",
+    description: "Epson CO-FH01 — Full HD 1080p, 3LCD, 3,000 lumens, HDMI/USB, horizontal & vertical keystone correction, built-in speaker, up to 378\" projection.",
+    link: "https://www.amazon.sa/-/en/Epson-CO-FH01-Technology-Connection-Horizontal/dp/B0BWS6TZNL",
+    lastUpdate: "Feb 2026",
+    score: null,
+    updateText: "<strong>Epson CO-FH01 Smart Video Projector</strong><br>• Full HD 1080p resolution<br>• 3LCD technology — no rainbow effect<br>• 3,000 lumens colour & white brightness<br>• Up to 378\" projection<br>• HDMI & USB connectivity<br>• Horizontal & vertical keystone correction<br>• Built-in speaker<br>• Compact and portable<br><br>Price: SAR 1,829–2,229 on Amazon.sa<br>SAR 1,500 received so far — needs ~329 more."
+  }
+];

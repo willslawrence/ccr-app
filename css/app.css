@@ -2516,3 +2516,175 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
     align-self: center;
   }
 }
+
+/* ====================================
+   CHARITY CARDS (GIVING DASHBOARD)
+   ==================================== */
+
+/* Category filter pills */
+.cat-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.cat-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--muted);
+}
+
+.cat-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.cat-btn.active {
+  color: #fff;
+}
+
+.cat-btn.active[data-cat="all"] { background: var(--accent); border-color: var(--accent); }
+.cat-btn.active[data-cat="church"] { background: #60a5fa; border-color: #60a5fa; }
+.cat-btn.active[data-cat="orphan"] { background: #d4a017; border-color: #d4a017; }
+.cat-btn.active[data-cat="persecuted"] { background: #f97316; border-color: #f97316; }
+.cat-btn.active[data-cat="word"] { background: #166534; border-color: #166534; }
+.cat-btn.active[data-cat="local"] { background: #4ade80; border-color: #4ade80; color: #0f172a; }
+.cat-btn.active[data-cat="global"] { background: #1e40af; border-color: #1e40af; }
+
+/* Charity grid */
+.charity-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .charity-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .charity-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Charity card */
+.giving-charity-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.giving-charity-card:hover {
+  background: var(--card-hover);
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.giving-charity-card.dimmed {
+  opacity: 0.4;
+  transform: none !important;
+}
+
+.giving-charity-card .charity-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.giving-charity-card .charity-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: var(--text);
+}
+
+.giving-charity-card .charity-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.giving-charity-card .charity-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.giving-charity-card .charity-amount {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.giving-charity-card .click-details {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Category tags */
+.category-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cat-church { background: #60a5fa; }
+.cat-orphan { background: #d4a017; }
+.cat-persecuted { background: #f97316; }
+.cat-word { background: #166534; }
+.cat-local { background: #4ade80; color: #0f172a; }
+.cat-global { background: #1e40af; }
+
+/* Status badges */
+.status-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
+}
+
+.status-given { background: #3b82f6; }
+.status-new { background: #ec4899; }
+
+/* Score circles */
+.score-circle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: white;
+}
+
+.score-100 { background: #16a34a; }
+.score-75 { background: #d97706; }
+.score-warning { background: #dc2626; }

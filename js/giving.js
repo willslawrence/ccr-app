@@ -4,6 +4,7 @@
    ==================================== */
 
 let currentGivingTab = 'transactions'; // Default to transactions
+let activeGivingCat = 'all'; // Category filter for charities
 let givingState = {
   transactions: [],
   showAddForm: false,
@@ -49,50 +50,19 @@ function calculateTotals() {
   return { totalIn, totalOut, balance };
 }
 
-// Mock charity data (replace with actual Google Sheets data later)
-const CHARITIES_DATA = [
-  {
-    name: "Local Food Bank",
-    category: "Community Outreach",
-    allocation: 2500,
-    description: "Supporting families in need with food assistance"
-  },
-  {
-    name: "Missions Fund",
-    category: "Global Missions",
-    allocation: 3000,
-    description: "Supporting missionaries worldwide"
-  },
-  {
-    name: "Youth Ministry",
-    category: "Ministry Programs",
-    allocation: 1500,
-    description: "Programs and activities for youth development"
-  },
-  {
-    name: "Building Maintenance",
-    category: "Operations",
-    allocation: 2000,
-    description: "Keeping our facilities in good condition"
-  },
-  {
-    name: "Benevolence Fund",
-    category: "Community Support",
-    allocation: 1000,
-    description: "Emergency assistance for church members and community"
-  }
-];
-
-// Calculate total allocation
-function getTotalAllocation() {
-  return CHARITIES_DATA.reduce((sum, charity) => sum + charity.allocation, 0);
+// Calculate total given (excluding Local Church)
+function getTotalGiven() {
+  if (!window.GIVING_CHARITIES) return 0;
+  return GIVING_CHARITIES
+    .filter(charity => charity.status === 'given' && charity.name !== 'Local Church (Us)')
+    .reduce((sum, charity) => sum + charity.amountNum, 0);
 }
 
 // Render Giving page
 async function renderGivingPage() {
   await loadTransactions();
   const totals = calculateTotals();
-  const totalAllocation = getTotalAllocation();
+  const totalGiven = getTotalGiven();
 
   return `
     <div class="page giving-page">
@@ -200,32 +170,54 @@ async function renderGivingPage() {
       <!-- Charities Tab -->
       <div class="giving-tab-content ${currentGivingTab === 'charities' ? 'active' : ''}" data-tab="charities">
 
-        <!-- Total Allocation Summary -->
+        <!-- Total Given Summary -->
         <div class="card giving-summary">
-          <h3>Total Monthly Allocation</h3>
-          <div class="giving-total">$${totalAllocation.toLocaleString()}</div>
+          <h3>Total Given</h3>
+          <div class="giving-total">SAR ${totalGiven.toLocaleString()}</div>
           <p style="color: var(--muted); font-size: 14px; margin-top: 8px;">
-            Distributed across ${CHARITIES_DATA.length} charities and funds
+            Across ${(GIVING_CHARITIES || []).filter(c => c.status === 'given').length} charities and ministries
           </p>
         </div>
 
-        <!-- Charity Cards -->
-        <div class="charities-grid">
-          ${CHARITIES_DATA.map(charity => {
-            const percent = Math.round((charity.allocation / totalAllocation) * 100);
+        <!-- Category Filter Pills -->
+        <div class="cat-filters" style="margin-bottom:20px;">
+          <button class="cat-btn ${activeGivingCat === 'all' ? 'active' : ''}" data-cat="all" onclick="filterGivingCategory('all')">All</button>
+          <button class="cat-btn ${activeGivingCat === 'church' ? 'active' : ''}" data-cat="church" onclick="filterGivingCategory('church')">⛪ Church Planting</button>
+          <button class="cat-btn ${activeGivingCat === 'orphan' ? 'active' : ''}" data-cat="orphan" onclick="filterGivingCategory('orphan')">💛 Orphans Widows & Sojourners</button>
+          <button class="cat-btn ${activeGivingCat === 'persecuted' ? 'active' : ''}" data-cat="persecuted" onclick="filterGivingCategory('persecuted')">🔥 Persecuted Church</button>
+          <button class="cat-btn ${activeGivingCat === 'word' ? 'active' : ''}" data-cat="word" onclick="filterGivingCategory('word')">📖 Ministry of the Word</button>
+          <button class="cat-btn ${activeGivingCat === 'local' ? 'active' : ''}" data-cat="local" onclick="filterGivingCategory('local')">🏠 Local Church</button>
+          <button class="cat-btn ${activeGivingCat === 'global' ? 'active' : ''}" data-cat="global" onclick="filterGivingCategory('global')">🌍 Global Church Needs</button>
+        </div>
+
+        <!-- Charity Cards Grid -->
+        <div class="charity-grid" id="charityGrid">
+          ${(GIVING_CHARITIES || []).map(charity => {
+            const isVisible = activeGivingCat === 'all' || charity.category === activeGivingCat || (charity.categories && charity.categories.some(c => c.cat === activeGivingCat));
+            const statusBadge = charity.status === 'given' ? 
+              '<span class="status-badge status-given">✓ Given</span>' : 
+              '<span class="status-badge status-new">★ New</span>';
+            const scoreCircle = charity.score === 100 ? 
+              '<div class="score-circle score-100">100</div>' : 
+              charity.score === 75 ? '<div class="score-circle score-75">75</div>' : 
+              charity.score === -1 ? '<div class="score-circle score-warning">⚠️</div>' : '';
+            
+            // Truncate description to 2-3 lines
+            const shortDesc = charity.description.length > 120 ? 
+              charity.description.substring(0, 120) + '...' : charity.description;
+
             return `
-              <div class="charity-card card">
-                <div class="charity-header">
-                  <h3>${escapeHtml(charity.name)}</h3>
-                  <span class="charity-category">${escapeHtml(charity.category)}</span>
+              <div class="giving-charity-card ${isVisible ? '' : 'dimmed'}" data-category="${charity.category}" onclick="openCharityModal('${charity.name.replace(/'/g, "\\'")}')">
+                ${scoreCircle}
+                <div class="charity-card-header">
+                  <span class="category-tag cat-${charity.category}">${charity.categoryLabel}</span>
+                  ${statusBadge}
                 </div>
-                <p class="charity-description">${escapeHtml(charity.description)}</p>
-                <div class="charity-allocation">
-                  <div class="allocation-amount">$${charity.allocation.toLocaleString()}</div>
-                  <div class="allocation-percent">${percent}% of total</div>
-                </div>
-                <div class="charity-progress-bar">
-                  <div class="charity-progress-fill" style="width: ${percent}%"></div>
+                <h3 class="charity-name">${escapeHtml(charity.name)}</h3>
+                <p class="charity-desc">${escapeHtml(shortDesc)}</p>
+                <div class="charity-footer">
+                  <div class="charity-amount">${charity.amount}</div>
+                  <div class="click-details">Click for details</div>
                 </div>
               </div>
             `;
@@ -234,6 +226,203 @@ async function renderGivingPage() {
       </div>
     </div>
   `;
+}
+
+// Filter charities by category
+function filterGivingCategory(cat) {
+  activeGivingCat = cat;
+  
+  // Update button states
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
+  
+  // Filter cards
+  document.querySelectorAll('.giving-charity-card').forEach(card => {
+    const cardCat = card.dataset.category;
+    const isVisible = cat === 'all' || cardCat === cat;
+    card.classList.toggle('dimmed', !isVisible);
+  });
+}
+
+// Open charity modal
+function openCharityModal(charityName) {
+  if (!window.GIVING_CHARITIES) return;
+  const charity = GIVING_CHARITIES.find(c => c.name === charityName);
+  if (!charity) return;
+  
+  // Reuse existing bookDetailModal
+  const modal = document.getElementById('bookDetailModal');
+  const modalContent = modal.querySelector('.modal-content');
+  
+  // Build modal content
+  let content = `
+    <div class="modal-header">
+      <h2>${escapeHtml(charity.name)}</h2>
+      <button class="modal-close" onclick="closeModal('bookDetailModal')">&times;</button>
+    </div>
+    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+  `;
+  
+  // Category and amount
+  content += `
+    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+      <span class="category-tag cat-${charity.category}">${charity.categoryLabel}</span>
+      ${charity.status === 'given' ? '<span class="status-badge status-given">✓ Given</span>' : '<span class="status-badge status-new">★ New</span>'}
+    </div>
+    <div style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--accent);">
+      ${charity.amount}
+    </div>
+  `;
+  
+  // Full description
+  content += `<div style="margin-bottom: 16px;">${charity.fullDescription || charity.description}</div>`;
+  
+  // Link if available
+  if (charity.link) {
+    content += `<div style="margin-bottom: 16px;"><a href="${charity.link}" target="_blank" class="btn btn-outline">Visit Website</a></div>`;
+  }
+  
+  // Stats row for orgs
+  if (charity.stats) {
+    content += `
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; padding: 12px; background: var(--card-hover); border-radius: 8px;">
+        <div style="text-align: center;">
+          <div style="font-size: 12px; color: var(--muted);">Programs</div>
+          <div style="font-weight: 600;">${charity.stats.programs}</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 12px; color: var(--muted);">Fundraising</div>
+          <div style="font-weight: 600;">${charity.stats.ceoPay}</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 12px; color: var(--muted);">Revenue</div>
+          <div style="font-weight: 600;">${charity.stats.revenue}</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Audit section if available
+  if (charity.audit) {
+    const audit = charity.audit;
+    content += `<div style="margin-bottom: 16px;">`;
+    
+    // Mission
+    if (audit.mission) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--accent);">Mission</h4>
+        <div style="margin-bottom: 16px; font-style: italic;">${audit.mission}</div>
+      `;
+    }
+    
+    // What They Do
+    if (audit.programs) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--accent);">What They Do</h4>
+        <ul style="margin-bottom: 16px;">
+          ${audit.programs.map(p => `<li>${p}</li>`).join('')}
+        </ul>
+      `;
+    }
+    
+    // Financials table
+    if (audit.financials) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--accent);">Financials</h4>
+        <div style="margin-bottom: 16px;">
+      `;
+      audit.financials.forEach(item => {
+        const colorClass = item.ratingColor === 'green' ? 'color: var(--green)' : 
+                          item.ratingColor === 'amber' ? 'color: #d97706' : 
+                          item.ratingColor === 'red' ? 'color: var(--red)' : '';
+        content += `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+            <span>${item.metric}</span>
+            <span style="${colorClass}; font-weight: 600;">${item.value}</span>
+          </div>
+        `;
+      });
+      content += `</div>`;
+    }
+    
+    // Leadership table
+    if (audit.leaders) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--accent);">Leadership</h4>
+        <div style="margin-bottom: 16px;">
+      `;
+      audit.leaders.forEach(leader => {
+        content += `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
+            <span>${leader.name} (${leader.role})</span>
+            <span style="font-weight: 600;">${leader.comp}</span>
+          </div>
+        `;
+      });
+      if (audit.leaderNote) {
+        content += `<div style="font-size: 12px; color: var(--muted); margin-top: 8px;">${audit.leaderNote}</div>`;
+      }
+      content += `</div>`;
+    }
+    
+    // Governance checkmarks
+    if (audit.governance) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--accent);">Governance</h4>
+        <ul style="margin-bottom: 16px;">
+          ${audit.governance.map(g => `<li style="color: var(--green);">✓ ${g}</li>`).join('')}
+        </ul>
+      `;
+    }
+    
+    // Critics Say (red box)
+    if (audit.critics) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--red);">Critics Say</h4>
+        <div style="background: rgba(220, 38, 38, 0.1); border-left: 4px solid var(--red); padding: 12px; margin-bottom: 16px;">
+          <ul>
+            ${audit.critics.map(c => `<li>${c}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+    
+    // Ambassadors Say (green box)
+    if (audit.ambassadors) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--green);">Ambassadors Say</h4>
+        <div style="background: rgba(22, 163, 74, 0.1); border-left: 4px solid var(--green); padding: 12px; margin-bottom: 16px;">
+          <ul>
+            ${audit.ambassadors.map(a => `<li>${a}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+    
+    // Verdict
+    if (audit.verdict) {
+      content += `
+        <h4 style="margin-bottom: 8px; color: var(--accent);">Verdict</h4>
+        <div style="margin-bottom: 16px; font-weight: 500;">${audit.verdict}</div>
+      `;
+    }
+    
+    content += `</div>`;
+  }
+  
+  // Update text if available
+  if (charity.updateText) {
+    content += `
+      <h4 style="margin-bottom: 8px; color: var(--accent);">Latest Update</h4>
+      <div style="margin-bottom: 16px;">${charity.updateText}</div>
+    `;
+  }
+  
+  content += `</div>`;
+  
+  modalContent.innerHTML = content;
+  modal.style.display = 'block';
 }
 
 // Initialize Giving page
