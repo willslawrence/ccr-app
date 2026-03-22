@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '1.6.6';
+const APP_VERSION = '1.6.7';
 
 // Global state
 const AppState = {
@@ -300,7 +300,7 @@ function initVersionModal() {
 
   if (versionBadge) {
     // Set version dynamically
-    versionBadge.textContent = 'v' + APP_VERSION.split('.').slice(0, 2).join('.');
+    versionBadge.textContent = 'v' + APP_VERSION;
     versionBadge.addEventListener('click', (e) => {
       e.stopPropagation();
       versionModalOverlay.classList.add('active');
