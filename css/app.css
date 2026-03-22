@@ -2517,6 +2517,63 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   }
 }
 
+/* Bible lock button and locked state styles */
+.bible-lock-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  margin-left: 8px;
+}
+
+.bible-lock-btn:hover {
+  background: var(--surface);
+}
+
+.book-card.locked {
+  opacity: 0.5;
+  filter: grayscale(50%);
+}
+
+.book-header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Bible stats panel styles */
+.bible-stats-panel {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.bible-progress-circles {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.bible-progress-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 100px;
+}
+
+.bible-genre-stats {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
 /* ====================================
    CHARITY CARDS (GIVING DASHBOARD)
    ==================================== */

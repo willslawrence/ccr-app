@@ -95,11 +95,12 @@ const BIBLE_GENRES = [
 ];
 
 // ====================================
-// IN-MEMORY CACHE + DEBOUNCED SAVE
+// IN-MEMORY CACHE + DEBOUNCED SAVE + LOCKED BOOKS
 // ====================================
 let _bibleCache = null;
 let _bibleSaveTimer = null;
 let _bibleSaving = false;
+let _lockedBooks = new Set(JSON.parse(localStorage.getItem('bible_locked_books') || '[]'));
 
 // Load Bible progress from Firestore (or cache)
 async function loadBibleProgress() {
@@ -200,9 +201,59 @@ function recomputeBibleStats(data) {
   }).length;
 }
 
+// Toggle book lock status (global function for onclick handlers)
+window.toggleBookLock = function(abbr) {
+  if (_lockedBooks.has(abbr)) {
+    _lockedBooks.delete(abbr);
+  } else {
+    _lockedBooks.add(abbr);
+  }
+  localStorage.setItem('bible_locked_books', JSON.stringify([..._lockedBooks]));
+  
+  // Update UI - re-render the entire book card to update lock button icon
+  if (_bibleCache) {
+    const book = BIBLE_BOOKS.find(b => b.abbr === abbr);
+    const card = document.querySelector(`.book-card[data-book="${abbr}"]`);
+    if (card && book) {
+      const progress = getBookProgressSync(book.abbr, _bibleCache);
+      const isCompleted = progress.percent === 100;
+      const isLocked = _lockedBooks.has(book.abbr);
+      
+      const newHtml = `
+        <div class="book-header">
+          <span class="book-name">${book.name}</span>
+          <div class="book-header-right">
+            <span class="book-progress">${progress.read}/${progress.total}</span>
+            ${isCompleted ? `<button class="bible-lock-btn" onclick="toggleBookLock('${book.abbr}')" title="${isLocked ? 'Unlock book' : 'Lock book'}">${isLocked ? '🔓' : '🔒'}</button>` : ''}
+          </div>
+        </div>
+        <div class="book-progress-bar">
+          <div class="book-progress-fill" style="width: ${progress.percent}%"></div>
+        </div>
+        <div class="chapter-grid" style="display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px;">
+          ${Array.from({length: book.chapters}, (_, i) => {
+            const chapterNum = i + 1;
+            const read = (_bibleCache.chaptersRead[book.abbr] || []).includes(chapterNum);
+            return `<button class="chapter-btn ${read ? 'read' : ''}"
+                            data-book="${book.abbr}"
+                            data-chapter="${chapterNum}">${chapterNum}</button>`;
+          }).join('')}
+        </div>
+      `;
+      
+      card.innerHTML = newHtml;
+      card.className = `book-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}`;
+    }
+  }
+}
+
 // Toggle chapter read status — instant UI, debounced save
 function toggleChapter(bookAbbr, chapterNum) {
   if (!_bibleCache) return;
+  
+  // Skip if book is locked
+  if (_lockedBooks.has(bookAbbr)) return;
+  
   const data = _bibleCache;
 
   if (!data.chaptersRead[bookAbbr]) {
@@ -288,6 +339,10 @@ function initChapterDragSelection() {
     if (!btn) return;
 
     const bookAbbr = btn.dataset.book;
+    
+    // Skip if book is locked
+    if (_lockedBooks.has(bookAbbr)) return;
+    
     const chapter = parseInt(btn.dataset.chapter);
     // Determine mode: if chapter is unread, we're marking as read. If read, unmarking.
     const isRead = btn.classList.contains('read');
@@ -334,6 +389,10 @@ function initChapterDragSelection() {
 
 function applyDragChapter(bookAbbr, chapterNum, markAsRead) {
   if (!_bibleCache) return;
+  
+  // Skip if book is locked
+  if (_lockedBooks.has(bookAbbr)) return;
+  
   const data = _bibleCache;
 
   if (!data.chaptersRead[bookAbbr]) {
@@ -366,25 +425,25 @@ function updateBibleStats(data) {
   const otPct = Math.round((otRead / OT_CHAPTERS) * 100);
   const ntPct = Math.round((ntRead / NT_CHAPTERS) * 100);
 
-  // Main ring
+  // Main ring (overall)
   const mainRing = document.getElementById('bible-ring-all');
-  if (mainRing) mainRing.setAttribute('stroke-dasharray', `${(overallPercent / 100) * 163.36} 163.36`);
+  if (mainRing) mainRing.setAttribute('stroke-dasharray', `${(overallPercent / 100) * 327} 327`);
   const mainPct = document.getElementById('bible-pct-all');
   if (mainPct) mainPct.textContent = overallPercent + '%';
 
   // OT ring
   const otRing = document.getElementById('bible-ring-ot');
-  if (otRing) otRing.setAttribute('stroke-dasharray', `${(otPct / 100) * 131.9} 131.9`);
-  const otSub = document.getElementById('bible-ot-sub');
-  if (otSub) otSub.textContent = `${otRead} / ${OT_CHAPTERS}`;
+  if (otRing) otRing.setAttribute('stroke-dasharray', `${(otPct / 100) * 327} 327`);
+  const otPct2 = document.getElementById('bible-pct-ot');
+  if (otPct2) otPct2.textContent = otPct + '%';
 
   // NT ring
   const ntRing = document.getElementById('bible-ring-nt');
-  if (ntRing) ntRing.setAttribute('stroke-dasharray', `${(ntPct / 100) * 131.9} 131.9`);
-  const ntSub = document.getElementById('bible-nt-sub');
-  if (ntSub) ntSub.textContent = `${ntRead} / ${NT_CHAPTERS}`;
+  if (ntRing) ntRing.setAttribute('stroke-dasharray', `${(ntPct / 100) * 327} 327`);
+  const ntPct2 = document.getElementById('bible-pct-nt');
+  if (ntPct2) ntPct2.textContent = ntPct + '%';
 
-  // Stat values
+  // Update any legacy stat displays that might exist
   const sRead = document.getElementById('bible-s-read');
   if (sRead) sRead.textContent = data.stats.totalChapters;
   const sLeft = document.getElementById('bible-s-left');
@@ -393,6 +452,12 @@ function updateBibleStats(data) {
   if (sBooks) sBooks.textContent = data.stats.booksCompleted;
   const sStreak = document.getElementById('bible-s-streak');
   if (sStreak) sStreak.textContent = data.streak.current || '—';
+  
+  // Testament sub-labels (for any legacy displays)
+  const otSub = document.getElementById('bible-ot-sub');
+  if (otSub) otSub.textContent = `${otRead} / ${OT_CHAPTERS}`;
+  const ntSub = document.getElementById('bible-nt-sub');
+  if (ntSub) ntSub.textContent = `${ntRead} / ${NT_CHAPTERS}`;
 }
 
 // Calculate genre stats
@@ -444,16 +509,14 @@ function calculateGenreStats(data) {
   });
 }
 
-// Toggle genre stats panel
-function toggleGenreStats() {
-  const panel = document.getElementById('genre-stats-panel');
-  const btn = document.querySelector('.genre-stats-btn');
+// Toggle stats panel (global function for onclick handlers)
+window.toggleBibleStatsPanel = function() {
+  const panel = document.getElementById('bibleStatsPanel');
   
   if (panel.style.display === 'none' || !panel.style.display) {
     panel.style.display = 'block';
-    btn.classList.add('active');
     
-    // Update stats
+    // Update genre progress bars
     const genreStats = calculateGenreStats(_bibleCache);
     const statsHtml = genreStats.map(stat => `
       <div class="genre-row">
@@ -467,15 +530,14 @@ function toggleGenreStats() {
       </div>
     `).join('');
     
-    panel.innerHTML = `
-      <h4 style="margin-bottom: 12px; font-size: 0.9em; font-weight: 700;">📊 Progress by Genre</h4>
-      ${statsHtml}
-    `;
+    const genreContainer = document.getElementById('genreProgressBars');
+    if (genreContainer) {
+      genreContainer.innerHTML = statsHtml;
+    }
   } else {
     panel.style.display = 'none';
-    btn.classList.remove('active');
   }
-}
+};
 
 function getBookProgressSync(bookAbbr, data) {
   const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
@@ -491,11 +553,15 @@ function renderBooksList(books, data) {
   return books.map(book => {
     const progress = getBookProgressSync(book.abbr, data);
     const isCompleted = progress.percent === 100;
+    const isLocked = _lockedBooks.has(book.abbr);
     return `
-      <div class="book-card ${isCompleted ? 'completed' : ''}" data-book="${book.abbr}">
+      <div class="book-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}" data-book="${book.abbr}">
         <div class="book-header">
           <span class="book-name">${book.name}</span>
-          <span class="book-progress">${progress.read}/${progress.total}</span>
+          <div class="book-header-right">
+            <span class="book-progress">${progress.read}/${progress.total}</span>
+            ${isCompleted ? `<button class="bible-lock-btn" onclick="toggleBookLock('${book.abbr}')" title="${isLocked ? 'Unlock book' : 'Lock book'}">${isLocked ? '🔓' : '🔒'}</button>` : ''}
+          </div>
         </div>
         <div class="book-progress-bar">
           <div class="book-progress-fill" style="width: ${progress.percent}%"></div>
@@ -527,63 +593,65 @@ async function renderBiblePage() {
     <div class="page bible-page">
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
+        <div class="btn-group">
+          <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">Old Testament</button>
+          <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">New Testament</button>
+          <button class="btn btn-outline" onclick="toggleBibleStatsPanel()">📊 Stats</button>
+        </div>
+      </div>
 
-        <!-- Compact Stats Summary -->
-        <div class="bible-stats-compact">
-          <!-- Main progress circle -->
-          <div class="main-progress">
-            <div style="position:relative;width:60px;height:60px;flex-shrink:0;">
-              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:60px;height:60px;">
-                <circle cx="70" cy="70" r="58" fill="none" stroke="var(--border)" stroke-width="11"/>
-                <circle id="bible-ring-all" cx="70" cy="70" r="58" fill="none"
-                        stroke="var(--accent)" stroke-width="11" stroke-linecap="round"
-                        stroke-dasharray="${(overallPercent / 100) * 364.4} 364.4" stroke-dashoffset="0"/>
+      <!-- Stats panel (hidden by default, toggled by Stats button) -->
+      <div id="bibleStatsPanel" class="bible-stats-panel" style="display:none;">
+        <!-- Three circular progress indicators -->
+        <div class="bible-progress-circles">
+          <div class="bible-progress-circle">
+            <div style="position:relative;width:80px;height:80px;">
+              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:80px;height:80px;">
+                <circle cx="70" cy="70" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
+                <circle id="bible-ring-all" cx="70" cy="70" r="52" fill="none"
+                        stroke="var(--accent)" stroke-width="8" stroke-linecap="round"
+                        stroke-dasharray="${(overallPercent / 100) * 327} 327" stroke-dashoffset="0"/>
               </svg>
               <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                <span id="bible-pct-all" style="font-size:0.85em;font-weight:700;color:var(--accent);line-height:1;">${overallPercent}%</span>
-                <span style="font-size:0.35em;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">Complete</span>
+                <span id="bible-pct-all" style="font-size:1em;font-weight:700;color:var(--accent);line-height:1;">${overallPercent}%</span>
+                <span style="font-size:0.4em;color:var(--muted);font-weight:600;text-transform:uppercase;">Overall</span>
               </div>
             </div>
           </div>
-          
-          <!-- Testament stats -->
-          <div class="testament-stats">
-            <div class="testament-row">
-              <span class="testament-label">OT:</span>
-              <span id="bible-ot-sub" class="testament-numbers">${otRead}/${OT_CHAPTERS}</span>
-            </div>
-            <div class="testament-row">
-              <span class="testament-label">NT:</span>
-              <span id="bible-nt-sub" class="testament-numbers">${ntRead}/${NT_CHAPTERS}</span>
+          <div class="bible-progress-circle">
+            <div style="position:relative;width:80px;height:80px;">
+              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:80px;height:80px;">
+                <circle cx="70" cy="70" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
+                <circle id="bible-ring-ot" cx="70" cy="70" r="52" fill="none"
+                        stroke="var(--blue)" stroke-width="8" stroke-linecap="round"
+                        stroke-dasharray="${(otPct / 100) * 327} 327" stroke-dashoffset="0"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span id="bible-pct-ot" style="font-size:1em;font-weight:700;color:var(--blue);line-height:1;">${otPct}%</span>
+                <span style="font-size:0.4em;color:var(--muted);font-weight:600;text-transform:uppercase;">Old Test.</span>
+              </div>
             </div>
           </div>
-          
-          <!-- Quick stats grid -->
-          <div class="quick-stats">
-            <div class="quick-stat">
-              <span id="bible-s-read" class="stat-number">${data.stats.totalChapters}</span>
-              <span class="stat-label">Read</span>
-            </div>
-            <div class="quick-stat">
-              <span id="bible-s-books" class="stat-number">${data.stats.booksCompleted}</span>
-              <span class="stat-label">Books</span>
-            </div>
-            <div class="quick-stat">
-              <span id="bible-s-streak" class="stat-number">${data.streak.current || '—'}</span>
-              <span class="stat-label">Streak</span>
+          <div class="bible-progress-circle">
+            <div style="position:relative;width:80px;height:80px;">
+              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:80px;height:80px;">
+                <circle cx="70" cy="70" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
+                <circle id="bible-ring-nt" cx="70" cy="70" r="52" fill="none"
+                        stroke="var(--green)" stroke-width="8" stroke-linecap="round"
+                        stroke-dasharray="${(ntPct / 100) * 327} 327" stroke-dashoffset="0"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <span id="bible-pct-nt" style="font-size:1em;font-weight:700;color:var(--green);line-height:1;">${ntPct}%</span>
+                <span style="font-size:0.4em;color:var(--muted);font-weight:600;text-transform:uppercase;">New Test.</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Navigation Buttons -->
-        <div class="btn-group bible-nav-buttons">
-          <button class="btn btn-primary bible-tab-btn active" data-testament="OT" onclick="scrollToTestament('OT')">OT</button>
-          <button class="btn btn-outline bible-tab-btn" data-testament="NT" onclick="scrollToTestament('NT')">NT</button>
-          <button class="btn btn-outline genre-stats-btn" onclick="toggleGenreStats()">📊 Stats</button>
-        </div>
-        
-        <!-- Genre Stats Panel -->
-        <div id="genre-stats-panel" class="genre-stats-panel" style="display:none;">
+        <!-- Genre progress bars -->
+        <div class="bible-genre-stats">
+          <h4 style="margin: 16px 0 12px 0; font-size: 0.9em; font-weight: 700;">Progress by Genre</h4>
+          <div id="genreProgressBars"></div>
         </div>
       </div>
 
@@ -605,7 +673,7 @@ async function renderBiblePage() {
   `;
 }
 
-function scrollToTestament(testament) {
+window.scrollToTestament = function(testament) {
   const el = document.getElementById(testament === 'OT' ? 'bible-ot-section' : 'bible-nt-section');
   if (el) {
     const summary = document.querySelector('.bible-summary');
@@ -619,7 +687,7 @@ function scrollToTestament(testament) {
     b.classList.toggle('btn-primary', b.dataset.testament === testament);
     b.classList.toggle('btn-outline', b.dataset.testament !== testament);
   });
-}
+};
 
 // Initialize Bible page
 function initBiblePage() {
@@ -633,6 +701,10 @@ function initBiblePage() {
         return;
       }
       const bookAbbr = btn.dataset.book;
+      
+      // Skip if book is locked
+      if (_lockedBooks.has(bookAbbr)) return;
+      
       const chapterNum = parseInt(btn.dataset.chapter);
       toggleChapter(bookAbbr, chapterNum);
     });
