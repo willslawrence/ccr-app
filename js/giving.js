@@ -259,7 +259,7 @@ function openCharityModal(charityName) {
   let content = `
     <div class="modal-header">
       <h2>${escapeHtml(charity.name)}</h2>
-      <button class="modal-close" onclick="closeModal('bookDetailModal')">&times;</button>
+      <button class="modal-close" onclick="document.getElementById('bookDetailModal').style.display='none'">&times;</button>
     </div>
     <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
   `;
