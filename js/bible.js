@@ -222,8 +222,7 @@ function updateBibleStats(data) {
   if (sStreak) sStreak.textContent = data.streak.current || '—';
 }
 
-async function getBookProgress(bookAbbr) {
-  const data = await loadBibleProgress();
+function getBookProgressSync(bookAbbr, data) {
   const book = BIBLE_BOOKS.find(b => b.abbr === bookAbbr);
   const read = data.chaptersRead[bookAbbr] || [];
   return {
@@ -235,7 +234,7 @@ async function getBookProgress(bookAbbr) {
 
 function renderBooksList(books, data) {
   return books.map(book => {
-    const progress = getBookProgress(book.abbr);
+    const progress = getBookProgressSync(book.abbr, data);
     const isCompleted = progress.percent === 100;
     return `
       <div class="book-card ${isCompleted ? 'completed' : ''}" data-book="${book.abbr}">
