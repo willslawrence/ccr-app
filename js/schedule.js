@@ -407,28 +407,28 @@ function renderVolunteeringTab() {
         const isPast = weekDate < now && !isCurrentWeek;
 
         return `
-          <div class="card" style="margin-bottom:16px;${isCurrentWeek ? 'border:2px solid var(--accent);' : ''}${isPast ? 'opacity:0.5;' : ''}">
-            <div class="card-header">
+          <div class="card" style="margin-bottom:10px;padding:12px 14px;${isCurrentWeek ? 'border:2px solid var(--accent);' : ''}${isPast ? 'opacity:0.5;' : ''}">
+            <div class="card-header" style="padding:0;margin-bottom:0;">
               <div style="flex:1;">
-                <div class="card-title">${formatDate(week.date)}</div>
-                <div class="text-muted" style="font-size:13px;margin-top:4px;">📍 ${escapeHtml(week.location)}</div>
+                <div class="card-title" style="font-size:15px;">${formatDate(week.date)}</div>
+                <div class="text-muted" style="font-size:12px;margin-top:2px;">📍 ${escapeHtml(week.location)}</div>
               </div>
-              ${isCurrentWeek ? '<span class="badge" style="background:var(--accent);color:white;">This Week</span>' : ''}
+              ${isCurrentWeek ? '<span class="badge" style="background:var(--accent);color:white;font-size:10px;padding:3px 8px;">THIS WEEK</span>' : ''}
             </div>
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-              <div style="display:grid;gap:8px;">
-                ${week.setupCleanup ? `<div><strong>Set Up/Clean Up:</strong> ${escapeHtml(week.setupCleanup)}</div>` : ''}
-                ${week.gospel ? `<div><strong>Gospel:</strong> ${escapeHtml(week.gospel)}</div>` : ''}
-                ${week.kids ? `<div><strong>Kids:</strong> ${escapeHtml(week.kids)}</div>` : ''}
-                ${week.it ? `<div><strong>IT:</strong> ${escapeHtml(week.it)}</div>` : ''}
-                ${week.songs ? `<div><strong>Songs:</strong> ${escapeHtml(week.songs)}</div>` : ''}
-                ${week.passageTheme ? `<div><strong>Passage Theme:</strong> ${escapeHtml(week.passageTheme)}</div>` : ''}
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+              <div style="display:grid;gap:3px;font-size:13px;">
+                ${week.setupCleanup ? `<div>🧹 <strong>Set Up/Clean Up:</strong> ${escapeHtml(week.setupCleanup)}</div>` : ''}
+                ${week.gospel ? `<div>📖 <strong>Gospel:</strong> ${escapeHtml(week.gospel)}</div>` : ''}
+                ${week.kids ? `<div>👶 <strong>Kids:</strong> ${escapeHtml(week.kids)}</div>` : ''}
+                ${week.it ? `<div>💻 <strong>IT:</strong> ${escapeHtml(week.it)}</div>` : ''}
+                ${week.songs ? `<div>🎵 <strong>Songs:</strong> ${escapeHtml(week.songs)}</div>` : ''}
+                ${week.passageTheme ? `<div>📜 <strong>Passage Theme:</strong> ${escapeHtml(week.passageTheme)}</div>` : ''}
               </div>
             </div>
             ${canEdit ? `
-              <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editVolunteerWeek('${week.id}')">✏️ Edit</button>
-                <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="(async () => await deleteVolunteerWeek('${week.id}'))()">🗑️ Delete</button>
+              <div class="btn-group" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="editVolunteerWeek('${week.id}')">✏️ Edit</button>
+                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;color:var(--red);" onclick="(async () => await deleteVolunteerWeek('${week.id}'))()">🗑️ Delete</button>
               </div>
             ` : ''}
           </div>
