@@ -205,27 +205,23 @@ function renderLibraryPage() {
         <h1 class="page-title">Friends Library</h1>
 
         <!-- Tab Buttons -->
-        <div class="btn-group" style="margin-bottom:0;">
+        <div class="btn-group" style="margin-bottom:8px;">
           <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">📚 Books</button>
           <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📋 Checked Out</button>
         </div>
-      </div>
 
-      <!-- Books Tab -->
-      <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
-
-        <!-- Search Bar -->
-        <div class="library-search-bar">
-          <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${escapeHtml(librarySearchQuery)}">
+        <!-- Search + Filter on same line -->
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div class="library-search-bar" style="flex:1;margin-bottom:0;">
+            <input type="text" id="librarySearch" placeholder="Search books or authors..." value="${escapeHtml(librarySearchQuery)}" style="padding:8px 12px;font-size:13px;min-height:36px;">
+          </div>
+          <button class="btn btn-outline" id="libraryFilterToggle" style="font-size:12px;padding:6px 12px;min-height:36px;flex-shrink:0;margin:0;">
+            🔽 Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ')' : ''}
+          </button>
         </div>
 
-        <!-- Filter Toggle Button -->
-        <button class="btn btn-outline" id="libraryFilterToggle" style="margin-bottom:12px;font-size:12px;padding:8px 16px;min-height:36px;">
-          ${libraryFiltersVisible ? '🔼' : '🔽'} Filter${hasActiveFilters ? ' (' + activeLibraryFilters.size + ' active)' : ''}
-        </button>
-
         <!-- Filter Pills (toggle visibility) -->
-        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;padding-bottom:4px;margin-bottom:16px;">
+        <div class="library-pills" id="libraryPills" style="display:${libraryFiltersVisible ? 'flex' : 'none'};flex-wrap:wrap;gap:6px;padding-top:8px;">
           <button class="library-pill ${!hasActiveFilters ? 'active' : ''}" data-filter="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
           ${getUniqueValues('Category').map(cat => `
             <button class="library-pill ${activeLibraryFilters.has('cat:' + cat.toLowerCase()) ? 'active' : ''}" data-filter="cat:${cat.toLowerCase()}" style="${getCategoryColor(cat)}">${escapeHtml(cat)}</button>
@@ -238,6 +234,10 @@ function renderLibraryPage() {
           `).join('')}
           <button class="library-pill ${activeLibraryFilters.has('fav') ? 'active' : ''}" data-filter="fav" style="background:linear-gradient(135deg,rgba(212,168,75,0.18),rgba(184,134,11,0.10));border-color:var(--accent);color:var(--accent);">⭐ Owner Fav</button>
         </div>
+      </div><!-- end page-sticky-banner -->
+
+      <!-- Books Tab -->
+      <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
 
         <!-- Books Grid -->
         <div class="library-books-grid" id="libraryGrid">
