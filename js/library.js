@@ -479,6 +479,13 @@ function openBookModal(idx) {
   if (checkouts.length === 0) {
     historyEl.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px 0;">No one has checked out this book yet.</div>';
   } else {
+    // Sort: active (reading/requested) first, then returned
+    checkouts.sort((a, b) => {
+      const aActive = a.status === 'reading' || a.status === 'requested' ? 0 : 1;
+      const bActive = b.status === 'reading' || b.status === 'requested' ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      return (b.startDate || '').localeCompare(a.startDate || '');
+    });
     historyEl.innerHTML = checkouts.map(l => {
       const pct = l.totalPages ? Math.round((l.currentPage / l.totalPages) * 100) : 0;
       const cPct = Math.min(pct, 100);
