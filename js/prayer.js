@@ -269,64 +269,7 @@ async function saveEditPrayer(id) {
   }
 }
 
-// ====================================
-// SWIPE TO PRAY
-// ====================================
-function initSwipeHandlers() {
-  document.querySelectorAll('.prayer-swipe-container').forEach(container => {
-    const id = container.dataset.prayerId;
-    let startX = 0;
-    let currentX = 0;
-    let swiping = false;
-
-    const inner = container.querySelector('.prayer-card-inner');
-    const prayBg = container.querySelector('.prayer-swipe-bg');
-
-    container.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].clientX;
-      currentX = startX;
-      swiping = true;
-      inner.style.transition = 'none';
-    }, { passive: true });
-
-    container.addEventListener('touchmove', (e) => {
-      if (!swiping) return;
-      currentX = e.touches[0].clientX;
-      let deltaX = currentX - startX;
-
-      // Only allow swipe right
-      if (deltaX < 0) deltaX = 0;
-      if (deltaX > 120) deltaX = 120;
-
-      inner.style.transform = `translateX(${deltaX}px)`;
-
-      // Show pray background with opacity based on distance
-      const progress = Math.min(deltaX / 80, 1);
-      prayBg.style.opacity = progress;
-    }, { passive: true });
-
-    container.addEventListener('touchend', () => {
-      if (!swiping) return;
-      swiping = false;
-
-      const deltaX = currentX - startX;
-      inner.style.transition = 'transform 0.3s ease';
-
-      if (deltaX > 80) {
-        // Trigger pray action
-        inner.style.transform = 'translateX(120px)';
-        setTimeout(() => {
-          inner.style.transform = 'translateX(0)';
-          prayBg.style.opacity = '0';
-          prayForRequest(id);
-        }, 300);
-      } else {
-        inner.style.transform = 'translateX(0)';
-        prayBg.style.opacity = '0';
-      }
-    });
-  });
-}
+// Swipe-to-pray removed — was too greedy with touch events and broke page scrolling
 
 function renderPrayers() {
   const list = document.getElementById('prayerList');
@@ -397,11 +340,7 @@ function renderPrayers() {
     }
 
     return `
-      <div class="prayer-swipe-container" data-prayer-id="${prayer.id}" style="position:relative;overflow:hidden;border-radius:14px;margin-bottom:12px;">
-        <div class="prayer-swipe-bg" style="position:absolute;left:0;top:0;bottom:0;width:120px;background:linear-gradient(90deg,var(--accent),var(--accent-light));display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;border-radius:14px 0 0 14px;z-index:0;">
-          <span style="font-size:28px;color:#fff;">🙏</span>
-        </div>
-        <div class="prayer-card-inner" style="position:relative;z-index:1;background:var(--card);border-radius:14px;">
+      <div style="margin-bottom:12px;">
           <div class="card card-clickable" style="margin:0;${prayer.answered ? 'opacity:0.6;' : ''}" onclick="togglePrayer('${prayer.id}')">
             <div class="card-header">
               <div style="flex:1;">
@@ -428,11 +367,9 @@ function renderPrayers() {
               </div>
             ` : ''}
           </div>
-        </div>
       </div>
     `;
   }).join('');
 
-  // Initialize swipe handlers after rendering
-  initSwipeHandlers();
+
 }
