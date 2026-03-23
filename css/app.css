@@ -399,8 +399,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Prevent horizontal scroll on the whole page */
-html, body {
+/* Prevent horizontal scroll — only on body, NOT html (html overflow breaks sticky in Safari) */
+body {
   overflow-x: hidden;
 }
 
