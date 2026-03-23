@@ -5,6 +5,23 @@
 
 const LIBRARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1tarzoeTPmF7At2B5a0yJJ9NzcrjtnTuXUgr-71xVHfk/gviz/tq?tqx=out:csv';
 
+// Apps Script web app for sending checkout notification emails
+// TODO: Deploy Apps Script and paste URL here
+const CHECKOUT_EMAIL_SCRIPT_URL = '';
+
+async function sendCheckoutEmail(ownerEmail, ownerName, borrowerName, bookTitle, dueBack) {
+  if (!CHECKOUT_EMAIL_SCRIPT_URL) {
+    console.warn('Checkout email script URL not configured');
+    return;
+  }
+  const resp = await fetch(CHECKOUT_EMAIL_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ ownerEmail, ownerName, borrowerName, bookTitle, dueBack })
+  });
+  if (!resp.ok) throw new Error('Email send failed');
+}
+
 let libraryBooks = [];
 let libraryCheckouts = [];
 let activeLibraryFilters = new Set();
@@ -209,6 +226,7 @@ function renderBookCover(book, size) {
 
 function renderLibraryPage() {
   const hasActiveFilters = activeLibraryFilters.size > 0;
+  const isLoading = libraryBooks.length === 0;
 
   return `
     <div class="page library-page">
@@ -231,6 +249,11 @@ function renderLibraryPage() {
       <!-- Books Tab -->
       <div class="library-tab-content ${currentLibraryTab === 'books' ? 'active' : ''}" data-libtab="books">
 
+        ${isLoading ? `
+          <div class="empty-state card">
+            <p>📚 Loading library...</p>
+          </div>
+        ` : `
         <!-- Always-visible Owner + Fav filters -->
         <div class="library-pills" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
           <button class="library-pill ${!hasActiveFilters ? 'active' : ''}" data-filter="all" style="background:var(--accent-glow);color:var(--accent);border-color:var(--accent-light);">All</button>
@@ -257,12 +280,7 @@ function renderLibraryPage() {
         <div class="library-books-grid" id="libraryGrid">
           ${renderLibraryBooks()}
         </div>
-
-        ${libraryBooks.length === 0 ? `
-          <div class="empty-state card">
-            <p>Loading library...</p>
-          </div>
-        ` : ''}
+        `}
       </div>
 
       <!-- Checkouts Tab -->
@@ -405,12 +423,16 @@ function renderCheckoutCard(log) {
         <button class="checkout-log-btn-return" data-action="return" data-log-id="${escapeHtml(log.id)}">📥 Return</button>
       </div>
       <div class="checkout-log-edit" id="edit-${escapeHtml(log.id)}" style="display:none;">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
           <span style="font-size:12px;color:var(--muted);">Page</span>
           <input type="number" class="checkout-edit-input" id="page-${escapeHtml(log.id)}" value="${log.currentPage}" min="0" max="${log.totalPages}">
           <span style="font-size:12px;color:var(--muted);">of ${log.totalPages}</span>
-          <button class="checkout-edit-save" data-log-id="${escapeHtml(log.id)}">Save</button>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--muted);">Due</span>
+          <input type="date" class="checkout-edit-input" id="due-${escapeHtml(log.id)}" value="${log.dueBack || ''}" style="flex:1;min-width:120px;">
+        </div>
+        <button class="checkout-edit-save" data-log-id="${escapeHtml(log.id)}">Save</button>
       </div>` : ''}
     </div>
   `;
@@ -563,16 +585,23 @@ function initBookModalActions(idx) {
         status: 'reading'
       });
 
-      // Notify the book owner via email
+      // Notify the book owner via email (automatic via Apps Script)
       const ownerEmail = book.OwnerEmail || '';
       const ownerName = book.Owner || '';
+      let emailNote = '';
       if (ownerEmail) {
-        const subject = encodeURIComponent(`📚 Book Checkout: ${book.Title}`);
-        const body = encodeURIComponent(`Hi ${ownerName},\n\n${name} has checked out your book "${book.Title}" from the CCR Friends Library.\n\nDue back: ${formatDate(dueBack)}\n\nPlease coordinate with ${name} to get the book to them.\n\nThanks!\nCCR Friends Library`);
-        window.open(`mailto:${ownerEmail}?subject=${subject}&body=${body}`, '_blank');
+        sendCheckoutEmail(ownerEmail, ownerName, name, book.Title, dueBack)
+          .then(() => {
+            const noteEl = document.getElementById('bookModalMsg');
+            if (noteEl) noteEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '. Email sent to ' + escapeHtml(ownerName) + '.</div>';
+          })
+          .catch(() => {
+            const noteEl = document.getElementById('bookModalMsg');
+            if (noteEl) noteEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '. (Email notification failed)</div>';
+          });
       }
 
-      msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.' + (ownerEmail ? ' An email notification has been opened for ' + escapeHtml(ownerName) + '.' : '') + '</div>';
+      msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.' + (ownerEmail ? ' Sending email to ' + escapeHtml(ownerName) + '...' : '') + '</div>';
       setTimeout(() => {
         closeBookModal();
         document.getElementById('app').innerHTML = renderLibraryPage();
@@ -742,12 +771,13 @@ function attachCheckoutLogListeners() {
       e.stopPropagation();
       const logId = btn.dataset.logId;
       const pageInput = document.getElementById('page-' + logId);
-      if (pageInput) {
-        const newPage = parseInt(pageInput.value) || 0;
-        updateCheckoutLog(logId, { currentPage: newPage, status: 'reading' });
-        document.getElementById('app').innerHTML = renderLibraryPage();
-        initLibraryPage();
-      }
+      const dueInput = document.getElementById('due-' + logId);
+      const updates = { status: 'reading' };
+      if (pageInput) updates.currentPage = parseInt(pageInput.value) || 0;
+      if (dueInput) updates.dueBack = dueInput.value;
+      updateCheckoutLog(logId, updates);
+      document.getElementById('app').innerHTML = renderLibraryPage();
+      initLibraryPage();
     });
   });
 }
