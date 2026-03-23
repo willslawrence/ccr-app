@@ -962,8 +962,11 @@ function initBookModalActions(idx) {
             }
             // Notify book owner
             const ownerEmail = book.OwnerEmail || book['Owner Email'] || '';
+            console.log(`Return: book="${book.Title}", owner="${book.Owner}", ownerEmail="${ownerEmail}"`);
             if (ownerEmail) {
               sendCheckoutEmail(ownerEmail, book.Owner || '', returnName, book.Title, '', 'return');
+            } else {
+              console.warn(`No owner email for "${book.Title}" — skipping notification`);
             }
             const msgEl = document.getElementById('bookModalMsg');
             msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">✅ Book returned!</div>';
@@ -1100,6 +1103,19 @@ function attachCheckoutLogListeners() {
       const log = libraryCheckoutLogs.find(l => l.id === logId);
       if (log) {
         await updateCheckoutLog(logId, { status: 'returned', currentPage: log.totalPages || log.currentPage });
+        // Send return email to book owner
+        const book = libraryBooks.find(b => b.Title === log.book);
+        if (book) {
+          const ownerEmail = book.OwnerEmail || book['Owner Email'] || '';
+          console.log(`Return (log tab): book="${log.book}", owner="${book.Owner}", ownerEmail="${ownerEmail}"`);
+          if (ownerEmail) {
+            sendCheckoutEmail(ownerEmail, book.Owner || '', log.name, book.Title, '', 'return');
+          } else {
+            console.warn(`No owner email for "${log.book}" — skipping notification`);
+          }
+        } else {
+          console.warn(`Book not found in libraryBooks for "${log.book}" — skipping notification`);
+        }
         await getCheckoutLogs();
         document.getElementById('app').innerHTML = renderLibraryPage();
         initLibraryPage();
