@@ -649,7 +649,7 @@ function renderLibraryBooks() {
 
     const isFav = isOwnerFav(book);
     return `
-      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}" style="position:relative;">
+      <div class="library-book-card card ${dimmed ? 'dimmed' : ''} ${isFav ? 'lib-fav-card' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}" style="position:relative;">
         <div class="lib-card-inner">
           <div class="lib-card-cover">
             ${renderBookCover(book, 'small')}
@@ -659,7 +659,6 @@ function renderLibraryBooks() {
             <p class="lib-card-author">by ${escapeHtml(book.Author)}</p>
             ${renderStarRating(book) ? `<div style="margin-bottom:4px;">${renderStarRating(book)}</div>` : ''}
             <div class="lib-card-badges">
-              ${isFav ? '<span class="badge badge-owner-fav" style="font-size:9px;padding:2px 6px;">⭐ Owner Fav</span>' : ''}
               <span class="badge badge-${statusClass}" style="font-size:9px;padding:2px 6px;">${statusLabel}</span>
               ${book.Owner ? `<span class="badge badge-gold" style="font-size:9px;padding:2px 6px;">👤 ${escapeHtml(book.Owner)}</span>` : ''}
             </div>
@@ -669,6 +668,7 @@ function renderLibraryBooks() {
             </div>
           </div>
         </div>
+        ${isFav ? '<span class="lib-fav-badge">⭐ Owner Fav</span>' : ''}
       </div>
     `;
   }).join('');

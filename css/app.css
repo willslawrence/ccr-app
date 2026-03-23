@@ -1448,8 +1448,8 @@ body.dark-theme .theme-toggle-slider:before {
 }
 
 /* Book card inner layout */
-/* Gold left accent bar on all cards */
-.library-book-card {
+/* Gold left accent bar for owner favorites only */
+.library-book-card.lib-fav-card {
   border-left: 4px solid var(--accent, #b8860b);
 }
 
@@ -1515,7 +1515,7 @@ body.dark-theme .theme-toggle-slider:before {
 
 .lib-fav-badge {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   right: 8px;
   background: var(--gold-grad);
   color: white;
