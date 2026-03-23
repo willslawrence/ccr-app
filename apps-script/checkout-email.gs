@@ -26,25 +26,25 @@ function doPost(e) {
     var subject, body;
     
     if (action === 'return') {
-      subject = '📚 Book Returned: ' + bookTitle;
+      subject = 'CCR Library - Book Returned: ' + bookTitle;
       body = 'Hi ' + ownerName + ',\n\n' +
              'Great news! ' + borrowerName + ' has returned your book "' + bookTitle + '" to the CCR Library.\n\n' +
-             'Thanks for sharing your books with the community! 📖\n\n' +
-             '— CCR Church Library';
+             'Thanks for sharing your books with the community!\n\n' +
+             '-- CCR Church Library';
     } else if (action === 'request') {
-      subject = '🔖 Book Requested: ' + bookTitle;
+      subject = 'CCR Library - Book Requested: ' + bookTitle;
       body = 'Hi ' + ownerName + ',\n\n' +
              borrowerName + ' has requested your book "' + bookTitle + '" from the CCR Library.\n\n' +
              'The book is currently checked out by someone else. ' + borrowerName + ' is next in line.\n\n' +
-             '— CCR Church Library';
+             '-- CCR Church Library';
     } else {
-      subject = '📤 Book Checked Out: ' + bookTitle;
+      subject = 'CCR Library - Book Checked Out: ' + bookTitle;
       body = 'Hi ' + ownerName + ',\n\n' +
              borrowerName + ' has checked out your book "' + bookTitle + '" from the CCR Library.\n\n' +
              'Due back: ' + dueBack + '\n\n' +
              'Please coordinate with ' + borrowerName + ' to arrange pickup.\n\n' +
-             'Thanks for sharing your books with the community! 📖\n\n' +
-             '— CCR Church Library';
+             'Thanks for sharing your books with the community!\n\n' +
+             '-- CCR Church Library';
     }
     
     GmailApp.sendEmail(ownerEmail, subject, body, {
