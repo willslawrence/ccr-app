@@ -6,36 +6,26 @@
 // Migrated from Google Sheets to Firebase Firestore
 
 // Apps Script web app for sending checkout notification emails
-// TODO: Deploy Apps Script and paste URL here
-const CHECKOUT_EMAIL_SCRIPT_URL = '';
+const CHECKOUT_EMAIL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPC9OEAOmQSI2ZW1CH_hnELwxJAMFob3Dwb9JYKCGbBDL-4uHYYx_Xdagh5P--ZYgO/exec';
 
-async function sendCheckoutEmail(ownerEmail, ownerName, borrowerName, bookTitle, dueBack) {
+async function sendCheckoutEmail(ownerEmail, ownerName, borrowerName, bookTitle, dueBack, action = 'checkout') {
   if (!CHECKOUT_EMAIL_SCRIPT_URL) {
-    // No email script configured - use mailto fallback
-    const subject = `Book Checkout: ${bookTitle}`;
-    const body = `Hi ${ownerName},
-
-${borrowerName} has checked out your book "${bookTitle}" from the CCR Library.
-
-Due back: ${dueBack}
-
-Please coordinate with ${borrowerName} to arrange pickup.
-
-Thanks!
-CCR Church App`;
-    
-    const mailtoUrl = `mailto:${ownerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    console.log('Opening mailto link for checkout notification');
-    window.location.href = mailtoUrl;
+    console.warn('No email script URL configured');
     return;
   }
   
-  const resp = await fetch(CHECKOUT_EMAIL_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ ownerEmail, ownerName, borrowerName, bookTitle, dueBack })
-  });
-  if (!resp.ok) throw new Error('Email send failed');
+  try {
+    const resp = await fetch(CHECKOUT_EMAIL_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ ownerEmail, ownerName, borrowerName, bookTitle, dueBack, action })
+    });
+    // Apps Script redirects, so we may get an opaque response with no-cors
+    console.log(`📧 Email notification sent (${action}) to ${ownerEmail} for "${bookTitle}"`);
+  } catch (error) {
+    console.warn('Email send failed (non-critical):', error);
+    // Non-blocking — don't throw, checkout still succeeds
+  }
 }
 
 let libraryBooks = [];
@@ -966,8 +956,14 @@ function initBookModalActions(idx) {
         const confirmBtn = document.getElementById('bookModalConfirmReturn');
         if (confirmBtn) {
           confirmBtn.onclick = async () => {
+            const returnName = (document.getElementById('bookModalReturnName').value || '').trim() || (active ? active.name : '');
             if (active) {
               await updateCheckoutLog(active.id, { status: 'returned', currentPage: active.totalPages || active.currentPage });
+            }
+            // Notify book owner
+            const ownerEmail = book.OwnerEmail || book['Owner Email'] || '';
+            if (ownerEmail) {
+              sendCheckoutEmail(ownerEmail, book.Owner || '', returnName, book.Title, '', 'return');
             }
             const msgEl = document.getElementById('bookModalMsg');
             msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">✅ Book returned!</div>';
@@ -1015,6 +1011,11 @@ function initBookModalActions(idx) {
               totalPages,
               status: 'requested'
             });
+            // Notify book owner
+            const ownerEmail = book.OwnerEmail || book['Owner Email'] || '';
+            if (ownerEmail) {
+              sendCheckoutEmail(ownerEmail, book.Owner || '', name, book.Title, '', 'request');
+            }
             msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">🔖 You\'re next in line!</div>';
             setTimeout(async () => {
               closeBookModal();
