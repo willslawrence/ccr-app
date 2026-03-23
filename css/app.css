@@ -1659,14 +1659,29 @@ body.dark-theme .theme-toggle-slider:before {
 
 .book-modal-form .form-input,
 .book-modal-form .btn,
-.book-modal-form input[type="date"],
-.book-modal-form input[type="text"],
-.book-modal-form input[type="number"] {
+.book-modal-form input,
+.book-modal-form button {
   box-sizing: border-box;
   max-width: 100%;
   width: 100%;
+  min-width: 0;
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* Nuclear: prevent ANY child from overflowing the modal */
+.modal * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.modal input,
+.modal button,
+.modal select,
+.modal textarea {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 
