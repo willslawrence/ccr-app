@@ -238,48 +238,121 @@ async function fetchLibraryData() {
 
 // Auto-fetch missing covers from Google Books API (editor+ only, runs once per session)
 let _coverFetchDone = false;
+
+// Check if an image URL actually returns a valid cover (not a placeholder)
+async function isValidCoverUrl(url) {
+  if (!url || !url.trim()) return false;
+  try {
+    const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
+    // no-cors won't give us status, but at least checks reachability
+    return true;
+  } catch { return false; }
+}
+
+// Try Google Books API for a cover
+async function fetchGoogleBooksCover(title, author) {
+  try {
+    const q = encodeURIComponent(`${title} ${author || ''}`);
+    const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=3`);
+    const data = await resp.json();
+    if (data.totalItems > 0) {
+      for (const item of data.items) {
+        const images = item.volumeInfo?.imageLinks;
+        let coverUrl = images?.thumbnail || images?.smallThumbnail || '';
+        if (coverUrl) {
+          // Upgrade http to https and remove edge=curl for cleaner images
+          coverUrl = coverUrl.replace(/^http:/, 'https:').replace('&edge=curl', '');
+          return coverUrl;
+        }
+      }
+    }
+  } catch (e) { console.warn('Google Books API failed:', e); }
+  return null;
+}
+
+// Try Open Library for a cover (by title + author search)
+async function fetchOpenLibraryCover(title, author, isbn) {
+  try {
+    // Try ISBN first if available
+    if (isbn) {
+      const url = `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`;
+      const resp = await fetch(url, { method: 'HEAD' });
+      if (resp.ok) return url;
+    }
+    // Search by title
+    const q = encodeURIComponent(title);
+    const resp = await fetch(`https://openlibrary.org/search.json?title=${q}&limit=1`);
+    const data = await resp.json();
+    if (data.docs && data.docs.length > 0) {
+      const coverId = data.docs[0].cover_i;
+      if (coverId) return `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`;
+      // Try ISBN from OL result
+      const olIsbn = data.docs[0].isbn?.[0];
+      if (olIsbn) return `https://covers.openlibrary.org/b/isbn/${olIsbn}-M.jpg`;
+    }
+  } catch (e) { console.warn('Open Library API failed:', e); }
+  return null;
+}
+
 async function autoFetchMissingCovers() {
   if (_coverFetchDone || !isEditor()) return;
   _coverFetchDone = true;
 
   try {
     const snapshot = await db.collection('books').get();
-    const missingCover = [];
+    const needsCover = [];
     snapshot.forEach(doc => {
       const data = doc.data();
-      if (!data.coverUrl || data.coverUrl.trim() === '') {
-        missingCover.push({ id: doc.id, title: data.title, author: data.author });
+      const cover = data.coverUrl || '';
+      // Flag books with no cover, or with known broken Google Books placeholder URLs
+      const isBroken = !cover.trim() || 
+        cover.includes('no_cover') ||
+        cover.startsWith('http://') ||  // Mixed content (blocked on HTTPS)
+        (cover.includes('books.google') && cover.includes('img=0')); // Sometimes a placeholder
+      if (isBroken) {
+        needsCover.push({ id: doc.id, title: data.title, author: data.author, isbn: data.isbn || '', currentUrl: cover });
       }
     });
 
-    if (missingCover.length === 0) return;
-    console.log(`Auto-fetching covers for ${missingCover.length} books...`);
+    if (needsCover.length === 0) {
+      console.log('All book covers look good!');
+      return;
+    }
+    console.log(`Checking/fixing covers for ${needsCover.length} books...`);
+    let fixed = 0;
 
-    for (const book of missingCover) {
-      try {
-        const q = encodeURIComponent(`${book.title} ${book.author}`);
-        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
-        const data = await resp.json();
-        if (data.totalItems > 0) {
-          const images = data.items[0].volumeInfo?.imageLinks;
-          const coverUrl = images?.thumbnail || images?.smallThumbnail || '';
-          if (coverUrl) {
-            await db.collection('books').doc(book.id).update({ coverUrl });
-            console.log(`Cover found for "${book.title}": ${coverUrl}`);
-            // Update local data too
-            const local = libraryBooks.find(b => b.Title === book.title);
-            if (local) local.CoverURL = coverUrl;
-          }
-        }
-      } catch (e) {
-        console.warn(`Failed to fetch cover for "${book.title}":`, e);
+    for (const book of needsCover) {
+      // Try Google Books first (with HTTPS upgrade)
+      let coverUrl = await fetchGoogleBooksCover(book.title, book.author);
+      
+      // If Google didn't work, try Open Library
+      if (!coverUrl) {
+        coverUrl = await fetchOpenLibraryCover(book.title, book.author, book.isbn);
       }
+
+      if (coverUrl && coverUrl !== book.currentUrl) {
+        await db.collection('books').doc(book.id).update({ coverUrl });
+        console.log(`✅ Cover fixed for "${book.title}": ${coverUrl}`);
+        const local = libraryBooks.find(b => b.Title === book.title);
+        if (local) local.CoverURL = coverUrl;
+        fixed++;
+      } else if (!coverUrl) {
+        console.log(`⚠️ No cover found for "${book.title}"`);
+      }
+      
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 300));
     }
 
+    console.log(`Cover fix complete: ${fixed}/${needsCover.length} updated`);
+
     // Re-render if any covers were updated
-    if (AppState.currentPage === 'library') {
+    if (fixed > 0 && AppState.currentPage === 'library') {
       const grid = document.getElementById('libraryGrid');
-      if (grid) renderLibraryGrid();
+      if (grid) {
+        grid.innerHTML = renderLibraryBooks();
+        attachBookCardListeners();
+      }
     }
   } catch (e) {
     console.warn('Auto-fetch covers failed:', e);
@@ -372,9 +445,15 @@ function renderBookCover(book, size) {
   const h = size === 'large' ? 175 : 88;
   const radius = size === 'large' ? 12 : 8;
   const fontSize = size === 'large' ? 48 : 24;
-  const coverUrl = book.CoverURL || book['Cover URL'] || '';
+  let coverUrl = book.CoverURL || book['Cover URL'] || '';
+  // Fix http:// URLs (mixed content blocked on HTTPS pages)
+  if (coverUrl.startsWith('http://')) coverUrl = coverUrl.replace('http://', 'https://');
+  const fallback = `<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fontSize}px;background:var(--gold-grad);color:white;font-weight:700;border-radius:${radius}px;\\'>${escapeHtml(book.Title)[0] || '?'}</div>`;
   if (coverUrl) {
-    return `<img src="${escapeHtml(coverUrl)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fontSize}px;background:var(--gold-grad);color:white;font-weight:700;border-radius:${radius}px;\\'>${escapeHtml(book.Title)[0] || '?'}</div>'">`;
+    // onload: check if image is too small (likely a placeholder)
+    return `<img src="${escapeHtml(coverUrl)}" style="width:100%;height:100%;object-fit:cover;" 
+      onerror="this.parentElement.innerHTML='${fallback}'"
+      onload="if(this.naturalWidth<10||this.naturalHeight<10)this.parentElement.innerHTML='${fallback}'">`;
   }
   return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:${fontSize}px;background:var(--gold-grad);color:white;font-weight:700;border-radius:${radius}px;">${escapeHtml(book.Title)[0] || '?'}</div>`;
 }
