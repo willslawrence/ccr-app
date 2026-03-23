@@ -633,6 +633,12 @@ body {
   color: var(--accent);
 }
 
+.badge-owner-fav {
+  background: linear-gradient(135deg, rgba(184,134,11,0.15), rgba(212,169,74,0.15));
+  color: #b8860b;
+  font-weight: 700;
+}
+
 .badge-green {
   background: rgba(61,139,79,0.10);
   color: var(--green);
@@ -1442,27 +1448,9 @@ body.dark-theme .theme-toggle-slider:before {
 }
 
 /* Book card inner layout */
-/* Gold ribbon for owner favorites */
-.lib-fav-card {
-  overflow: visible;
-}
-
-.lib-fav-ribbon {
-  position: absolute;
-  top: -4px;
-  right: 10px;
-  width: 28px;
-  height: 36px;
-  background: linear-gradient(135deg, #d4a94a, #b8860b);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 5px;
-  font-size: 12px;
-  z-index: 2;
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 2px 6px rgba(184, 134, 11, 0.35);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+/* Gold left accent bar on all cards */
+.library-book-card {
+  border-left: 4px solid var(--accent, #b8860b);
 }
 
 .lib-card-inner {

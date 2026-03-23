@@ -669,6 +669,7 @@ function renderLibraryBooks() {
             <p class="lib-card-author">by ${escapeHtml(book.Author)}</p>
             ${renderStarRating(book) ? `<div style="margin-bottom:4px;">${renderStarRating(book)}</div>` : ''}
             <div class="lib-card-badges">
+              ${isFav ? '<span class="badge badge-owner-fav" style="font-size:9px;padding:2px 6px;">⭐ Owner Fav</span>' : ''}
               <span class="badge badge-${statusClass}" style="font-size:9px;padding:2px 6px;">${statusLabel}</span>
               ${book.Owner ? `<span class="badge badge-gold" style="font-size:9px;padding:2px 6px;">👤 ${escapeHtml(book.Owner)}</span>` : ''}
             </div>
