@@ -236,6 +236,56 @@ async function fetchLibraryData() {
   }
 }
 
+// Auto-fetch missing covers from Google Books API (editor+ only, runs once per session)
+let _coverFetchDone = false;
+async function autoFetchMissingCovers() {
+  if (_coverFetchDone || !isEditor()) return;
+  _coverFetchDone = true;
+
+  try {
+    const snapshot = await db.collection('books').get();
+    const missingCover = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (!data.coverUrl || data.coverUrl.trim() === '') {
+        missingCover.push({ id: doc.id, title: data.title, author: data.author });
+      }
+    });
+
+    if (missingCover.length === 0) return;
+    console.log(`Auto-fetching covers for ${missingCover.length} books...`);
+
+    for (const book of missingCover) {
+      try {
+        const q = encodeURIComponent(`${book.title} ${book.author}`);
+        const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1`);
+        const data = await resp.json();
+        if (data.totalItems > 0) {
+          const images = data.items[0].volumeInfo?.imageLinks;
+          const coverUrl = images?.thumbnail || images?.smallThumbnail || '';
+          if (coverUrl) {
+            await db.collection('books').doc(book.id).update({ coverUrl });
+            console.log(`Cover found for "${book.title}": ${coverUrl}`);
+            // Update local data too
+            const local = libraryBooks.find(b => b.Title === book.title);
+            if (local) local.CoverURL = coverUrl;
+          }
+        }
+      } catch (e) {
+        console.warn(`Failed to fetch cover for "${book.title}":`, e);
+      }
+    }
+
+    // Re-render if any covers were updated
+    if (AppState.currentPage === 'library') {
+      const grid = document.getElementById('libraryGrid');
+      if (grid) renderLibraryGrid();
+    }
+  } catch (e) {
+    console.warn('Auto-fetch covers failed:', e);
+  }
+}
+
 // CSV parsing functions removed - now using Firestore
 
 function loadMockLibraryData() {
@@ -955,6 +1005,8 @@ async function initLibraryPage() {
     fetchLibraryData().then(() => {
       document.getElementById('app').innerHTML = renderLibraryPage();
       initLibraryPage();
+      // Auto-fetch missing covers in background (editor+ only)
+      autoFetchMissingCovers();
     });
     return;
   }
