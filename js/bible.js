@@ -404,11 +404,17 @@ function updateBibleStats(data) {
   const ntPct2 = document.getElementById('bible-pct-nt');
   if (ntPct2) ntPct2.textContent = ntPct + '%';
 
-  // Update chapters/day displays
+  // Update overall progress bar
+  const overallFill = document.getElementById('bible-overall-fill');
+  if (overallFill) overallFill.style.width = overallPercent + '%';
+  const overallDot = document.getElementById('bible-overall-dot');
+  if (overallDot) overallDot.style.left = overallPercent + '%';
+
+  // Update chapters/day and days remaining
   const cpdEl = document.getElementById('bible-cpd');
   if (cpdEl) cpdEl.textContent = getChaptersPerDay(data);
-  const cpdCard = document.getElementById('bible-cpd-card');
-  if (cpdCard) cpdCard.textContent = getChaptersPerDay(data);
+  const daysEl = document.getElementById('bible-days-remaining');
+  if (daysEl) daysEl.textContent = getDaysRemaining(data) + ' days remaining in ' + getTargetYearLabel(data);
 }
 
 // Calculate genre stats
@@ -524,6 +530,19 @@ function getTargetDate(data) {
   return new Date().getFullYear() + '-12-31';
 }
 
+// Get days remaining until target date
+function getDaysRemaining(data) {
+  const now = new Date();
+  const target = data.targetDate ? new Date(data.targetDate) : new Date(now.getFullYear(), 11, 31);
+  return Math.max(0, Math.ceil((target - now) / (1000 * 60 * 60 * 24)));
+}
+
+// Get target year label
+function getTargetYearLabel(data) {
+  const target = data.targetDate ? new Date(data.targetDate) : new Date(new Date().getFullYear(), 11, 31);
+  return target.getFullYear();
+}
+
 // Bible section definitions
 const OT_SECTIONS = [
   { name: 'Pentateuch (Torah)', icon: '📜', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
@@ -618,6 +637,10 @@ async function renderBiblePage() {
   const otPct = Math.round((otRead / OT_CHAPTERS) * 100);
   const ntPct = Math.round((ntRead / NT_CHAPTERS) * 100);
 
+  const daysRemaining = getDaysRemaining(data);
+  const targetYear = getTargetYearLabel(data);
+  const chaptersPerDay = getChaptersPerDay(data);
+
   return `
     <div class="page bible-page">
       <div class="page-sticky-banner">
@@ -626,6 +649,26 @@ async function renderBiblePage() {
           <button class="btn btn-outline" onclick="scrollToTestament('OT')">Old Testament</button>
           <button class="btn btn-outline" onclick="scrollToTestament('NT')">New Testament</button>
           <button class="btn btn-primary" onclick="toggleBibleStats()">📊 Stats</button>
+        </div>
+      </div>
+
+      <!-- Overall Progress Bar (always visible) -->
+      <div class="bible-overall-progress">
+        <div class="bible-overall-text">
+          <span class="bible-overall-read"><strong>${data.stats.totalChapters} of ${TOTAL_CHAPTERS.toLocaleString()} chapters read</strong></span>
+          <span class="bible-overall-sep">·</span>
+          <span class="bible-overall-days" id="bible-days-remaining">${daysRemaining} days remaining in ${targetYear}</span>
+        </div>
+        <div class="bible-overall-bar">
+          <div class="bible-overall-bar-dot" style="left:${overallPercent}%;" id="bible-overall-dot"></div>
+          <div class="bible-overall-bar-fill" style="width:${overallPercent}%;" id="bible-overall-fill"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+          <span style="font-size:12px;color:var(--muted);">📖 <span id="bible-cpd">${chaptersPerDay}</span> chapters/day to finish by target</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--muted);">🎯</span>
+            <input type="date" class="form-input bible-target-input" id="bibleTargetDate" value="${getTargetDate(data)}" onchange="updateBibleTargetDate()">
+          </div>
         </div>
       </div>
 
@@ -677,18 +720,8 @@ async function renderBiblePage() {
           </div>
         </div>
 
-        <!-- Target Date -->
-        <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:14px;background:var(--surface);border-radius:12px;flex-wrap:wrap;">
-          <span style="font-size:13px;font-weight:600;color:var(--text);">🎯 Finish by:</span>
-          <input type="date" class="form-input" id="bibleTargetDate" value="${getTargetDate(data)}" onchange="updateBibleTargetDate()" style="flex:1;min-width:140px;margin:0;padding:8px 12px;font-size:14px;">
-          <div style="text-align:center;min-width:80px;">
-            <div id="bible-cpd" style="font-size:22px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">${getChaptersPerDay(data)}</div>
-            <div style="font-size:10px;color:var(--muted);font-weight:600;">ch/day needed</div>
-          </div>
-        </div>
-
         <!-- Reading Stats Cards -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px;">
           <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
             <div style="font-size:20px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">${data.stats.totalChapters}</div>
             <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters Read</div>
@@ -700,10 +733,6 @@ async function renderBiblePage() {
           <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
             <div style="font-size:20px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">${getBooksFinished(data)}</div>
             <div style="font-size:11px;color:var(--muted);font-weight:600;">Books Finished</div>
-          </div>
-          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div id="bible-cpd-card" style="font-size:20px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">${getChaptersPerDay(data)}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Ch/Day to Target</div>
           </div>
         </div>
       </div>
@@ -744,9 +773,11 @@ window.updateBibleTargetDate = async function() {
   if (!input || !_bibleCache) return;
   _bibleCache.targetDate = input.value;
   scheduleBibleSave();
-  // Update the chapters/day display
+  // Update chapters/day and days remaining
   const cpdEl = document.getElementById('bible-cpd');
   if (cpdEl) cpdEl.textContent = getChaptersPerDay(_bibleCache);
+  const daysEl = document.getElementById('bible-days-remaining');
+  if (daysEl) daysEl.textContent = getDaysRemaining(_bibleCache) + ' days remaining in ' + getTargetYearLabel(_bibleCache);
 };
 
 // Scroll to testament section

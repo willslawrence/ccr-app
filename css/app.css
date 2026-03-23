@@ -2623,6 +2623,76 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   border: 1px solid var(--border);
 }
 
+/* Overall progress bar (always visible) */
+.bible-overall-progress {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-neu);
+}
+
+.bible-overall-text {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.bible-overall-read {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.bible-overall-sep {
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.bible-overall-days {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.bible-overall-bar {
+  position: relative;
+  height: 8px;
+  background: var(--surface);
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.bible-overall-bar-fill {
+  height: 100%;
+  background: var(--gold-grad);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.bible-overall-bar-dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 14px;
+  background: var(--red, #e74c3c);
+  border-radius: 50%;
+  z-index: 1;
+  transition: left 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.bible-target-input {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  min-height: 32px !important;
+  border-radius: 8px !important;
+  width: auto !important;
+  min-width: 120px;
+}
+
 .bible-progress-circles {
   display: flex;
   justify-content: space-around;
