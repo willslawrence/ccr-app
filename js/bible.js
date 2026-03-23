@@ -386,23 +386,23 @@ function updateBibleStats(data) {
   const otPct = Math.round((otRead / OT_CHAPTERS) * 100);
   const ntPct = Math.round((ntRead / NT_CHAPTERS) * 100);
 
-  // Main ring (overall)
+  // Main ring (overall) — radius 56, circumference 352
   const mainRing = document.getElementById('bible-ring-all');
-  if (mainRing) mainRing.setAttribute('stroke-dasharray', `${(overallPercent / 100) * 327} 327`);
+  if (mainRing) mainRing.setAttribute('stroke-dasharray', `${(overallPercent / 100) * 352} 352`);
   const mainPct = document.getElementById('bible-pct-all');
   if (mainPct) mainPct.textContent = overallPercent + '%';
 
   // OT ring
   const otRing = document.getElementById('bible-ring-ot');
-  if (otRing) otRing.setAttribute('stroke-dasharray', `${(otPct / 100) * 327} 327`);
-  const otPct2 = document.getElementById('bible-pct-ot');
-  if (otPct2) otPct2.textContent = otPct + '%';
+  if (otRing) otRing.setAttribute('stroke-dasharray', `${(otPct / 100) * 352} 352`);
+  const otLabel = document.getElementById('bible-ot-label');
+  if (otLabel) otLabel.textContent = otRead + ' / ' + OT_CHAPTERS + ' chapters';
 
   // NT ring
   const ntRing = document.getElementById('bible-ring-nt');
-  if (ntRing) ntRing.setAttribute('stroke-dasharray', `${(ntPct / 100) * 327} 327`);
-  const ntPct2 = document.getElementById('bible-pct-nt');
-  if (ntPct2) ntPct2.textContent = ntPct + '%';
+  if (ntRing) ntRing.setAttribute('stroke-dasharray', `${(ntPct / 100) * 352} 352`);
+  const ntLabel = document.getElementById('bible-nt-label');
+  if (ntLabel) ntLabel.textContent = ntRead + ' / ' + NT_CHAPTERS + ' chapters';
 
   // Update overall progress bar
   const overallFill = document.getElementById('bible-overall-fill');
@@ -672,70 +672,58 @@ async function renderBiblePage() {
         </div>
       </div>
 
-      <!-- Stats panel (hidden by default) -->
-      <div id="bibleStatsPanel" style="display:none;">
-        <!-- Three circular progress indicators -->
-        <div class="bible-progress-circles">
-          <div class="bible-progress-circle">
-            <div style="position:relative;width:80px;height:80px;">
-              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:80px;height:80px;">
-                <circle cx="70" cy="70" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
-                <circle id="bible-ring-all" cx="70" cy="70" r="52" fill="none"
-                        stroke="var(--accent)" stroke-width="8" stroke-linecap="round"
-                        stroke-dasharray="${(overallPercent / 100) * 327} 327" stroke-dashoffset="0"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                <span id="bible-pct-all" style="font-size:1em;font-weight:700;color:var(--accent);line-height:1;">${overallPercent}%</span>
-                <span style="font-size:0.4em;color:var(--muted);font-weight:600;text-transform:uppercase;">Overall</span>
-              </div>
-            </div>
-          </div>
-          <div class="bible-progress-circle">
-            <div style="position:relative;width:80px;height:80px;">
-              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:80px;height:80px;">
-                <circle cx="70" cy="70" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
-                <circle id="bible-ring-ot" cx="70" cy="70" r="52" fill="none"
-                        stroke="var(--blue)" stroke-width="8" stroke-linecap="round"
-                        stroke-dasharray="${(otPct / 100) * 327} 327" stroke-dashoffset="0"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                <span id="bible-pct-ot" style="font-size:1em;font-weight:700;color:var(--blue);line-height:1;">${otPct}%</span>
-                <span style="font-size:0.4em;color:var(--muted);font-weight:600;text-transform:uppercase;">Old Test.</span>
-              </div>
-            </div>
-          </div>
-          <div class="bible-progress-circle">
-            <div style="position:relative;width:80px;height:80px;">
-              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:80px;height:80px;">
-                <circle cx="70" cy="70" r="52" fill="none" stroke="var(--border)" stroke-width="8"/>
-                <circle id="bible-ring-nt" cx="70" cy="70" r="52" fill="none"
-                        stroke="var(--green)" stroke-width="8" stroke-linecap="round"
-                        stroke-dasharray="${(ntPct / 100) * 327} 327" stroke-dashoffset="0"/>
-              </svg>
-              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                <span id="bible-pct-nt" style="font-size:1em;font-weight:700;color:var(--green);line-height:1;">${ntPct}%</span>
-                <span style="font-size:0.4em;color:var(--muted);font-weight:600;text-transform:uppercase;">New Test.</span>
-              </div>
+      <!-- Progress Circles (always visible) -->
+      <div class="bible-rings-layout">
+        <!-- Main ring (large, left) -->
+        <div class="bible-ring-main">
+          <div style="position:relative;width:130px;height:130px;">
+            <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:130px;height:130px;">
+              <circle cx="70" cy="70" r="56" fill="none" stroke="var(--border)" stroke-width="7"/>
+              <circle id="bible-ring-all" cx="70" cy="70" r="56" fill="none"
+                      stroke="var(--red, #e74c3c)" stroke-width="7" stroke-linecap="round"
+                      stroke-dasharray="${(overallPercent / 100) * 352} 352" stroke-dashoffset="0"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+              <span id="bible-pct-all" style="font-size:28px;font-weight:800;color:var(--red, #e74c3c);line-height:1;">${overallPercent}%</span>
+              <span style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Complete</span>
             </div>
           </div>
         </div>
-
-        <!-- Reading Stats Cards -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px;">
-          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div style="font-size:20px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">${data.stats.totalChapters}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters Read</div>
+        <!-- OT + NT rings (smaller, stacked right) -->
+        <div class="bible-rings-side">
+          <div class="bible-ring-row">
+            <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
+              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:64px;height:64px;">
+                <circle cx="70" cy="70" r="56" fill="none" stroke="var(--border)" stroke-width="9"/>
+                <circle id="bible-ring-ot" cx="70" cy="70" r="56" fill="none"
+                        stroke="var(--purple, #7c3aed)" stroke-width="9" stroke-linecap="round"
+                        stroke-dasharray="${(otPct / 100) * 352} 352" stroke-dashoffset="0"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text);">Old Testament</div>
+              <div id="bible-ot-label" style="font-size:14px;color:var(--muted);">${otRead} / ${OT_CHAPTERS} chapters</div>
+            </div>
           </div>
-          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div style="font-size:20px;font-weight:700;color:var(--muted);font-family:'JetBrains Mono',monospace;">${TOTAL_CHAPTERS - data.stats.totalChapters}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters To Go</div>
-          </div>
-          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div style="font-size:20px;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">${getBooksFinished(data)}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Books Finished</div>
+          <div class="bible-ring-row">
+            <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
+              <svg viewBox="0 0 140 140" style="transform:rotate(-90deg);width:64px;height:64px;">
+                <circle cx="70" cy="70" r="56" fill="none" stroke="var(--border)" stroke-width="9"/>
+                <circle id="bible-ring-nt" cx="70" cy="70" r="56" fill="none"
+                        stroke="var(--green)" stroke-width="9" stroke-linecap="round"
+                        stroke-dasharray="${(ntPct / 100) * 352} 352" stroke-dashoffset="0"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:var(--text);">New Testament</div>
+              <div id="bible-nt-label" style="font-size:14px;color:var(--muted);">${ntRead} / ${NT_CHAPTERS} chapters</div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Stats panel (hidden by default) -->
+      <div id="bibleStatsPanel" style="display:none;">
 
       <!-- Old Testament Card -->
       <div id="bible-ot-section">

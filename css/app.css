@@ -2693,6 +2693,51 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   min-width: 120px;
 }
 
+/* Rings layout: large main left, OT/NT stacked right */
+.bible-rings-layout {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-neu);
+}
+
+.bible-ring-main {
+  flex-shrink: 0;
+}
+
+.bible-rings-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bible-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 380px) {
+  .bible-rings-layout {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+  .bible-rings-side {
+    width: 100%;
+  }
+  .bible-ring-row {
+    justify-content: center;
+  }
+}
+
 .bible-progress-circles {
   display: flex;
   justify-content: space-around;
