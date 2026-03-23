@@ -44,7 +44,7 @@ function renderSettingsPage() {
           <h3 style="margin-bottom:12px;font-size:16px;">About</h3>
           <div style="display:grid;gap:6px;font-size:13px;">
             <div><strong>App Name:</strong> CCR Church App</div>
-            <div><strong>Version:</strong> 1.8.0</div>
+            <div><strong>Version:</strong> 1.8.2</div>
             <div><strong>Build:</strong> ${new Date().getFullYear()}.03</div>
           </div>
         </div>
@@ -70,25 +70,10 @@ function initSettingsPage() {
 
 function setupThemeToggle() {
   const toggle = document.getElementById('themeToggle');
-  const currentTheme = localStorage.getItem('ccr_theme') || 'light';
 
-  // Set initial state
-  if (currentTheme === 'dark') {
-    toggle.textContent = '☀️';
-    toggle.style.background = 'var(--accent)';
-    toggle.style.color = 'white';
-  } else {
-    toggle.textContent = '🌙';
-    toggle.style.background = 'var(--surface)';
-    toggle.style.color = 'var(--muted)';
-  }
-
-  // Listen for changes
-  toggle.addEventListener('click', () => {
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    
-    if (newTheme === 'dark') {
+  function updateToggleUI() {
+    const isDark = document.body.classList.contains('dark-theme');
+    if (isDark) {
       toggle.textContent = '☀️';
       toggle.style.background = 'var(--accent)';
       toggle.style.color = 'white';
@@ -97,8 +82,17 @@ function setupThemeToggle() {
       toggle.style.background = 'var(--surface)';
       toggle.style.color = 'var(--muted)';
     }
-    
-    localStorage.setItem('ccr_theme', newTheme);
+  }
+
+  // Set initial state
+  updateToggleUI();
+
+  // Listen for changes
+  toggle.addEventListener('click', () => {
+    const isDark = document.body.classList.contains('dark-theme');
+    const newTheme = isDark ? 'light' : 'dark';
+    setTheme(newTheme);
+    updateToggleUI();
   });
 }
 
