@@ -1684,6 +1684,19 @@ body.dark-theme .theme-toggle-slider:before {
   box-sizing: border-box;
 }
 
+/* Ensure form sections stay within modal content area */
+.modal .book-modal-section,
+.modal .book-modal-form,
+.modal .book-modal-summary,
+.modal .book-modal-header {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 
 
 .book-modal-msg {
@@ -2632,6 +2645,41 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
 }
 
 /* Testament card layout - new Bible structure */
+/* Bible section groups (collapsible) */
+.bible-section-group {
+  border-bottom: 1px solid var(--border);
+}
+
+.bible-section-group:last-child {
+  border-bottom: none;
+}
+
+.bible-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  background: var(--surface);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.bible-section-header:active {
+  background: var(--border);
+}
+
+.bible-section-chevron {
+  font-size: 12px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+
+.bible-section-body {
+  padding: 0 16px;
+}
+
 .bible-book-section { 
   padding: 12px 0; 
   border-bottom: 1px solid var(--border); 

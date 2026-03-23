@@ -404,15 +404,11 @@ function updateBibleStats(data) {
   const ntPct2 = document.getElementById('bible-pct-nt');
   if (ntPct2) ntPct2.textContent = ntPct + '%';
 
-  // Update any legacy stat displays that might exist
-  const sRead = document.getElementById('bible-s-read');
-  if (sRead) sRead.textContent = data.stats.totalChapters;
-  const sLeft = document.getElementById('bible-s-left');
-  if (sLeft) sLeft.textContent = (TOTAL_CHAPTERS - data.stats.totalChapters).toLocaleString();
-  const sBooks = document.getElementById('bible-s-books');
-  if (sBooks) sBooks.textContent = data.stats.booksCompleted;
-  const sStreak = document.getElementById('bible-s-streak');
-  if (sStreak) sStreak.textContent = data.streak.current || '—';
+  // Update chapters/day displays
+  const cpdEl = document.getElementById('bible-cpd');
+  if (cpdEl) cpdEl.textContent = getChaptersPerDay(data);
+  const cpdCard = document.getElementById('bible-cpd-card');
+  if (cpdCard) cpdCard.textContent = getChaptersPerDay(data);
 }
 
 // Calculate genre stats
@@ -512,36 +508,101 @@ function getBooksFinished(data) {
   }).length;
 }
 
-// Calculate chapters per day needed to finish this year
+// Calculate chapters per day needed to finish by target date
 function getChaptersPerDay(data) {
   const remaining = TOTAL_CHAPTERS - data.stats.totalChapters;
+  if (remaining <= 0) return 0;
   const now = new Date();
-  const endOfYear = new Date(now.getFullYear(), 11, 31);
-  const daysLeft = Math.max(1, Math.ceil((endOfYear - now) / (1000 * 60 * 60 * 24)));
+  const targetDate = data.targetDate ? new Date(data.targetDate) : new Date(now.getFullYear(), 11, 31);
+  const daysLeft = Math.max(1, Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24)));
   return Math.ceil(remaining / daysLeft);
 }
 
-// Render books in testament card format
-function renderTestamentBooks(books, data) {
-  return books.map(book => {
-    const progress = getBookProgressSync(book.abbr, data);
-    const isLocked = _lockedBooks.has(book.abbr);
+// Get target date (defaults to end of current year)
+function getTargetDate(data) {
+  if (data.targetDate) return data.targetDate;
+  return new Date().getFullYear() + '-12-31';
+}
+
+// Bible section definitions
+const OT_SECTIONS = [
+  { name: 'Pentateuch (Torah)', icon: '📜', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
+  { name: 'Historical Books', icon: '⚔️', books: ['Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther'] },
+  { name: 'Poetry & Wisdom', icon: '🎵', books: ['Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon'] },
+  { name: 'Major Prophets', icon: '🔥', books: ['Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel'] },
+  { name: 'Minor Prophets', icon: '📣', books: ['Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
+];
+
+const NT_SECTIONS = [
+  { name: 'Gospels', icon: '✝️', books: ['Matthew','Mark','Luke','John'] },
+  { name: 'History', icon: '🌍', books: ['Acts'] },
+  { name: 'Pauline Epistles', icon: '✉️', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon'] },
+  { name: 'General Epistles', icon: '📨', books: ['Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
+  { name: 'Prophecy', icon: '🔮', books: ['Revelation'] },
+];
+
+// Render a single book within a section
+function renderBookEntry(book, data) {
+  const progress = getBookProgressSync(book.abbr, data);
+  const isLocked = _lockedBooks.has(book.abbr);
+  return `
+    <div class="bible-book-section ${isLocked ? 'locked' : ''}" data-book="${book.abbr}">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <strong style="font-size:15px;">${book.name}</strong>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="bible-book-progress" style="color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;">${progress.read}/${progress.total}</span>
+          <button class="bible-lock-btn ${isLocked ? 'locked' : ''}" onclick="toggleBookLock('${book.abbr}')" title="Lock/unlock">🔒</button>
+        </div>
+      </div>
+      <div class="bible-book-bar"><div class="bible-book-bar-fill" style="width:${progress.percent}%;background:var(--gold-grad);"></div></div>
+      <div class="bible-chapter-grid">
+        ${Array.from({length: book.chapters}, (_, i) => {
+          const chapterNum = i + 1;
+          const read = (data.chaptersRead[book.abbr] || []).includes(chapterNum);
+          return `<button class="chapter-btn ${read ? 'read' : ''}" data-book="${book.abbr}" data-chapter="${chapterNum}">${chapterNum}</button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Calculate section progress
+function getSectionProgress(section, data) {
+  let total = 0, read = 0;
+  section.books.forEach(bookName => {
+    const book = BIBLE_BOOKS.find(b => b.name === bookName);
+    if (book) {
+      total += book.chapters;
+      read += (data.chaptersRead[book.abbr] || []).length;
+    }
+  });
+  return { read, total, percent: total > 0 ? Math.round((read / total) * 100) : 0 };
+}
+
+// Render books grouped by sections with collapsible headers
+function renderTestamentBooks(books, data, sections) {
+  return sections.map((section, idx) => {
+    const sectionBooks = section.books.map(name => BIBLE_BOOKS.find(b => b.name === name)).filter(Boolean);
+    const sp = getSectionProgress(section, data);
+    const sectionId = section.name.replace(/[^a-zA-Z]/g, '');
+    const collapsed = localStorage.getItem(`bible_section_${sectionId}`) === 'collapsed';
     return `
-      <div class="bible-book-section ${isLocked ? 'locked' : ''}" data-book="${book.abbr}">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <strong style="font-size:15px;">${book.name}</strong>
+      <div class="bible-section-group">
+        <div class="bible-section-header" onclick="toggleBibleSection('${sectionId}')" data-section="${sectionId}">
           <div style="display:flex;align-items:center;gap:8px;">
-            <span class="bible-book-progress" style="color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;">${progress.read}/${progress.total}</span>
-            <button class="bible-lock-btn ${isLocked ? 'locked' : ''}" onclick="toggleBookLock('${book.abbr}')" title="Lock/unlock">🔒</button>
+            <span style="font-size:16px;">${section.icon}</span>
+            <span style="font-size:14px;font-weight:700;">${section.name}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${sp.read}/${sp.total}</span>
+            <div style="width:60px;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">
+              <div style="width:${sp.percent}%;height:100%;background:var(--gold-grad);border-radius:3px;"></div>
+            </div>
+            <span class="bible-section-chevron" id="chevron-${sectionId}">${collapsed ? '▶' : '▼'}</span>
           </div>
         </div>
-        <div class="bible-book-bar"><div class="bible-book-bar-fill" style="width:${progress.percent}%;background:var(--gold-grad);"></div></div>
-        <div class="bible-chapter-grid">
-          ${Array.from({length: book.chapters}, (_, i) => {
-            const chapterNum = i + 1;
-            const read = (data.chaptersRead[book.abbr] || []).includes(chapterNum);
-            return `<button class="chapter-btn ${read ? 'read' : ''}" data-book="${book.abbr}" data-chapter="${chapterNum}">${chapterNum}</button>`;
-          }).join('')}
+        <div class="bible-section-body" id="section-${sectionId}" style="${collapsed ? 'display:none;' : ''}">
+          ${sectionBooks.map(book => renderBookEntry(book, data)).join('')}
         </div>
       </div>
     `;
@@ -616,8 +677,18 @@ async function renderBiblePage() {
           </div>
         </div>
 
+        <!-- Target Date -->
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding:14px;background:var(--surface);border-radius:12px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);">🎯 Finish by:</span>
+          <input type="date" class="form-input" id="bibleTargetDate" value="${getTargetDate(data)}" onchange="updateBibleTargetDate()" style="flex:1;min-width:140px;margin:0;padding:8px 12px;font-size:14px;">
+          <div style="text-align:center;min-width:80px;">
+            <div id="bible-cpd" style="font-size:22px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">${getChaptersPerDay(data)}</div>
+            <div style="font-size:10px;color:var(--muted);font-weight:600;">ch/day needed</div>
+          </div>
+        </div>
+
         <!-- Reading Stats Cards -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:12px;">
           <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
             <div style="font-size:20px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace;">${data.stats.totalChapters}</div>
             <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters Read</div>
@@ -631,37 +702,52 @@ async function renderBiblePage() {
             <div style="font-size:11px;color:var(--muted);font-weight:600;">Books Finished</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div style="font-size:20px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">${getChaptersPerDay(data)}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Chapters/Day</div>
+            <div id="bible-cpd-card" style="font-size:20px;font-weight:700;color:var(--blue);font-family:'JetBrains Mono',monospace;">${getChaptersPerDay(data)}</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:600;">Ch/Day to Target</div>
           </div>
-          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div style="font-size:20px;font-weight:700;color:var(--orange);font-family:'JetBrains Mono',monospace;">${data.streak || 0}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Day Streak</div>
-          </div>
-          ${data.bestStreak ? `
-          <div style="text-align:center;padding:12px;background:var(--surface);border-radius:8px;">
-            <div style="font-size:20px;font-weight:700;color:var(--purple);font-family:'JetBrains Mono',monospace;">${data.bestStreak}</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:600;">Best Streak</div>
-          </div>` : ''}
         </div>
       </div>
 
       <!-- Old Testament Card -->
       <div id="bible-ot-section">
-        <div class="card" style="margin-bottom:16px;">
-          ${renderTestamentBooks(OT_BOOKS, data)}
+        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">📜 Old Testament <span style="font-size:13px;color:var(--muted);font-weight:500;">${otRead}/${OT_CHAPTERS}</span></h2>
+        <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+          ${renderTestamentBooks(OT_BOOKS, data, OT_SECTIONS)}
         </div>
       </div>
 
       <!-- New Testament Card -->
       <div id="bible-nt-section">
-        <div class="card" style="margin-bottom:16px;">
-          ${renderTestamentBooks(NT_BOOKS, data)}
+        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">✝️ New Testament <span style="font-size:13px;color:var(--muted);font-weight:500;">${ntRead}/${NT_CHAPTERS}</span></h2>
+        <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
+          ${renderTestamentBooks(NT_BOOKS, data, NT_SECTIONS)}
         </div>
       </div>
     </div>
   `;
 }
+
+// Toggle collapsible Bible section
+window.toggleBibleSection = function(sectionId) {
+  const body = document.getElementById('section-' + sectionId);
+  const chevron = document.getElementById('chevron-' + sectionId);
+  if (!body) return;
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? '' : 'none';
+  if (chevron) chevron.textContent = isHidden ? '▼' : '▶';
+  localStorage.setItem(`bible_section_${sectionId}`, isHidden ? 'expanded' : 'collapsed');
+};
+
+// Update target date
+window.updateBibleTargetDate = async function() {
+  const input = document.getElementById('bibleTargetDate');
+  if (!input || !_bibleCache) return;
+  _bibleCache.targetDate = input.value;
+  scheduleBibleSave();
+  // Update the chapters/day display
+  const cpdEl = document.getElementById('bible-cpd');
+  if (cpdEl) cpdEl.textContent = getChaptersPerDay(_bibleCache);
+};
 
 // Scroll to testament section
 window.scrollToTestament = function(testament) {
