@@ -407,14 +407,18 @@ function updateBibleStats(data) {
   // Update overall progress bar
   const overallFill = document.getElementById('bible-overall-fill');
   if (overallFill) overallFill.style.width = overallPercent + '%';
-  const overallDot = document.getElementById('bible-overall-dot');
-  if (overallDot) overallDot.style.left = overallPercent + '%';
+
+  // Update chapter counts
+  const readCount = document.getElementById('bible-read-count');
+  if (readCount) readCount.textContent = data.stats.totalChapters;
+  const remainCount = document.getElementById('bible-remaining-count');
+  if (remainCount) remainCount.textContent = TOTAL_CHAPTERS - data.stats.totalChapters;
 
   // Update chapters/day and days remaining
   const cpdEl = document.getElementById('bible-cpd');
   if (cpdEl) cpdEl.textContent = getChaptersPerDay(data);
   const daysEl = document.getElementById('bible-days-remaining');
-  if (daysEl) daysEl.textContent = getDaysRemaining(data) + ' days remaining in ' + getTargetYearLabel(data);
+  if (daysEl) daysEl.textContent = getDaysRemaining(data);
 }
 
 // Calculate genre stats
@@ -468,10 +472,16 @@ function calculateGenreStats(data) {
 
 // Toggle stats panel (global function for onclick handlers)
 window.toggleBibleStats = function() {
-  const panel = document.getElementById('bibleStatsPanel');
+  const allStats = document.getElementById('bibleStatsAll');
+  if (!allStats) return;
   
-  if (panel.style.display === 'none' || !panel.style.display) {
-    panel.style.display = 'block';
+  const isHidden = allStats.style.display === 'none';
+  allStats.style.display = isHidden ? '' : 'none';
+  
+  if (isHidden) {
+    // Also show genre breakdown
+    const panel = document.getElementById('bibleStatsPanel');
+    if (panel) panel.style.display = 'block';
     
     // Update genre progress bars
     const genreStats = calculateGenreStats(_bibleCache);
@@ -491,8 +501,6 @@ window.toggleBibleStats = function() {
     if (genreContainer) {
       genreContainer.innerHTML = statsHtml;
     }
-  } else {
-    panel.style.display = 'none';
   }
 };
 
@@ -652,6 +660,9 @@ async function renderBiblePage() {
         </div>
       </div>
 
+      <!-- All stats (toggled by Stats button) -->
+      <div id="bibleStatsAll">
+
       <!-- Progress Circles (top row, compact) -->
       <div class="bible-rings-row">
         <div class="bible-ring-compact">
@@ -701,35 +712,40 @@ async function renderBiblePage() {
       <!-- Chapter Progress Bar -->
       <div class="bible-overall-progress">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-          <span style="font-size:14px;font-weight:600;">${data.stats.totalChapters} of ${TOTAL_CHAPTERS.toLocaleString()} chapters</span>
-          <span style="font-size:13px;color:var(--muted);" id="bible-days-remaining">${daysRemaining} days left</span>
+          <span style="font-size:14px;font-weight:600;"><span id="bible-read-count">${data.stats.totalChapters}</span> of ${TOTAL_CHAPTERS.toLocaleString()} chapters</span>
+          <span style="font-size:13px;color:var(--muted);"><span id="bible-remaining-count">${TOTAL_CHAPTERS - data.stats.totalChapters}</span> remaining</span>
         </div>
         <div class="bible-overall-bar">
           <div class="bible-overall-bar-fill" style="width:${overallPercent}%;" id="bible-overall-fill"></div>
         </div>
       </div>
 
-      <!-- Chapters Per Day Card -->
+      <!-- Chapters Per Day + Target Card -->
       <div class="bible-cpd-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
           <div>
             <div style="font-size:28px;font-weight:800;color:var(--accent);font-family:'JetBrains Mono',monospace;" id="bible-cpd">${chaptersPerDay}</div>
             <div style="font-size:12px;color:var(--muted);font-weight:600;">chapters/day to finish</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:12px;color:var(--muted);">🎯 Target:</span>
-            <input type="date" class="form-input bible-target-input" id="bibleTargetDate" value="${getTargetDate(data)}" onchange="updateBibleTargetDate()">
+          <div style="text-align:right;">
+            <div style="font-size:22px;font-weight:800;color:var(--blue);font-family:'JetBrains Mono',monospace;" id="bible-days-remaining">${daysRemaining}</div>
+            <div style="font-size:12px;color:var(--muted);font-weight:600;">days remaining</div>
           </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--border);">
+          <span style="font-size:12px;color:var(--muted);">🎯 Target:</span>
+          <input type="date" class="form-input bible-target-input" id="bibleTargetDate" value="${getTargetDate(data)}" onchange="updateBibleTargetDate()" style="flex:1;">
         </div>
       </div>
 
-      <!-- Stats panel (hidden by default, genre breakdowns) -->
+      <!-- Genre breakdown (inside stats toggle) -->
       <div id="bibleStatsPanel" style="display:none;">
         <div class="card" style="padding:16px;margin-bottom:16px;">
           <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📊 Genre Breakdown</h3>
           <div id="genreProgressBars"></div>
         </div>
       </div>
+      </div><!-- end bibleStatsAll -->
 
       <!-- Old Testament Card -->
       <div id="bible-ot-section">
@@ -771,7 +787,7 @@ window.updateBibleTargetDate = async function() {
   const cpdEl = document.getElementById('bible-cpd');
   if (cpdEl) cpdEl.textContent = getChaptersPerDay(_bibleCache);
   const daysEl = document.getElementById('bible-days-remaining');
-  if (daysEl) daysEl.textContent = getDaysRemaining(_bibleCache) + ' days remaining in ' + getTargetYearLabel(_bibleCache);
+  if (daysEl) daysEl.textContent = getDaysRemaining(_bibleCache);
 };
 
 // Scroll to testament section
