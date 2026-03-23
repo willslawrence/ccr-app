@@ -1637,6 +1637,8 @@ body.dark-theme .theme-toggle-slider:before {
   margin-bottom: 20px;
   overflow: hidden;
   word-break: break-word;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .book-modal-form {
@@ -1646,12 +1648,25 @@ body.dark-theme .theme-toggle-slider:before {
   border: 1px solid var(--border);
   box-sizing: border-box;
   overflow: hidden;
+  max-width: 100%;
+}
+
+.book-modal-form .form-group {
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .book-modal-form .form-input,
-.book-modal-form .btn {
+.book-modal-form .btn,
+.book-modal-form input[type="date"],
+.book-modal-form input[type="text"],
+.book-modal-form input[type="number"] {
   box-sizing: border-box;
   max-width: 100%;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 
