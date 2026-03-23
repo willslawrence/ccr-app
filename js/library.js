@@ -54,7 +54,7 @@ async function getCheckoutLogs() {
         const stored = JSON.parse(localStorage.getItem('ccr_checkout_logs') || '[]');
         libraryCheckoutLogs = stored;
         return stored;
-      } catch { return []; }
+      } catch (e) { return []; }
     }
   } catch (error) {
     console.error('Error getting checkout logs:', error);
@@ -236,42 +236,21 @@ async function isValidCoverUrl(url) {
     const resp = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
     // no-cors won't give us status, but at least checks reachability
     return true;
-  } catch { return false; }
+  } catch (e) { return false; }
 }
 
-// Check if a Google Books cover URL is a placeholder (solid color image)
+// Check if a Google Books cover URL is likely a placeholder
+// Uses <img> loading only (no fetch — Google Books blocks CORS)
 async function isGoogleBooksPlaceholder(url) {
-  try {
-    const resp = await fetch(url);
-    const blob = await resp.blob();
-    // Placeholders are typically small (< 5KB)
-    if (blob.size < 5000) return true;
-    // Load as image and check if it's mostly one color
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          // Sample 20 pixels from the center
-          const cx = Math.floor(img.width / 2);
-          const cy = Math.floor(img.height / 2);
-          const data = ctx.getImageData(cx - 5, cy - 5, 10, 2).data;
-          const colors = new Set();
-          for (let i = 0; i < data.length; i += 4) {
-            colors.add(`${data[i]},${data[i+1]},${data[i+2]}`);
-          }
-          resolve(colors.size < 3); // Placeholder = almost all same color
-        } catch { resolve(false); } // CORS issues = assume it's fine
-      };
-      img.onerror = () => resolve(true);
-      img.src = url;
-    });
-  } catch { return true; }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      // Placeholders are typically very small (1x1 or tiny solid color images)
+      resolve(img.naturalWidth < 10 || img.naturalHeight < 10);
+    };
+    img.onerror = () => resolve(true); // Can't load = treat as placeholder
+    img.src = url;
+  });
 }
 
 // Check if a Google Books result title roughly matches expected
