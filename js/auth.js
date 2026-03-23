@@ -99,14 +99,14 @@ function initLoginPage() {
     const errorEl = document.getElementById('signupError');
 
     try {
-      // Check if this is the first user (admin)
+      // Create Firebase Auth account first (so we're authenticated for Firestore reads)
+      const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+
+      // Now check if this is the first user (admin) — requires auth
       const usersSnapshot = await db.collection('users').limit(1).get();
       const isFirstUser = usersSnapshot.empty;
       const role = isFirstUser ? 'admin' : 'member';
-
-      // Create Firebase Auth account
-      const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-      const user = userCredential.user;
 
       // Update Firebase Auth profile with displayName
       await user.updateProfile({ displayName: name });

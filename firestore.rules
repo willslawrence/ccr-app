@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: get user role from Firestore
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Helper: check if user is admin
+    function isAdmin() {
+      return isAuth() && getUserRole() == 'admin';
+    }
+
+    // Helper: check if user is editor or admin
+    function isEditor() {
+      return isAuth() && (getUserRole() == 'editor' || getUserRole() == 'admin');
+    }
+
+    // Users collection - any auth user can list (needed for first-user check),
+    // users can read own doc, admin can read all
+    match /users/{userId} {
+      allow list: if isAuth();
+      allow get: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Books - any authenticated user can read, editors can write
+    match /books/{bookId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
+    // Checkouts - any authenticated user can read/write (they check out books)
+    match /checkouts/{checkoutId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if isAuth();
+    }
+
+    // Prayers - any authenticated user can read/create, editors can delete
+    match /prayers/{prayerId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth();
+      allow delete: if isEditor();
+    }
+
+    // Events - any authenticated user can read, editors can write
+    match /events/{eventId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
+    // Order of Service - any authenticated user can read, editors can write
+    match /order_of_service/{docId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
+    // Schedule Volunteers - any authenticated user can read, editors can write
+    match /schedule_volunteers/{docId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
+    // Bulletins - any authenticated user can read, editors can write
+    match /bulletins/{bulletinId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
+    // Sermons - any authenticated user can read, editors can write
+    match /sermons/{sermonId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
+    // Transactions - any authenticated user can read/write
+    match /transactions/{transactionId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    // Email queue - authenticated users can create, admin can manage
+    match /emailQueue/{emailId} {
+      allow create: if isAuth();
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
