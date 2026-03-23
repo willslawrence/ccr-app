@@ -95,19 +95,5 @@ service cloud.firestore {
       allow create: if isAuth();
       allow read, update, delete: if isAdmin();
     }
-
-    // Polls - any authenticated user can read, admin can create/update/archive
-    match /polls/{pollId} {
-      allow read: if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAuth();  // Users need to increment vote counts
-      allow delete: if isAdmin();
-
-      // Votes sub-collection - any auth user can create, admin can read all
-      match /votes/{voteId} {
-        allow create: if isAuth();
-        allow read: if isAdmin();
-      }
-    }
   }
 }
