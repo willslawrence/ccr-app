@@ -3,7 +3,7 @@
    ==================================== */
 
 function renderSettingsPage() {
-  const user = getCurrentUser();
+  const user = getCurrentUser() || { name: 'User', email: '', role: 'member' };
 
   return `
     <div class="page">

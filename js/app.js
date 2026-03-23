@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '1.8.3';
+const APP_VERSION = '1.8.4';
 
 // Global state
 const AppState = {
@@ -100,8 +100,13 @@ async function render() {
       initVotePage();
       break;
     case 'settings':
-      app.innerHTML = renderSettingsPage();
-      initSettingsPage();
+      try {
+        app.innerHTML = renderSettingsPage();
+        initSettingsPage();
+      } catch (e) {
+        console.error('Settings page error:', e);
+        app.innerHTML = '<div class="page"><h1>Settings Error</h1><p>' + e.message + '</p></div>';
+      }
       break;
     default:
       app.innerHTML = '<div class="page"><h1>404 - Page Not Found</h1></div>';
