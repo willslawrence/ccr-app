@@ -918,13 +918,13 @@ function attachCheckoutLogListeners() {
 
   // Return buttons
   document.querySelectorAll('[data-action="return"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const logId = btn.dataset.logId;
-      const logs = getCheckoutLogs();
-      const log = logs.find(l => l.id === logId);
+      const log = libraryCheckoutLogs.find(l => l.id === logId);
       if (log) {
-        updateCheckoutLog(logId, { status: 'returned', currentPage: log.totalPages || log.currentPage });
+        await updateCheckoutLog(logId, { status: 'returned', currentPage: log.totalPages || log.currentPage });
+        await getCheckoutLogs();
         document.getElementById('app').innerHTML = renderLibraryPage();
         initLibraryPage();
       }
@@ -933,7 +933,7 @@ function attachCheckoutLogListeners() {
 
   // Save progress buttons
   document.querySelectorAll('.checkout-edit-save').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const logId = btn.dataset.logId;
       const pageInput = document.getElementById('page-' + logId);
@@ -941,7 +941,8 @@ function attachCheckoutLogListeners() {
       const updates = { status: 'reading' };
       if (pageInput) updates.currentPage = parseInt(pageInput.value) || 0;
       if (dueInput) updates.dueBack = dueInput.value;
-      updateCheckoutLog(logId, updates);
+      await updateCheckoutLog(logId, updates);
+      await getCheckoutLogs();
       document.getElementById('app').innerHTML = renderLibraryPage();
       initLibraryPage();
     });
