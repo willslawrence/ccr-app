@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Migration to Firebase</title>
+    <style>
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        h1 {
+            color: #b8860b;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .status.info { background: #e3f2fd; color: #1976d2; }
+        .status.success { background: #e8f5e8; color: #2e7d32; }
+        .status.error { background: #ffebee; color: #c62828; }
+        .status.warning { background: #fff3e0; color: #f57c00; }
+        button {
+            background: linear-gradient(135deg, #d4a84b, #b8860b);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #c9a23a, #a67c0a);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #d4a84b, #b8860b);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .book-item {
+            padding: 10px;
+            border-left: 4px solid #b8860b;
+            background: #fafafa;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Library Migration to Firebase</h1>
+        <div id="status"></div>
+        <div id="progress" style="display:none;">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">0 / 0 books processed</p>
+        </div>
+        <div id="results"></div>
+        <button id="migrateBtn" onclick="startMigration()">Start Migration</button>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Firebase configuration (same as app)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBObs_aGSXFl2Ph4KWz3ohwgvNSbQSmr9I",
+            authDomain: "ccr-church-app.firebaseapp.com",
+            projectId: "ccr-church-app",
+            storageBucket: "ccr-church-app.firebasestorage.app",
+            messagingSenderId: "139840828810",
+            appId: "1:139840828810:web:4f9f275a491eed430e8473"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Google Sheets JSON endpoint
+        const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1tarzoeTPmF7At2B5a0yJJ9NzcrjtnTuXUgr-71xVHfk/gviz/tq?tqx=out:json';
+
+        // Missing book covers to fetch
+        const MISSING_COVERS = {
+            "Emblems of the Infinite King": "J Ryan Lister",
+            "Deeper": "Dane Ortlund",
+            "Theology For Ministry": "Edwards"
+        };
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function updateProgress(current, total) {
+            const progressDiv = document.getElementById('progress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressDiv.style.display = 'block';
+            const percent = total > 0 ? (current / total) * 100 : 0;
+            progressFill.style.width = percent + '%';
+            progressText.textContent = `${current} / ${total} books processed`;
+        }
+
+        function slugify(text) {
+            return text.toLowerCase()
+                .replace(/[^\w ]+/g, '')
+                .replace(/ +/g, '-');
+        }
+
+        async function fetchBookCover(title, author) {
+            try {
+                const query = `intitle:${encodeURIComponent(title)}+inauthor:${encodeURIComponent(author)}`;
+                const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`);
+                const data = await response.json();
+                
+                if (data.items && data.items[0] && data.items[0].volumeInfo.imageLinks) {
+                    // Prefer highres, then thumbnail
+                    return data.items[0].volumeInfo.imageLinks.extraLarge ||
+                           data.items[0].volumeInfo.imageLinks.large ||
+                           data.items[0].volumeInfo.imageLinks.medium ||
+                           data.items[0].volumeInfo.imageLinks.thumbnail;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error fetching cover for', title, ':', error);
+                return null;
+            }
+        }
+
+        async function fetchGoogleSheetsData() {
+            try {
+                showStatus('Fetching data from Google Sheets...', 'info');
+                
+                const response = await fetch(GOOGLE_SHEETS_URL);
+                const text = await response.text();
+                
+                // Parse Google Sheets JSON response (it has some extra wrapper text)
+                const jsonStart = text.indexOf('{');
+                const jsonText = text.substring(jsonStart);
+                const data = JSON.parse(jsonText);
+                
+                if (!data.table || !data.table.rows) {
+                    throw new Error('Invalid data format from Google Sheets');
+                }
+                
+                return data.table;
+            } catch (error) {
+                showStatus(`Error fetching Google Sheets data: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        function parseGoogleSheetsData(table) {
+            const headers = table.cols.map(col => col.label || '').map(label => {
+                // Normalize headers to simple field names
+                const headerMap = {
+                    'Book Owner': 'owner',
+                    'Owner Email': 'ownerEmail', 
+                    'Owner Fav': 'ownerFav',
+                    'Total Pages': 'pages',
+                    'Cover URL': 'coverUrl',
+                    'Goodreads Rating': 'rating',
+                    'Title': 'title',
+                    'Author': 'author',
+                    'Summary': 'summary',
+                    'Genre': 'genre',
+                    'Category': 'category'
+                };
+                return headerMap[label] || label.toLowerCase().replace(/\s+/g, '');
+            });
+            
+            const books = [];
+            
+            for (const row of table.rows) {
+                const book = {};
+                
+                headers.forEach((header, idx) => {
+                    const cell = row.c[idx];
+                    book[header] = cell ? (cell.v || '').toString().trim() : '';
+                });
+                
+                // Filter out empty rows and CSV artifacts
+                if (book.title && book.author && 
+                    book.title.length > 0 && book.author.length > 0) {
+                    
+                    // Filter out sentence fragments (titles starting with lowercase)
+                    const firstChar = book.title.charAt(0);
+                    if (firstChar === firstChar.toUpperCase()) {
+                        
+                        // Convert data types
+                        book.pages = parseInt(book.pages) || 0;
+                        book.rating = parseFloat(book.rating) || 0;
+                        book.ownerFav = ['TRUE', 'YES', '1'].includes(book.ownerFav.toUpperCase());
+                        
+                        books.push(book);
+                    }
+                }
+            }
+            
+            return books;
+        }
+
+        async function startMigration() {
+            const user = auth.currentUser;
+            if (!user) {
+                showStatus('Please log in to the CCR app first!', 'error');
+                return;
+            }
+
+            // Check if user is admin
+            try {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (!userDoc.exists || userDoc.data().role !== 'admin') {
+                    showStatus('Only admin users can run the migration!', 'error');
+                    return;
+                }
+            } catch (error) {
+                showStatus('Error checking user permissions: ' + error.message, 'error');
+                return;
+            }
+
+            const migrateBtn = document.getElementById('migrateBtn');
+            migrateBtn.disabled = true;
+            migrateBtn.textContent = 'Migrating...';
+
+            try {
+                // Fetch and parse Google Sheets data
+                const table = await fetchGoogleSheetsData();
+                const books = parseGoogleSheetsData(table);
+                
+                showStatus(`Found ${books.length} valid books. Starting migration...`, 'info');
+                
+                let processed = 0;
+                let successful = 0;
+                let failed = 0;
+                const results = [];
+
+                // Process books in batches to avoid overwhelming the API
+                const batchSize = 10;
+                for (let i = 0; i < books.length; i += batchSize) {
+                    const batch = books.slice(i, i + batchSize);
+                    const batchPromises = batch.map(async (book) => {
+                        try {
+                            // Check if we need to fetch a missing cover
+                            if (!book.coverUrl && MISSING_COVERS[book.title]) {
+                                const coverUrl = await fetchBookCover(book.title, MISSING_COVERS[book.title]);
+                                if (coverUrl) {
+                                    book.coverUrl = coverUrl;
+                                }
+                            }
+
+                            // Generate stable document ID
+                            const docId = slugify(book.title);
+                            
+                            // Write to Firestore
+                            await db.collection('books').doc(docId).set({
+                                title: book.title,
+                                author: book.author,
+                                coverUrl: book.coverUrl || '',
+                                summary: book.summary || '',
+                                rating: book.rating,
+                                genre: book.genre || '',
+                                pages: book.pages,
+                                category: book.category || '',
+                                owner: book.owner || '',
+                                ownerEmail: book.ownerEmail || '',
+                                ownerFav: book.ownerFav,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+
+                            successful++;
+                            results.push({
+                                title: book.title,
+                                status: 'success',
+                                message: 'Migrated successfully'
+                            });
+                        } catch (error) {
+                            failed++;
+                            results.push({
+                                title: book.title,
+                                status: 'error',
+                                message: error.message
+                            });
+                        }
+                        
+                        processed++;
+                        updateProgress(processed, books.length);
+                    });
+                    
+                    await Promise.all(batchPromises);
+                    
+                    // Small delay between batches to be nice to the APIs
+                    if (i + batchSize < books.length) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                }
+
+                // Show final results
+                showStatus(`Migration complete! ${successful} successful, ${failed} failed.`, 
+                          failed > 0 ? 'warning' : 'success');
+
+                // Show detailed results
+                const resultsDiv = document.getElementById('results');
+                let resultsHtml = '<h3>Migration Results:</h3>';
+                
+                if (failed > 0) {
+                    resultsHtml += '<h4>Failed:</h4>';
+                    results.filter(r => r.status === 'error').forEach(r => {
+                        resultsHtml += `<div class="book-item" style="border-left-color: #c62828;">
+                            ❌ ${r.title}: ${r.message}
+                        </div>`;
+                    });
+                }
+                
+                if (successful > 0) {
+                    resultsHtml += '<h4>Successful:</h4>';
+                    results.filter(r => r.status === 'success').slice(0, 10).forEach(r => {
+                        resultsHtml += `<div class="book-item">✅ ${r.title}</div>`;
+                    });
+                    if (successful > 10) {
+                        resultsHtml += `<div class="book-item">... and ${successful - 10} more</div>`;
+                    }
+                }
+                
+                resultsDiv.innerHTML = resultsHtml;
+
+            } catch (error) {
+                showStatus(`Migration failed: ${error.message}`, 'error');
+            } finally {
+                migrateBtn.disabled = false;
+                migrateBtn.textContent = 'Run Migration Again';
+            }
+        }
+
+        // Check auth state on page load
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                showStatus(`Logged in as: ${user.email}`, 'success');
+            } else {
+                showStatus('Please log in to the CCR app first, then refresh this page.', 'warning');
+                document.getElementById('migrateBtn').disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>

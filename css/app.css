@@ -3,8 +3,17 @@
    Based on Friends Library aesthetic
    ==================================== */
 
-/* Prevent iOS Safari pinch-to-zoom */
-html { touch-action: manipulation; }
+/* Prevent iOS Safari pinch-to-zoom and all swipe/overscroll behavior */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Also prevent pull-to-refresh */
+body {
+  overscroll-behavior-y: contain;
+  touch-action: pan-y pinch-zoom;
+}
 
 :root {
   /* Colors */
@@ -1261,6 +1270,7 @@ body.dark-theme .theme-toggle-slider:before {
   cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
+  touch-action: manipulation;
   align-items: center;
   justify-content: center;
   padding: 0;

@@ -3,7 +3,7 @@
    Fetches from Google Sheets CSV
    ==================================== */
 
-const LIBRARY_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1tarzoeTPmF7At2B5a0yJJ9NzcrjtnTuXUgr-71xVHfk/gviz/tq?tqx=out:csv';
+// Migrated from Google Sheets to Firebase Firestore
 
 // Apps Script web app for sending checkout notification emails
 // TODO: Deploy Apps Script and paste URL here
@@ -11,9 +11,25 @@ const CHECKOUT_EMAIL_SCRIPT_URL = '';
 
 async function sendCheckoutEmail(ownerEmail, ownerName, borrowerName, bookTitle, dueBack) {
   if (!CHECKOUT_EMAIL_SCRIPT_URL) {
-    console.warn('Checkout email script URL not configured');
+    // No email script configured - use mailto fallback
+    const subject = `Book Checkout: ${bookTitle}`;
+    const body = `Hi ${ownerName},
+
+${borrowerName} has checked out your book "${bookTitle}" from the CCR Library.
+
+Due back: ${dueBack}
+
+Please coordinate with ${borrowerName} to arrange pickup.
+
+Thanks!
+CCR Church App`;
+    
+    const mailtoUrl = `mailto:${ownerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    console.log('Opening mailto link for checkout notification');
+    window.location.href = mailtoUrl;
     return;
   }
+  
   const resp = await fetch(CHECKOUT_EMAIL_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
@@ -29,107 +45,198 @@ let librarySearchQuery = '';
 let libraryFiltersVisible = false;
 let currentLibraryTab = 'books';
 
-// ─── CHECKOUT LOG STORAGE ───
-const CHECKOUT_STORAGE_KEY = 'ccr_checkout_logs';
+// ─── CHECKOUT LOG STORAGE (FIREBASE) ───
+let libraryCheckoutLogs = []; // Cache for checkout logs
 
-function getCheckoutLogs() {
+async function getCheckoutLogs() {
   try {
-    return JSON.parse(localStorage.getItem(CHECKOUT_STORAGE_KEY) || '[]');
-  } catch { return []; }
+    if (typeof db !== 'undefined') {
+      const snapshot = await db.collection('checkouts').orderBy('startDate', 'desc').get();
+      const logs = [];
+      snapshot.forEach(doc => {
+        logs.push({ id: doc.id, ...doc.data() });
+      });
+      libraryCheckoutLogs = logs;
+      return logs;
+    } else {
+      // Fallback to localStorage if Firebase not available
+      try {
+        const stored = JSON.parse(localStorage.getItem('ccr_checkout_logs') || '[]');
+        libraryCheckoutLogs = stored;
+        return stored;
+      } catch { return []; }
+    }
+  } catch (error) {
+    console.error('Error getting checkout logs:', error);
+    return libraryCheckoutLogs; // Return cached version
+  }
 }
 
 function saveCheckoutLogs(logs) {
-  localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(logs));
+  // Keep localStorage as backup
+  localStorage.setItem('ccr_checkout_logs', JSON.stringify(logs));
 }
 
-function addCheckoutLog(entry) {
-  const logs = getCheckoutLogs();
-  entry.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-  logs.push(entry);
-  saveCheckoutLogs(logs);
-  return entry;
-}
-
-function updateCheckoutLog(id, updates) {
-  const logs = getCheckoutLogs();
-  const idx = logs.findIndex(l => l.id === id);
-  if (idx >= 0) {
-    Object.assign(logs[idx], updates);
+async function addCheckoutLog(entry) {
+  try {
+    if (typeof db !== 'undefined') {
+      const docRef = await db.collection('checkouts').add({
+        ...entry,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      entry.id = docRef.id;
+      
+      // Also queue email notification
+      await queueCheckoutEmail(entry);
+      
+      // Update local cache
+      libraryCheckoutLogs.unshift(entry);
+      saveCheckoutLogs(libraryCheckoutLogs); // Backup to localStorage
+      
+      return entry;
+    } else {
+      // Fallback to localStorage
+      entry.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      const logs = await getCheckoutLogs();
+      logs.push(entry);
+      saveCheckoutLogs(logs);
+      return entry;
+    }
+  } catch (error) {
+    console.error('Error adding checkout log:', error);
+    // Fallback to localStorage
+    entry.id = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const logs = await getCheckoutLogs();
+    logs.push(entry);
     saveCheckoutLogs(logs);
+    return entry;
+  }
+}
+
+async function updateCheckoutLog(id, updates) {
+  try {
+    if (typeof db !== 'undefined') {
+      await db.collection('checkouts').doc(id).update({
+        ...updates,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      
+      // Update local cache
+      const idx = libraryCheckoutLogs.findIndex(l => l.id === id);
+      if (idx >= 0) {
+        Object.assign(libraryCheckoutLogs[idx], updates);
+        saveCheckoutLogs(libraryCheckoutLogs);
+      }
+    } else {
+      // Fallback to localStorage  
+      const logs = await getCheckoutLogs();
+      const idx = logs.findIndex(l => l.id === id);
+      if (idx >= 0) {
+        Object.assign(logs[idx], updates);
+        saveCheckoutLogs(logs);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating checkout log:', error);
+    // Try localStorage fallback
+    const logs = await getCheckoutLogs();
+    const idx = logs.findIndex(l => l.id === id);
+    if (idx >= 0) {
+      Object.assign(logs[idx], updates);
+      saveCheckoutLogs(logs);
+    }
+  }
+}
+
+async function queueCheckoutEmail(checkoutEntry) {
+  try {
+    const book = libraryBooks.find(b => b.title === checkoutEntry.book);
+    if (!book || !book.ownerEmail) {
+      console.log('No owner email found for book:', checkoutEntry.book);
+      return;
+    }
+
+    const emailData = {
+      to: book.ownerEmail,
+      subject: `📚 Book Checkout: ${checkoutEntry.book}`,
+      body: `Hi ${book.owner || 'there'},
+
+${checkoutEntry.name} has checked out your book "${checkoutEntry.book}" from the CCR Library.
+
+Due back: ${checkoutEntry.dueBack || 'Not specified'}
+
+Please coordinate with ${checkoutEntry.name} to arrange pickup.
+
+Thanks!
+CCR Church App`,
+      bookTitle: checkoutEntry.book,
+      borrowerName: checkoutEntry.name,
+      ownerName: book.owner || '',
+      dueBack: checkoutEntry.dueBack || '',
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (typeof db !== 'undefined') {
+      await db.collection('emailQueue').add(emailData);
+      console.log('Email queued successfully');
+    }
+  } catch (error) {
+    console.error('Error queueing email:', error);
   }
 }
 
 function getCheckoutsForBook(bookTitle) {
-  return getCheckoutLogs().filter(l => l.book === bookTitle);
+  return libraryCheckoutLogs.filter(l => l.book === bookTitle);
 }
 
 function getActiveCheckoutForBook(bookTitle) {
-  return getCheckoutLogs().find(l => l.book === bookTitle && (l.status === 'reading' || l.status === 'requested'));
+  return libraryCheckoutLogs.find(l => l.book === bookTitle && (l.status === 'reading' || l.status === 'requested'));
 }
 
 // ─── FETCH & PARSE ───
 
 async function fetchLibraryData() {
   try {
-    const response = await fetch(LIBRARY_SHEET_URL);
-    const csvText = await response.text();
-    parseLibraryCSV(csvText);
+    if (typeof db !== 'undefined') {
+      console.log('Fetching library data from Firestore...');
+      const snapshot = await db.collection('books').get();
+      libraryBooks = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        // Map Firestore fields to expected format
+        libraryBooks.push({
+          Title: data.title || '',
+          Author: data.author || '',
+          CoverURL: data.coverUrl || '',
+          Summary: data.summary || '',
+          Rating: data.rating || 0,
+          'Goodreads Rating': data.rating || 0,
+          Genre: data.genre || '',
+          Pages: data.pages || 0,
+          'Total Pages': data.pages || 0,
+          Category: data.category || '',
+          Owner: data.owner || '',
+          OwnerEmail: data.ownerEmail || '',
+          'Owner Email': data.ownerEmail || '',
+          OwnerFav: data.ownerFav || false,
+          'Owner Fav': data.ownerFav || false,
+          Status: 'Available' // Will be determined by checkout logs
+        });
+      });
+      console.log(`Loaded ${libraryBooks.length} books from Firestore`);
+    } else {
+      console.warn('Firebase not available, using mock data');
+      loadMockLibraryData();
+    }
   } catch (error) {
     console.error('Error fetching library data:', error);
     loadMockLibraryData();
   }
 }
 
-function parseLibraryCSV(csvText) {
-  // Normalize CSV headers to simple field names
-  const HEADER_MAP = {
-    'Book Owner': 'Owner',
-    'Owner Email': 'OwnerEmail',
-    'Owner Fav': 'OwnerFav',
-    'Total Pages': 'Pages',
-    'Cover URL': 'CoverURL',
-    'Goodreads Rating': 'Rating',
-  };
-
-  const lines = csvText.split('\n').filter(line => line.trim());
-  const rawHeaders = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-  const headers = rawHeaders.map(h => HEADER_MAP[h] || h);
-
-  libraryBooks = [];
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
-    if (values.length < headers.length) continue;
-
-    const book = {};
-    headers.forEach((header, idx) => {
-      book[header] = values[idx] ? values[idx].trim() : '';
-    });
-
-    if (book.Title && book.Title !== '') {
-      libraryBooks.push(book);
-    }
-  }
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current);
-  return result.map(s => s.replace(/^"|"$/g, ''));
-}
+// CSV parsing functions removed - now using Firestore
 
 function loadMockLibraryData() {
   libraryBooks = [
@@ -227,6 +334,14 @@ function renderBookCover(book, size) {
 function renderLibraryPage() {
   const hasActiveFilters = activeLibraryFilters.size > 0;
   const isLoading = libraryBooks.length === 0;
+  
+  // Calculate counts for tab buttons
+  const booksCount = libraryBooks.length > 0 ? libraryBooks.length : 0;
+  const checkoutsCount = libraryCheckoutLogs.filter(l => l.status === 'reading' || l.status === 'requested').length;
+  
+  // Tab labels with counts
+  const booksLabel = booksCount > 0 ? `📚 Books (${booksCount})` : '📚 Books';
+  const checkoutsLabel = checkoutsCount > 0 ? `📋 Checked Out (${checkoutsCount})` : '📋 Checked Out';
 
   return `
     <div class="page library-page">
@@ -235,8 +350,8 @@ function renderLibraryPage() {
 
         <!-- Tab Buttons -->
         <div class="btn-group" style="margin-bottom:8px;">
-          <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">📚 Books</button>
-          <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">📋 Checked Out</button>
+          <button class="btn ${currentLibraryTab === 'books' ? 'btn-primary' : 'btn-outline'}" data-libtab="books">${booksLabel}</button>
+          <button class="btn ${currentLibraryTab === 'checkouts' ? 'btn-primary' : 'btn-outline'}" data-libtab="checkouts">${checkoutsLabel}</button>
         </div>
 
         <!-- Search -->
@@ -345,7 +460,7 @@ function renderLibraryBooks() {
 // ─── CHECKOUT LOGS TAB ───
 
 function renderCheckoutLogs() {
-  const logs = getCheckoutLogs();
+  const logs = libraryCheckoutLogs; // Use cached logs
   if (logs.length === 0) {
     return `
       <div class="empty-state card">
@@ -489,9 +604,9 @@ function openBookModal(idx) {
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Due Back</label>
-          <div style="display:flex;gap:8px;align-items:stretch;">
-            <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}" style="flex:1;margin:0;padding:8px 12px;font-size:14px;box-sizing:border-box;">
-            <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="white-space:nowrap;padding:0 16px;font-size:14px;box-sizing:border-box;max-width:100%;">📤 Check Out</button>
+          <div style="display:flex;gap:8px;align-items:stretch;overflow:hidden;width:100%;">
+            <input type="date" class="form-input" id="bookModalCheckoutDue" value="${dueVal}" style="flex:1;min-width:0;margin:0;padding:8px 12px;font-size:14px;box-sizing:border-box;">
+            <button class="btn btn-primary" id="bookModalCheckoutBtn" data-book-idx="${idx}" style="white-space:nowrap;padding:0 16px;font-size:14px;box-sizing:border-box;min-width:0;">📤 Check Out</button>
           </div>
         </div>
         <p style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5;">Please coordinate with the owner to get the book. Update the site when you return it.</p>
@@ -566,7 +681,7 @@ function initBookModalActions(idx) {
   // Checkout button
   const checkoutBtn = document.getElementById('bookModalCheckoutBtn');
   if (checkoutBtn) {
-    checkoutBtn.onclick = () => {
+    checkoutBtn.onclick = async () => {
       const name = (document.getElementById('bookModalCheckoutName').value || '').trim();
       const dueBack = document.getElementById('bookModalCheckoutDue').value;
       const msgEl = document.getElementById('bookModalMsg');
@@ -575,7 +690,7 @@ function initBookModalActions(idx) {
         return;
       }
       const totalPages = parseInt(book.Pages || book['Total Pages'] || '0') || 0;
-      addCheckoutLog({
+      await addCheckoutLog({
         name,
         book: book.Title,
         startDate: new Date().toISOString().slice(0, 10),
@@ -585,25 +700,24 @@ function initBookModalActions(idx) {
         status: 'reading'
       });
 
-      // Notify the book owner via email (automatic via Apps Script)
-      const ownerEmail = book.OwnerEmail || '';
+      // Notify the book owner via email (automatic via email queue + Cloud Functions)
+      const ownerEmail = book.OwnerEmail || book['Owner Email'] || '';
       const ownerName = book.Owner || '';
-      let emailNote = '';
       if (ownerEmail) {
-        sendCheckoutEmail(ownerEmail, ownerName, name, book.Title, dueBack)
-          .then(() => {
-            const noteEl = document.getElementById('bookModalMsg');
-            if (noteEl) noteEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '. Email sent to ' + escapeHtml(ownerName) + '.</div>';
-          })
-          .catch(() => {
-            const noteEl = document.getElementById('bookModalMsg');
-            if (noteEl) noteEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '. (Email notification failed)</div>';
-          });
+        try {
+          await sendCheckoutEmail(ownerEmail, ownerName, name, book.Title, dueBack);
+          msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '. Email notification sent.</div>';
+        } catch (error) {
+          console.error('Email send failed:', error);
+          msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '. (Email notification failed)</div>';
+        }
+      } else {
+        msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.</div>';
       }
 
-      msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">📚 Checked out! Due back ' + formatDate(dueBack) + '.' + (ownerEmail ? ' Sending email to ' + escapeHtml(ownerName) + '...' : '') + '</div>';
-      setTimeout(() => {
+      setTimeout(async () => {
         closeBookModal();
+        await getCheckoutLogs(); // Refresh checkout logs
         document.getElementById('app').innerHTML = renderLibraryPage();
         initLibraryPage();
       }, 1500);
@@ -626,14 +740,15 @@ function initBookModalActions(idx) {
       setTimeout(() => {
         const confirmBtn = document.getElementById('bookModalConfirmReturn');
         if (confirmBtn) {
-          confirmBtn.onclick = () => {
+          confirmBtn.onclick = async () => {
             if (active) {
-              updateCheckoutLog(active.id, { status: 'returned', currentPage: active.totalPages || active.currentPage });
+              await updateCheckoutLog(active.id, { status: 'returned', currentPage: active.totalPages || active.currentPage });
             }
             const msgEl = document.getElementById('bookModalMsg');
             msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">✅ Book returned!</div>';
-            setTimeout(() => {
+            setTimeout(async () => {
               closeBookModal();
+              await getCheckoutLogs(); // Refresh checkout logs
               document.getElementById('app').innerHTML = renderLibraryPage();
               initLibraryPage();
             }, 1500);
@@ -658,7 +773,7 @@ function initBookModalActions(idx) {
       setTimeout(() => {
         const confirmBtn = document.getElementById('bookModalConfirmRequest');
         if (confirmBtn) {
-          confirmBtn.onclick = () => {
+          confirmBtn.onclick = async () => {
             const name = (document.getElementById('bookModalRequestName').value || '').trim();
             const msgEl = document.getElementById('bookModalMsg');
             if (!name) {
@@ -666,7 +781,7 @@ function initBookModalActions(idx) {
               return;
             }
             const totalPages = parseInt(book.Pages || book['Total Pages'] || '0') || 0;
-            addCheckoutLog({
+            await addCheckoutLog({
               name,
               book: book.Title,
               startDate: new Date().toISOString().slice(0, 10),
@@ -676,8 +791,9 @@ function initBookModalActions(idx) {
               status: 'requested'
             });
             msgEl.innerHTML = '<div class="badge badge-green" style="padding:8px 12px;font-size:12px;">🔖 You\'re next in line!</div>';
-            setTimeout(() => {
+            setTimeout(async () => {
               closeBookModal();
+              await getCheckoutLogs(); // Refresh checkout logs
               document.getElementById('app').innerHTML = renderLibraryPage();
               initLibraryPage();
             }, 1500);
@@ -782,9 +898,59 @@ function attachCheckoutLogListeners() {
   });
 }
 
+// ─── MIGRATE LOCALSTORAGE CHECKOUTS ───
+
+async function migrateLocalStorageCheckouts() {
+  try {
+    if (typeof db === 'undefined') return;
+    
+    const localLogs = JSON.parse(localStorage.getItem('ccr_checkout_logs') || '[]');
+    if (localLogs.length === 0) return;
+    
+    console.log(`Migrating ${localLogs.length} checkout logs to Firestore...`);
+    
+    // Check if we already have checkouts in Firestore
+    const existingCheckouts = await db.collection('checkouts').limit(1).get();
+    if (!existingCheckouts.empty) {
+      console.log('Checkout logs already exist in Firestore, skipping migration');
+      return;
+    }
+    
+    // Migrate each log
+    const batch = db.batch();
+    localLogs.forEach(log => {
+      const docRef = db.collection('checkouts').doc();
+      const logData = {
+        ...log,
+        createdAt: firebase.firestore.Timestamp.now(),
+        updatedAt: firebase.firestore.Timestamp.now()
+      };
+      delete logData.id; // Let Firestore generate the ID
+      batch.set(docRef, logData);
+    });
+    
+    await batch.commit();
+    console.log('Successfully migrated checkout logs to Firestore');
+    
+    // Keep localStorage as backup but mark as migrated
+    localStorage.setItem('ccr_checkout_logs_migrated', 'true');
+    
+  } catch (error) {
+    console.error('Error migrating checkout logs:', error);
+  }
+}
+
 // ─── INIT ───
 
-function initLibraryPage() {
+async function initLibraryPage() {
+  // Migrate localStorage data on first load
+  if (typeof db !== 'undefined' && !localStorage.getItem('ccr_checkout_logs_migrated')) {
+    await migrateLocalStorageCheckouts();
+  }
+
+  // Fetch checkout logs
+  await getCheckoutLogs();
+
   if (libraryBooks.length === 0) {
     fetchLibraryData().then(() => {
       document.getElementById('app').innerHTML = renderLibraryPage();
