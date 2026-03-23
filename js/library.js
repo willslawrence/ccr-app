@@ -249,24 +249,87 @@ async function isValidCoverUrl(url) {
   } catch { return false; }
 }
 
-// Try Google Books API for a cover
-async function fetchGoogleBooksCover(title, author) {
+// Check if a Google Books cover URL is a placeholder (solid color image)
+async function isGoogleBooksPlaceholder(url) {
   try {
-    const q = encodeURIComponent(`${title} ${author || ''}`);
-    const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=3`);
-    const data = await resp.json();
-    if (data.totalItems > 0) {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    // Placeholders are typically small (< 5KB)
+    if (blob.size < 5000) return true;
+    // Load as image and check if it's mostly one color
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          // Sample 20 pixels from the center
+          const cx = Math.floor(img.width / 2);
+          const cy = Math.floor(img.height / 2);
+          const data = ctx.getImageData(cx - 5, cy - 5, 10, 2).data;
+          const colors = new Set();
+          for (let i = 0; i < data.length; i += 4) {
+            colors.add(`${data[i]},${data[i+1]},${data[i+2]}`);
+          }
+          resolve(colors.size < 3); // Placeholder = almost all same color
+        } catch { resolve(false); } // CORS issues = assume it's fine
+      };
+      img.onerror = () => resolve(true);
+      img.src = url;
+    });
+  } catch { return true; }
+}
+
+// Check if a Google Books result title roughly matches expected
+function titleMatches(resultTitle, expectedTitle) {
+  const normalize = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  const result = normalize(resultTitle);
+  const expected = normalize(expectedTitle);
+  // Check if significant words overlap
+  const expectedWords = expected.split(/\s+/).filter(w => w.length > 2);
+  if (expectedWords.length === 0) return true;
+  const matchCount = expectedWords.filter(w => result.includes(w)).length;
+  return matchCount >= Math.ceil(expectedWords.length * 0.4);
+}
+
+// Try Google Books API for a cover (with title verification)
+async function fetchGoogleBooksCover(title, author) {
+  const queries = [
+    `intitle:"${title}" inauthor:"${(author || '').split(/[,&(]/)[0].trim()}"`,
+    `${title} ${(author || '').split(/[,&(]/)[0].trim()}`,
+  ];
+  for (const q of queries) {
+    try {
+      const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=5`);
+      const data = await resp.json();
+      if (!data.items) continue;
       for (const item of data.items) {
+        // Verify this result is actually for the right book
+        const resultTitle = item.volumeInfo?.title || '';
+        if (!titleMatches(resultTitle, title)) continue;
+
         const images = item.volumeInfo?.imageLinks;
         let coverUrl = images?.thumbnail || images?.smallThumbnail || '';
-        if (coverUrl) {
-          // Upgrade http to https and remove edge=curl for cleaner images
-          coverUrl = coverUrl.replace(/^http:/, 'https:').replace('&edge=curl', '');
-          return coverUrl;
+        if (!coverUrl) continue;
+
+        // Upgrade http to https and remove edge=curl for cleaner images
+        coverUrl = coverUrl.replace(/^http:/, 'https:').replace('&edge=curl', '');
+
+        // Verify it's not a placeholder image
+        const placeholder = await isGoogleBooksPlaceholder(coverUrl);
+        if (placeholder) {
+          console.log(`  Skipping placeholder for "${resultTitle}"`);
+          continue;
         }
+
+        return coverUrl;
       }
-    }
-  } catch (e) { console.warn('Google Books API failed:', e); }
+    } catch (e) { console.warn('Google Books API failed:', e); }
+  }
   return null;
 }
 
@@ -301,28 +364,62 @@ async function autoFetchMissingCovers() {
   try {
     const snapshot = await db.collection('books').get();
     const needsCover = [];
+    
+    // Phase 1: Quick checks for obviously broken covers
+    const toVerify = [];
     snapshot.forEach(doc => {
       const data = doc.data();
       const cover = data.coverUrl || '';
-      // Flag books with no cover, or with known broken Google Books placeholder URLs
+      // Obviously broken
       const isBroken = !cover.trim() || 
         cover.includes('no_cover') ||
         cover.startsWith('http://') ||  // Mixed content (blocked on HTTPS)
         (cover.includes('books.google') && cover.includes('img=0')); // Sometimes a placeholder
       if (isBroken) {
         needsCover.push({ id: doc.id, title: data.title, author: data.author, isbn: data.isbn || '', currentUrl: cover });
+      } else if (cover.includes('books.google.com')) {
+        // Google Books covers need deeper validation (might be placeholder or wrong book)
+        toVerify.push({ id: doc.id, title: data.title, author: data.author, isbn: data.isbn || '', currentUrl: cover });
       }
     });
+
+    // Phase 2: Verify Google Books covers aren't placeholders or wrong books
+    // Do this in batches to avoid overwhelming the browser
+    console.log(`Quick-broken: ${needsCover.length}, Google covers to verify: ${toVerify.length}`);
+    for (const book of toVerify) {
+      try {
+        const isPlaceholder = await isGoogleBooksPlaceholder(book.currentUrl);
+        if (isPlaceholder) {
+          console.log(`🔍 Placeholder detected for "${book.title}"`);
+          needsCover.push(book);
+          continue;
+        }
+        // Check if the Google Books ID matches the actual book
+        const idMatch = book.currentUrl.match(/id=([^&]+)/);
+        if (idMatch) {
+          const gbResp = await fetch(`https://www.googleapis.com/books/v1/volumes/${idMatch[1]}`);
+          const gbData = await gbResp.json();
+          const gbTitle = gbData.volumeInfo?.title || '';
+          if (!titleMatches(gbTitle, book.title)) {
+            console.log(`🔍 Wrong book cover for "${book.title}" (shows "${gbTitle}")`);
+            needsCover.push(book);
+          }
+        }
+      } catch (e) {
+        console.warn(`Verify failed for "${book.title}":`, e);
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
 
     if (needsCover.length === 0) {
       console.log('All book covers look good!');
       return;
     }
-    console.log(`Checking/fixing covers for ${needsCover.length} books...`);
+    console.log(`Fixing covers for ${needsCover.length} books...`);
     let fixed = 0;
 
     for (const book of needsCover) {
-      // Try Google Books first (with HTTPS upgrade)
+      // Try Google Books first (with title verification + placeholder check)
       let coverUrl = await fetchGoogleBooksCover(book.title, book.author);
       
       // If Google didn't work, try Open Library
@@ -562,8 +659,7 @@ function renderLibraryBooks() {
 
     const isFav = isOwnerFav(book);
     return `
-      <div class="library-book-card card ${dimmed ? 'dimmed' : ''} ${isFav ? 'lib-fav-card' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}" style="position:relative;">
-        ${isFav ? '<div class="lib-fav-ribbon" title="Owner Favorite">⭐</div>' : ''}
+      <div class="library-book-card card ${dimmed ? 'dimmed' : ''}" data-index="${idx}" data-isbn="${escapeHtml(book.ISBN || '')}" style="position:relative;">
         <div class="lib-card-inner">
           <div class="lib-card-cover">
             ${renderBookCover(book, 'small')}
