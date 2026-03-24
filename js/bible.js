@@ -124,6 +124,12 @@ async function loadBibleProgress() {
       if (data.streak && data.streak.lastRead?.toDate) {
         data.streak.lastRead = data.streak.lastRead.toDate().toDateString();
       }
+      // Ensure all chapter numbers are integers (Firestore may return strings from older saves)
+      if (data.chaptersRead) {
+        for (const abbr of Object.keys(data.chaptersRead)) {
+          data.chaptersRead[abbr] = data.chaptersRead[abbr].map(Number);
+        }
+      }
       _bibleCache = data;
       return data;
     }
@@ -269,7 +275,8 @@ function toggleChapter(bookAbbr, chapterNum) {
 
   const index = data.chaptersRead[bookAbbr].indexOf(chapterNum);
   if (index > -1) {
-    data.chaptersRead[bookAbbr].splice(index, 1);
+    // Remove ALL occurrences (guard against duplicates)
+    data.chaptersRead[bookAbbr] = data.chaptersRead[bookAbbr].filter(c => c !== chapterNum);
   } else {
     data.chaptersRead[bookAbbr].push(chapterNum);
     updateStreak(data);
@@ -371,7 +378,8 @@ function applyDragChapter(bookAbbr, chapterNum, markAsRead) {
     data.chaptersRead[bookAbbr].push(chapterNum);
     updateStreak(data);
   } else if (!markAsRead && index > -1) {
-    data.chaptersRead[bookAbbr].splice(index, 1);
+    // Remove ALL occurrences (guard against duplicates)
+    data.chaptersRead[bookAbbr] = data.chaptersRead[bookAbbr].filter(c => c !== chapterNum);
   }
 
   // Instant UI
