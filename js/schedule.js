@@ -596,6 +596,10 @@ function renderOoSTab() {
             <input type="url" class="form-input" id="oosVenueUrl" placeholder="https://maps.google.com/...">
           </div>
           <div class="form-group">
+            <label class="form-label">Instructions</label>
+            <input type="text" class="form-input" id="oosInstructions" placeholder="Gate codes, parking info, access notes...">
+          </div>
+          <div class="form-group">
             <label class="form-label">Service Items</label>
             <div id="oosServiceItems">
               <div class="oos-item-row" style="display:flex;gap:6px;margin-bottom:8px;">
@@ -719,6 +723,7 @@ function renderOoSTab() {
             <div style="margin-bottom:12px;font-size:12px;">
               <strong>Venue:</strong> ${escapeHtml(currentOoS.venueName)}
               ${currentOoS.venueUrl ? `<br><a href="${escapeHtml(currentOoS.venueUrl)}" target="_blank" style="color:var(--accent);text-decoration:none;">📍 View on Google Maps 🔗</a>` : ''}
+              ${currentOoS.instructions ? `<br><span style="color:var(--muted);">ℹ️ ${escapeHtml(currentOoS.instructions)}</span>` : ''}
             </div>
 
             <div style="margin-top:12px;">
@@ -837,6 +842,7 @@ async function saveOoS() {
   const date = document.getElementById('oosDate').value;
   const venueName = document.getElementById('oosVenueName').value.trim();
   const venueUrl = document.getElementById('oosVenueUrl').value.trim();
+  const instructions = document.getElementById('oosInstructions').value.trim();
   const childrenSection = document.getElementById('oosChildren').value.trim();
 
   // Parse service items from structured inputs
@@ -875,6 +881,7 @@ async function saveOoS() {
         date,
         venueName,
         venueUrl,
+        instructions,
         items,
         childrenSection,
         updatedAt: firebase.firestore.Timestamp.now()
@@ -886,6 +893,7 @@ async function saveOoS() {
         oos.date = date;
         oos.venueName = venueName;
         oos.venueUrl = venueUrl;
+        oos.instructions = instructions;
         oos.items = items;
         oos.childrenSection = childrenSection;
         oos.updatedAt = new Date().toISOString();
@@ -896,6 +904,7 @@ async function saveOoS() {
         date,
         venueName,
         venueUrl,
+        instructions,
         items,
         childrenSection,
         createdAt: firebase.firestore.Timestamp.now()
@@ -930,6 +939,7 @@ function editOoS(id) {
   document.getElementById('oosDate').value = oos.date;
   document.getElementById('oosVenueName').value = oos.venueName;
   document.getElementById('oosVenueUrl').value = oos.venueUrl || '';
+  document.getElementById('oosInstructions').value = oos.instructions || '';
 
   // Populate service items and songs into structured fields
   const serviceContainer = document.getElementById('oosServiceItems');
@@ -1044,6 +1054,7 @@ function copyOoSCard(id, btnEl) {
   let text = `📋 *Order of Service — ${formatDate(oos.date)}*\n`;
   text += `📍 ${oos.venueName}\n`;
   if (oos.venueUrl) text += `${oos.venueUrl}\n`;
+  if (oos.instructions) text += `ℹ️ ${oos.instructions}\n`;
   text += '\n';
   oos.items.forEach((item, idx) => {
     const time = item.time ? `${item.time} — ` : '';
