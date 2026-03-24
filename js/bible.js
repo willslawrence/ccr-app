@@ -434,6 +434,16 @@ function updateBibleStats(data) {
   const ntHeader = document.getElementById('bible-nt-header-count');
   if (ntHeader) ntHeader.textContent = ntRead + '/' + NT_CHAPTERS;
 
+  // Update section headers (Torah, Historical Books, etc.)
+  [...OT_SECTIONS, ...NT_SECTIONS].forEach(section => {
+    const sectionId = section.name.replace(/[^a-zA-Z]/g, '');
+    const sp = getSectionProgress(section, data);
+    const countEl = document.getElementById('section-count-' + sectionId);
+    if (countEl) countEl.textContent = sp.read + '/' + sp.total;
+    const barEl = document.getElementById('section-bar-' + sectionId);
+    if (barEl) barEl.style.width = sp.percent + '%';
+  });
+
   // Update genre bars if stats panel is visible
   const genreContainer = document.getElementById('genreProgressBars');
   if (genreContainer && genreContainer.innerHTML) {
@@ -652,9 +662,9 @@ function renderTestamentBooks(books, data, sections) {
             <span style="font-size:14px;font-weight:700;">${section.name}</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${sp.read}/${sp.total}</span>
+            <span id="section-count-${sectionId}" style="font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${sp.read}/${sp.total}</span>
             <div style="width:60px;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;">
-              <div style="width:${sp.percent}%;height:100%;background:var(--gold-grad);border-radius:3px;"></div>
+              <div id="section-bar-${sectionId}" style="width:${sp.percent}%;height:100%;background:var(--gold-grad);border-radius:3px;"></div>
             </div>
             <span class="bible-section-chevron" id="chevron-${sectionId}">${collapsed ? '▶' : '▼'}</span>
           </div>
