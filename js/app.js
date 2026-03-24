@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.4.1';
+const APP_VERSION = '2.4.2';
 
 // Global state
 const AppState = {

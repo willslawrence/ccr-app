@@ -687,7 +687,7 @@ async function initGivingPage() {
       givingState.editingId = null;
       document.getElementById('addTransactionForm').style.display = 'block';
       document.getElementById('transDate').value = new Date().toISOString().split('T')[0];
-      document.getElementById('transDate').focus();
+      document.getElementById('transDesc').focus();
     });
   }
 
@@ -861,7 +861,7 @@ function editTransaction(id) {
   if (isAdmin() && document.getElementById('transStatus')) document.getElementById('transStatus').value = trans.status || 'Pending';
   
   document.getElementById('addTransactionForm').style.display = 'block';
-  document.getElementById('transDate').focus();
+  document.getElementById('addTransactionForm').scrollIntoView({ behavior: 'smooth' });
 }
 
 // Delete transaction

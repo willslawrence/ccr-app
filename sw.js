@@ -3,8 +3,8 @@
    Offline caching for PWA
    ==================================== */
 
-const CACHE_NAME = 'ccr-app-v60';
-const APP_VERSION = '2.4.1';
+const CACHE_NAME = 'ccr-app-v61';
+const APP_VERSION = '2.4.2';
 
 // Install event - skip waiting immediately
 self.addEventListener('install', (event) => {
