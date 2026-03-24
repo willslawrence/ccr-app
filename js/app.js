@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.4.6';
+const APP_VERSION = '2.5.0';
 
 // Global state
 const AppState = {
@@ -54,6 +54,10 @@ async function render() {
     // Check for new bulletin badge
     if (typeof checkBulletinBadge === 'function') {
       loadBulletins().then(() => checkBulletinBadge()).catch(() => {});
+    }
+    // Check for new prayer request badge
+    if (typeof checkPrayerBadge === 'function' && typeof loadPrayers === 'function') {
+      loadPrayers().then(() => checkPrayerBadge()).catch(() => {});
     }
   }
 

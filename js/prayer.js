@@ -9,7 +9,7 @@ let prayerState = {
   showAddForm: false,
   showSearch: false,
   editingId: null,
-  swipeState: {}  // track swipe per prayer card
+  prayedThisSession: new Set()
 };
 
 function renderPrayerPage() {
@@ -70,8 +70,56 @@ function renderPrayerPage() {
   `;
 }
 
+// Track seen prayer IDs for new prayer notification
+function getSeenPrayerIds() {
+  try { return new Set(JSON.parse(localStorage.getItem('ccr_seen_prayers') || '[]')); } catch(e) { return new Set(); }
+}
+function markPrayersSeen() {
+  const ids = prayerState.prayers.map(p => p.id);
+  localStorage.setItem('ccr_seen_prayers', JSON.stringify(ids));
+  clearPrayerBadge();
+}
+function checkPrayerBadge() {
+  const seen = getSeenPrayerIds();
+  const unseen = prayerState.prayers.filter(p => !p.answered && !seen.has(p.id));
+  if (unseen.length > 0) {
+    showPrayerBadge(unseen.length);
+  } else {
+    clearPrayerBadge();
+  }
+}
+function showPrayerBadge(count) {
+  document.querySelectorAll('.fab-item[data-page="prayer"], button[data-page="prayer"]').forEach(el => {
+    if (!el.querySelector('.prayer-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'prayer-badge';
+      badge.style.cssText = 'position:absolute;top:-2px;right:-2px;background:#dc2626;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;';
+      badge.textContent = count;
+      el.style.position = 'relative';
+      el.appendChild(badge);
+    } else {
+      el.querySelector('.prayer-badge').textContent = count;
+    }
+  });
+  // Also badge the home grid button
+  document.querySelectorAll('[onclick*="prayer"], [data-page="prayer"]').forEach(el => {
+    if (!el.querySelector('.prayer-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'prayer-badge';
+      badge.style.cssText = 'position:absolute;top:4px;right:4px;background:#dc2626;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;';
+      badge.textContent = count;
+      el.style.position = 'relative';
+      el.appendChild(badge);
+    }
+  });
+}
+function clearPrayerBadge() {
+  document.querySelectorAll('.prayer-badge').forEach(b => b.remove());
+}
+
 async function initPrayerPage() {
   await loadPrayers();
+  markPrayersSeen();
   renderPrayers();
 
   const addBtn = document.getElementById('addPrayerBtn');
@@ -176,24 +224,10 @@ function togglePrayer(id) {
   renderPrayers();
 }
 
-async function prayForRequest(id) {
-  const user = getCurrentUser();
-  const prayer = prayerState.prayers.find(p => p.id === id);
-  if (!prayer) return;
-
-  if (!prayer.prayedBy.includes(user.uid)) {
-    try {
-      await db.collection('prayers').doc(id).update({
-        prayedBy: firebase.firestore.FieldValue.arrayUnion(user.uid),
-        prayingCount: firebase.firestore.FieldValue.increment(1)
-      });
-      await loadPrayers();
-      renderPrayers();
-    } catch (error) {
-      console.error('Error praying for request:', error);
-      alert('Failed to update prayer count. Please try again.');
-    }
-  }
+function prayForRequest(id) {
+  if (!prayerState.prayedThisSession) prayerState.prayedThisSession = new Set();
+  prayerState.prayedThisSession.add(id);
+  renderPrayers();
 }
 
 async function markAnswered(id) {
@@ -305,7 +339,7 @@ function renderPrayers() {
     const isEditing = prayerState.editingId === prayer.id;
     const canEdit = user.uid === prayer.submittedBy || isEditor();
     const canAnswer = user.uid === prayer.submittedBy || isEditor();
-    const hasPrayed = prayer.prayedBy && prayer.prayedBy.includes(user.uid);
+    const hasPrayed = prayerState.prayedThisSession && prayerState.prayedThisSession.has(prayer.id);
 
     // Format date for the date input
     const prayerDate = prayer.createdAt ? new Date(prayer.createdAt) : new Date();
@@ -348,7 +382,7 @@ function renderPrayers() {
             <div style="flex:1;padding:12px 14px;">
             <div class="card-header">
               <div style="flex:1;">
-                <div class="card-meta">${formatDate(prayer.createdAt)} · ${escapeHtml(prayer.submitterName || 'Unknown')}${prayer.prayingCount > 0 ? ` · 🙏 ${prayer.prayingCount}` : ''}</div>
+                <div class="card-meta">${formatDate(prayer.createdAt)} · ${escapeHtml(prayer.submitterName || 'Unknown')}</div>
                 <div class="card-title">${escapeHtml(prayer.shortDesc || prayer.text || '')}</div>
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
