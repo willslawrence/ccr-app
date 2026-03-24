@@ -341,14 +341,17 @@ function renderPrayers() {
 
     return `
       <div style="margin-bottom:12px;">
-          <div class="card card-clickable" style="margin:0;${prayer.answered ? 'opacity:0.6;' : ''}" onclick="togglePrayer('${prayer.id}')">
+          <div class="card card-clickable" style="margin:0;${prayer.answered ? 'opacity:0.6;' : ''}display:flex;align-items:stretch;gap:0;padding:0;overflow:hidden;" onclick="togglePrayer('${prayer.id}')">
+            <button class="pray-side-btn ${hasPrayed ? 'prayed' : ''}" onclick="event.stopPropagation(); prayForRequest('${prayer.id}')" ${hasPrayed ? 'disabled' : ''} title="${hasPrayed ? 'Prayed' : 'Pray'}">
+              <span>P</span><span>R</span><span>A</span><span>Y</span>
+            </button>
+            <div style="flex:1;padding:12px 14px;">
             <div class="card-header">
               <div style="flex:1;">
-                <div class="card-meta">${formatDate(prayer.createdAt)} · ${escapeHtml(prayer.submitterName || 'Unknown')}</div>
+                <div class="card-meta">${formatDate(prayer.createdAt)} · ${escapeHtml(prayer.submitterName || 'Unknown')}${prayer.prayingCount > 0 ? ` · 🙏 ${prayer.prayingCount}` : ''}</div>
                 <div class="card-title">${escapeHtml(prayer.shortDesc || prayer.text || '')}</div>
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
-                ${prayer.prayingCount > 0 ? `<span style="font-size:11px;color:var(--muted);">🙏 ${prayer.prayingCount}</span>` : ''}
                 ${prayer.answered ? '<span class="badge badge-green">✓ Answered</span>' : ''}
               </div>
             </div>
@@ -356,16 +359,14 @@ function renderPrayers() {
               <div class="card-content" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);" onclick="event.stopPropagation();">
                 ${prayer.longDesc ? `<p style="margin-bottom:16px;">${escapeHtml(prayer.longDesc)}</p>` : ''}
 
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-bottom:12px;">
-                  <button class="btn ${hasPrayed ? 'btn-outline' : 'btn-primary'}" style="font-size:12px;padding:6px 12px;min-height:32px;border-radius:8px;" onclick="prayForRequest('${prayer.id}')" ${hasPrayed ? 'disabled' : ''}>
-                    🙏 ${hasPrayed ? 'Prayed' : 'Pray'}
-                  </button>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                   ${!prayer.answered && canAnswer ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;" onclick="markAnswered('${prayer.id}')">✓ Answered</button>` : ''}
                   ${canEdit ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;" onclick="startEditPrayer('${prayer.id}')">✏️ Edit</button>` : ''}
                   ${canEdit ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;color:var(--red);" onclick="deletePrayer('${prayer.id}')">🗑️</button>` : ''}
                 </div>
               </div>
             ` : ''}
+            </div>
           </div>
       </div>
     `;
