@@ -3111,14 +3111,17 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   cursor: default;
 }
 
-/* Fix date picker overflow on mobile */
-input[type="date"],
-input[type="datetime-local"] {
-  max-width: 100%;
-  box-sizing: border-box;
+/* Fix form overflow on mobile */
+#app {
+  overflow-x: hidden;
+  width: 100%;
 }
-.giving-page .form-input,
-.giving-page .form-select {
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
   max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
 }

@@ -439,7 +439,7 @@ function initVolunteeringTab() {
       scheduleState.showAddForm = true;
       scheduleState.editingId = null;
       document.getElementById('volunteerForm').style.display = 'block';
-      document.getElementById('volDate').focus();
+      document.getElementById('volLocation').focus();
     });
   }
 
@@ -545,7 +545,7 @@ function editVolunteerWeek(id) {
   document.getElementById('volSongs').value = week.songs || '';
   document.getElementById('volPassage').value = week.passageTheme || '';
   document.getElementById('volunteerForm').style.display = 'block';
-  document.getElementById('volDate').focus();
+  document.getElementById('volLocation').focus();
 }
 
 async function deleteVolunteerWeek(id) {
@@ -789,7 +789,7 @@ function initOoSTab() {
       scheduleState.showAddForm = true;
       scheduleState.editingId = null;
       document.getElementById('oosForm').style.display = 'block';
-      document.getElementById('oosDate').focus();
+      document.getElementById('oosVenueName').focus();
     });
   }
 
@@ -976,7 +976,7 @@ function editOoS(id) {
 
   document.getElementById('oosChildren').value = oos.childrenSection || '';
   document.getElementById('oosForm').style.display = 'block';
-  document.getElementById('oosDate').focus();
+  document.getElementById('oosVenueName').focus();
 }
 
 async function deleteOoS(id) {
