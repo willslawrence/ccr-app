@@ -364,7 +364,8 @@ function renderBulletinDisplay() {
     const isLatest = bulletin.published && bulletin.id === latestPublishedId;
 
     return `
-      <div class="card" style="margin-bottom:14px;${isLatest ? 'border:2px solid var(--accent);' : ''}${!bulletin.published ? 'border:1px dashed var(--muted);opacity:0.8;' : ''}">
+      <div class="card" style="margin-bottom:14px;${isLatest ? 'border:2px solid var(--accent);' : ''}${!bulletin.published ? 'border:1px dashed var(--muted);opacity:0.8;' : ''}position:relative;">
+        <button class="copy-card-btn" onclick="event.stopPropagation(); copyBulletinCard('${bulletin.id}', this)" title="Copy for sharing">📋</button>
         <div class="card-header">
           <div style="flex:1;">
             <div class="card-title" style="font-size:15px;">${formatDate(bulletin.date)}</div>
@@ -462,4 +463,27 @@ function formatMarkdown(text) {
   }
 
   return formatted.join('');
+}
+
+/* ====================================
+   COPY-TO-CLIPBOARD FORMATTER
+   ==================================== */
+
+function copyBulletinCard(id, btnEl) {
+  const bulletin = bulletinState.bulletins.find(b => b.id === id);
+  if (!bulletin) return;
+  let text = `📰 *Bulletin — ${formatDate(bulletin.date)}*\n\n`;
+  bulletin.sections.forEach(section => {
+    if (section.heading) text += `*${section.heading}*\n`;
+    if (section.content) {
+      // Strip markdown syntax for clean plain text
+      let clean = section.content;
+      // Convert **bold** to *bold* (Signal style)
+      clean = clean.replace(/\*\*([^*]+)\*\*/g, '*$1*');
+      // Keep bullet points as-is (- prefix works in Signal)
+      text += clean + '\n';
+    }
+    text += '\n';
+  });
+  copyCardText(text.trim(), btnEl);
 }

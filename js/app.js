@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.1.7';
+const APP_VERSION = '2.2.0';
 
 // Global state
 const AppState = {
@@ -295,6 +295,28 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// Copy text to clipboard with visual feedback on the button
+function copyCardText(text, btnEl) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✅';
+    setTimeout(() => { btnEl.textContent = orig; }, 1200);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const orig = btnEl.textContent;
+    btnEl.textContent = '✅';
+    setTimeout(() => { btnEl.textContent = orig; }, 1200);
+  });
 }
 
 // Version modal

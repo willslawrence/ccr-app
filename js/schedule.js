@@ -172,7 +172,8 @@ function renderEventsTab() {
         const isPast = eventDate < now;
 
         return `
-          <div class="card" style="margin-bottom:12px;${isPast ? 'opacity:0.5;' : ''}">
+          <div class="card" style="margin-bottom:12px;${isPast ? 'opacity:0.5;' : ''}position:relative;">
+            <button class="copy-card-btn" onclick="event.stopPropagation(); copyEventCard('${event.id}', this)" title="Copy for sharing">📋</button>
             <div class="card-header">
               <div style="flex:1;">
                 <div class="card-meta">${formatDate(event.date)}${event.time ? ' • ' + event.time : ''}</div>
@@ -395,7 +396,8 @@ function renderVolunteeringTab() {
         const isPast = weekDate < now && !isCurrentWeek;
 
         return `
-          <div class="card" style="margin-bottom:10px;padding:12px 14px;${isCurrentWeek ? 'border:2px solid var(--accent);' : ''}${isPast ? 'opacity:0.5;' : ''}">
+          <div class="card" style="margin-bottom:10px;padding:12px 14px;${isCurrentWeek ? 'border:2px solid var(--accent);' : ''}${isPast ? 'opacity:0.5;' : ''}position:relative;">
+            <button class="copy-card-btn" onclick="event.stopPropagation(); copyVolunteerCard('${week.id}', this)" title="Copy for sharing">📋</button>
             <div class="card-header" style="padding:0;margin-bottom:0;">
               <div style="flex:1;">
                 <div class="card-title" style="font-size:15px;">${formatDate(week.date)}</div>
@@ -704,7 +706,8 @@ function renderOoSTab() {
           <div class="empty-sub">Create this week's OoS</div>
         </div>
       ` : `
-        <div class="card" style="margin-bottom:16px;padding:10px 12px;">
+        <div class="card" style="margin-bottom:16px;padding:10px 12px;position:relative;">
+          <button class="copy-card-btn" onclick="event.stopPropagation(); copyOoSCard('${currentOoS.id}', this)" title="Copy for sharing">📋</button>
           <div class="card-header" style="margin-bottom:8px;">
             <div style="flex:1;">
               <div class="card-title" style="font-size:14px;">Order of Service</div>
@@ -1002,4 +1005,54 @@ function isThisWeek(date) {
   weekEnd.setHours(23, 59, 59, 999);
 
   return date >= weekStart && date <= weekEnd;
+}
+
+/* ====================================
+   COPY-TO-CLIPBOARD FORMATTERS
+   Signal/WhatsApp-friendly plain text
+   ==================================== */
+
+function copyEventCard(id, btnEl) {
+  const ev = scheduleState.events.find(e => e.id === id);
+  if (!ev) return;
+  let text = `📅 *${ev.title}*\n`;
+  text += `${formatDate(ev.date)}`;
+  if (ev.time) text += ` • ${ev.time}`;
+  text += '\n';
+  if (ev.location) text += `📍 ${ev.location}\n`;
+  if (ev.description) text += `\n${ev.description}\n`;
+  copyCardText(text.trim(), btnEl);
+}
+
+function copyVolunteerCard(id, btnEl) {
+  const week = scheduleState.volunteerSchedule.find(w => w.id === id);
+  if (!week) return;
+  let text = `👥 *Volunteering — ${formatDate(week.date)}*\n`;
+  text += `📍 ${week.location}\n\n`;
+  if (week.setupCleanup) text += `🧹 Set Up/Clean Up: ${week.setupCleanup}\n`;
+  if (week.gospel) text += `📖 Gospel: ${week.gospel}\n`;
+  if (week.kids) text += `👶 Kids: ${week.kids}\n`;
+  if (week.it) text += `💻 IT: ${week.it}\n`;
+  if (week.songs) text += `🎵 Songs: ${week.songs}\n`;
+  if (week.passageTheme) text += `📜 Passage Theme: ${week.passageTheme}\n`;
+  copyCardText(text.trim(), btnEl);
+}
+
+function copyOoSCard(id, btnEl) {
+  const oos = scheduleState.orderOfService.find(o => o.id === id);
+  if (!oos) return;
+  let text = `📋 *Order of Service — ${formatDate(oos.date)}*\n`;
+  text += `📍 ${oos.venueName}\n`;
+  if (oos.venueUrl) text += `${oos.venueUrl}\n`;
+  text += '\n';
+  oos.items.forEach((item, idx) => {
+    const time = item.time ? `${item.time} — ` : '';
+    const title = item.title.startsWith('Song: ') ? `🎵 ${item.title.replace('Song: ', '')}` : item.title;
+    text += `${idx + 1}. ${time}${title}\n`;
+    if (item.url) text += `   ${item.url}\n`;
+  });
+  if (oos.childrenSection) {
+    text += `\n👶 Children's Section:\n${oos.childrenSection}\n`;
+  }
+  copyCardText(text.trim(), btnEl);
 }
