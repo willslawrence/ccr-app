@@ -179,9 +179,9 @@ function renderVotePage() {
     const catHtml = renderVoteCategoryCards(CATEGORIES, FIXED_COSTS, '', false);
     activeContent = `
       <div class="card vote-name-section">
-        <label class="form-label">Your Name</label>
-        <div class="vote-hint">Enter your name to identify your vote</div>
-        <input type="text" class="form-input vote-name-input" id="voterName" placeholder="First and Last name" autocomplete="name">
+        <label class="form-label">Name or Pseudonym</label>
+        <div class="vote-hint">Pre-filled from your account — change it if you prefer a pseudonym</div>
+        <input type="text" class="form-input vote-name-input" id="voterName" placeholder="Name or pseudonym" autocomplete="name">
       </div>
       <div class="vote-voter-count card">
         Total votes submitted: <strong id="voteTotalVoters">—</strong>
@@ -438,6 +438,14 @@ function initVotePage() {
       if (submitWrap) submitWrap.classList.toggle('hidden', tab !== 'active' || !ACTIVE_POLL);
     });
   });
+
+  // Pre-fill voter name from logged-in user
+  if (ACTIVE_POLL) {
+    const nameInput = document.getElementById('voterName');
+    if (nameInput && AppState.currentUser && AppState.currentUser.name) {
+      nameInput.value = AppState.currentUser.name;
+    }
+  }
 
   // Only wire up voting interactions if there's an active poll
   if (ACTIVE_POLL) {
