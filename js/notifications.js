@@ -116,16 +116,9 @@ async function storeFCMToken(token) {
  * Handle token refresh
  */
 function setupTokenRefresh() {
-  if (!messaging) return;
-
-  messaging.onTokenRefresh(async () => {
-    console.log('FCM token refreshed');
-    const newToken = await messaging.getToken({ vapidKey: 'BBMmlPVPIGEP3UQZ26covkZFXfVFFpSbL6o7Tk6IkbEatHKSyzUCHHW9KMnMNweybWKLXpjyruSL5MHlQFyF0AA' });
-    if (newToken) {
-      fcmToken = newToken;
-      await storeFCMToken(newToken);
-    }
-  });
+  // Token refresh is handled automatically by getToken() in modern Firebase SDK
+  // No need for onTokenRefresh — it's deprecated in compat v10+
+  console.log('Token refresh handled by getToken()');
 }
 
 /* ====================================

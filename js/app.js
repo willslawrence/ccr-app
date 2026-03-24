@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.6.2';
+const APP_VERSION = '2.6.3';
 
 // Global state
 const AppState = {
@@ -214,8 +214,8 @@ async function init() {
             }
           }
 
-          // Initialize push notifications
-          onUserLogin();
+          // Initialize push notifications (non-blocking — never prevent login)
+          try { onUserLogin(); } catch(e) { console.warn('Push notification init failed (non-blocking):', e.message); }
 
           // Navigate to home page if on login page
           if (AppState.currentPage === 'login') {
