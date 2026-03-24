@@ -14,13 +14,24 @@ const firebaseConfig = {
 
 // Firebase SDK loaded via CDN <script> tags in index.html
 // Initialize Firebase
-let app, auth, db;
+let app, auth, db, messaging;
 
 function initFirebase() {
   if (typeof firebase !== 'undefined') {
     app = firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
+    
+    // Initialize Firebase Messaging
+    if (firebase.messaging.isSupported()) {
+      messaging = firebase.messaging();
+      // Set VAPID key for web push
+      messaging.usePublicVapidKey("BBMmlPVPIGEP3UQZ26covkZFXfVFFpSbL6o7Tk6IkbEatHKSyzUCHHW9KMnMNweybWKLXpjyruSL5MHlQFyF0AA");
+      console.log('Firebase Messaging initialized');
+    } else {
+      console.warn('Firebase Messaging not supported in this browser');
+    }
+    
     console.log('Firebase initialized successfully');
     return true;
   } else {

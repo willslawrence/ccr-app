@@ -208,6 +208,9 @@ async function addPrayer() {
     await db.collection('prayers').add(prayer);
     await loadPrayers();
 
+    // Send push notification
+    await sendPushNotification('prayer', '🙏 New Prayer Request', shortDesc, 'all');
+
     document.getElementById('prayerFormElement').reset();
     prayerState.showAddForm = false;
     document.getElementById('addPrayerForm').style.display = 'none';

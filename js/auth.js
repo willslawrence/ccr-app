@@ -2,6 +2,17 @@
    AUTHENTICATION with Firebase Auth
    ==================================== */
 
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'Hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'Show';
+  }
+}
+
 function renderLoginPage() {
   return `
     <div class="page" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
@@ -16,13 +27,19 @@ function renderLoginPage() {
           </div>
           <div class="form-group">
             <label class="form-label">Password</label>
-            <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required>
+            <div style="position:relative;">
+              <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required style="padding-right:48px;">
+              <button type="button" class="show-pw-btn" onclick="togglePassword('loginPassword', this)">Show</button>
+            </div>
           </div>
           <div id="loginError" class="form-error" style="display:none;"></div>
           <button type="submit" class="btn btn-primary" style="width:100%;">Sign In</button>
         </form>
 
-        <p style="margin-top:20px;font-size:13px;color:var(--muted);">
+        <p style="margin-top:12px;font-size:13px;color:var(--muted);">
+          <a href="#" id="forgotPassword" style="color:var(--accent);">Forgot password?</a>
+        </p>
+        <p style="margin-top:12px;font-size:13px;color:var(--muted);">
           Don't have an account? <a href="#" id="showSignup" style="color:var(--accent);font-weight:600;">Create one</a>
         </p>
 
@@ -39,7 +56,10 @@ function renderLoginPage() {
             </div>
             <div class="form-group">
               <label class="form-label">Password</label>
-              <input type="password" class="form-input" id="signupPassword" placeholder="••••••••" required>
+              <div style="position:relative;">
+                <input type="password" class="form-input" id="signupPassword" placeholder="••••••••" required style="padding-right:48px;">
+                <button type="button" class="show-pw-btn" onclick="togglePassword('signupPassword', this)">Show</button>
+              </div>
             </div>
             <div id="signupError" class="form-error" style="display:none;"></div>
             <button type="submit" class="btn btn-primary" style="width:100%;">Create Account</button>
@@ -57,6 +77,26 @@ function initLoginPage() {
   const showSignup = document.getElementById('showSignup');
   const backToLogin = document.getElementById('backToLogin');
   const signupFormDiv = document.getElementById('signupForm');
+
+  // Forgot password
+  document.getElementById('forgotPassword').addEventListener('click', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value.trim();
+    const errorEl = document.getElementById('loginError');
+    if (!email) {
+      errorEl.textContent = 'Enter your email above, then tap "Forgot password?"';
+      errorEl.style.display = 'block';
+      return;
+    }
+    try {
+      await firebase.auth().sendPasswordResetEmail(email);
+      errorEl.style.display = 'none';
+      alert('Password reset email sent to ' + email + '. Check your inbox.');
+    } catch (error) {
+      errorEl.textContent = error.message || 'Failed to send reset email.';
+      errorEl.style.display = 'block';
+    }
+  });
 
   // Show signup form
   showSignup.addEventListener('click', (e) => {

@@ -918,6 +918,15 @@ async function saveOoS() {
         ...oosData,
         createdAt: new Date().toISOString()
       });
+
+      // Send push notification for new Order of Service
+      const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      await sendPushNotification('oos', '📋 Order of Service', formattedDate, 'all');
     }
 
     scheduleState.showAddForm = false;

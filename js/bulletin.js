@@ -249,8 +249,10 @@ async function handleBulletinSubmit(e) {
         // Store the published timestamp so we can detect new bulletins
         const publishKey = latestPublished.id + '_' + (latestPublished.updatedAt || latestPublished.createdAt);
         localStorage.setItem('ccr_bulletin_latest', publishKey);
-        // Send browser notification
-        sendBulletinNotification(latestPublished);
+        // Send push notification
+        const firstSection = latestPublished.sections && latestPublished.sections[0];
+        const body = firstSection ? firstSection.heading : 'New bulletin published';
+        await sendPushNotification('bulletin', '📰 New Bulletin', body, 'all');
       }
     }
   } catch (error) {
@@ -261,25 +263,7 @@ async function handleBulletinSubmit(e) {
 
 // ─── NOTIFICATION & BADGE ───
 
-function sendBulletinNotification(bulletin) {
-  if (!('Notification' in window)) return;
-
-  if (Notification.permission === 'granted') {
-    const firstSection = bulletin.sections && bulletin.sections[0];
-    const body = firstSection ? firstSection.heading || 'New content available' : 'New content available';
-    new Notification('📋 New Bulletin — ' + formatDate(bulletin.date), {
-      body: body,
-      icon: 'img/icon-192.png',
-      tag: 'bulletin-update'
-    });
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(permission => {
-      if (permission === 'granted') {
-        sendBulletinNotification(bulletin);
-      }
-    });
-  }
-}
+// Note: Replaced with push notification system in handleBulletinSubmit
 
 function checkBulletinBadge() {
   const latestPublished = bulletinState.bulletins.find(b => b.published);
