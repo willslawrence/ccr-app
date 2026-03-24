@@ -369,6 +369,7 @@ async function renderGivingPage() {
           <p style="color: var(--muted); font-size: 14px; margin-top: 8px;">
             Across ${(GIVING_CHARITIES || []).filter(c => c.status === 'given').length} charities and ministries
           </p>
+          <p style="color: var(--muted); font-size: 11px; margin-top: 4px;">Since December 2025</p>
         </div>
 
         <!-- Category Filter Pills -->
