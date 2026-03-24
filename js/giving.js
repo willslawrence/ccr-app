@@ -131,7 +131,10 @@ function getTotalGiven() {
 // Format amount for display (no currency symbol in transaction list)
 function formatAmount(amount, showCurrency = false) {
   const prefix = showCurrency ? 'SAR ' : '';
-  return prefix + Math.abs(amount).toLocaleString();
+  const val = Math.abs(amount);
+  // Round to whole numbers for clean display, but keep decimals if they exist on individual transactions
+  const display = Number.isInteger(val) || val >= 100 ? Math.round(val).toLocaleString() : val.toLocaleString(undefined, {maximumFractionDigits: 2});
+  return prefix + display;
 }
 
 // Render Giving page
