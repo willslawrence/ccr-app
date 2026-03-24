@@ -427,6 +427,29 @@ function updateBibleStats(data) {
   if (cpdEl) cpdEl.textContent = getChaptersPerDay(data);
   const daysEl = document.getElementById('bible-days-remaining');
   if (daysEl) daysEl.textContent = getDaysRemaining(data);
+
+  // Update testament header counts
+  const otHeader = document.getElementById('bible-ot-header-count');
+  if (otHeader) otHeader.textContent = otRead + '/' + OT_CHAPTERS;
+  const ntHeader = document.getElementById('bible-nt-header-count');
+  if (ntHeader) ntHeader.textContent = ntRead + '/' + NT_CHAPTERS;
+
+  // Update genre bars if stats panel is visible
+  const genreContainer = document.getElementById('genreProgressBars');
+  if (genreContainer && genreContainer.innerHTML) {
+    const genreStats = calculateGenreStats(data);
+    genreContainer.innerHTML = genreStats.map(stat => `
+      <div class="genre-row">
+        <div class="genre-info">
+          <span class="genre-name" style="color: ${stat.color};">${stat.name}</span>
+          <span class="genre-numbers">${stat.readChapters}/${stat.totalChapters} (${stat.percentage}%)</span>
+        </div>
+        <div class="genre-bar">
+          <div class="genre-fill" style="width: ${stat.percentage}%; background: ${stat.color};"></div>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 // Calculate genre stats
@@ -757,7 +780,7 @@ async function renderBiblePage() {
 
       <!-- Old Testament Card -->
       <div id="bible-ot-section">
-        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">📜 Old Testament <span style="font-size:13px;color:var(--muted);font-weight:500;">${otRead}/${OT_CHAPTERS}</span></h2>
+        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">📜 Old Testament <span id="bible-ot-header-count" style="font-size:13px;color:var(--muted);font-weight:500;">${otRead}/${OT_CHAPTERS}</span></h2>
         <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
           ${renderTestamentBooks(OT_BOOKS, data, OT_SECTIONS)}
         </div>
@@ -765,7 +788,7 @@ async function renderBiblePage() {
 
       <!-- New Testament Card -->
       <div id="bible-nt-section">
-        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">✝️ New Testament <span style="font-size:13px;color:var(--muted);font-weight:500;">${ntRead}/${NT_CHAPTERS}</span></h2>
+        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">✝️ New Testament <span id="bible-nt-header-count" style="font-size:13px;color:var(--muted);font-weight:500;">${ntRead}/${NT_CHAPTERS}</span></h2>
         <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
           ${renderTestamentBooks(NT_BOOKS, data, NT_SECTIONS)}
         </div>
