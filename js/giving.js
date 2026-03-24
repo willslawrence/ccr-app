@@ -128,27 +128,10 @@ function getTotalGiven() {
     .reduce((sum, charity) => sum + charity.amountNum, 0);
 }
 
-// Format date for display
-function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric',
-    year: 'numeric'
-  });
-}
-
 // Format amount for display (no currency symbol in transaction list)
 function formatAmount(amount, showCurrency = false) {
   const prefix = showCurrency ? 'SAR ' : '';
   return prefix + Math.abs(amount).toLocaleString();
-}
-
-// Escape HTML
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // Render Giving page
@@ -209,7 +192,7 @@ async function renderGivingPage() {
           </div>
         </div>
 
-        ${isAdmin() || isEditor() ? `
+        ${isAdmin() ? `
           <button class="btn btn-primary" id="addTransactionBtn" style="margin-bottom:20px;">+ Add Transaction</button>
         ` : ''}
 
@@ -312,7 +295,7 @@ async function renderGivingPage() {
                   </div>
                 </div>
               </div>
-              ${(isAdmin() || isEditor()) ? `
+              ${isAdmin() ? `
                 <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
                   <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editTransaction('${trans.id}')">✏️ Edit</button>
                   <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️ Delete</button>
