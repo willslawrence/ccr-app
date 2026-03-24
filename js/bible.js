@@ -576,18 +576,18 @@ function renderBookEntry(book, data) {
     <div class="bible-book-section ${isLocked ? 'locked' : ''}" data-book="${book.abbr}">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <strong style="font-size:15px;">${book.name}</strong>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="bible-book-progress" style="color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;">${progress.read}/${progress.total}</span>
-          <button class="bible-lock-btn ${isLocked ? 'locked' : ''}" onclick="toggleBookLock('${book.abbr}')" title="Lock/unlock">🔒</button>
-        </div>
+        <span class="bible-book-progress" style="color:var(--accent);font-weight:700;font-family:'JetBrains Mono',monospace;">${progress.read}/${progress.total}</span>
       </div>
       <div class="bible-book-bar"><div class="bible-book-bar-fill" style="width:${progress.percent}%;background:var(--gold-grad);"></div></div>
-      <div class="bible-chapter-grid">
+      <div style="display:flex;align-items:flex-start;gap:6px;">
+        <button class="bible-lock-btn ${isLocked ? 'locked' : ''}" onclick="toggleBookLock('${book.abbr}')" title="Lock/unlock" style="margin-top:2px;flex-shrink:0;">🔒</button>
+        <div class="bible-chapter-grid" style="flex:1;">
         ${Array.from({length: book.chapters}, (_, i) => {
           const chapterNum = i + 1;
           const read = (data.chaptersRead[book.abbr] || []).includes(chapterNum);
           return `<button class="chapter-btn ${read ? 'read' : ''}" data-book="${book.abbr}" data-chapter="${chapterNum}">${chapterNum}</button>`;
         }).join('')}
+        </div>
       </div>
     </div>
   `;

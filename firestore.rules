@@ -31,6 +31,11 @@ service cloud.firestore {
       allow create: if isAuth() && request.auth.uid == userId;
       allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
+
+      // Bible progress - users can read/write their own
+      match /bibleProgress/{docId} {
+        allow read, write: if isAuth() && request.auth.uid == userId;
+      }
     }
 
     // Books - any authenticated user can read, editors can write
