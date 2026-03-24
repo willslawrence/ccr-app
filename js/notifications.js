@@ -3,7 +3,7 @@
    ==================================== */
 
 // Apps Script URL for sending push notifications (placeholder for now)
-const PUSH_SERVER_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+const PUSH_SERVER_URL = 'https://script.google.com/macros/s/AKfycbwIdYATZbE6BGgVTKUDFkVIfTcBbDhgATb5OPJeT-LWiU5sTrT8E_s4sNlCZTkpNqBQkg/exec';
 
 let notificationPermission = 'default';
 let fcmToken = null;

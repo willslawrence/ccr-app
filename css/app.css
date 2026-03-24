@@ -216,8 +216,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .fab-item {
   position: absolute;
-  width: 64px;
-  height: 64px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   border: none;
   background: rgba(255,255,255,0.15);
@@ -269,14 +269,14 @@ h1, h2, h3, h4, h5, h6 {
 /* FAB Arc Positioning - Even fan from right-center semicircle */
 /* Items spread in a semicircle arc from the right edge, centered vertically */
 /* Arc radius ~120px, 7 items spread evenly from top to bottom */
-.fab-item:nth-child(1) { right: 50px;  top: calc(50% - 220px); }   /* Prayer - top */
-.fab-item:nth-child(2) { right: 85px;  top: calc(50% - 160px); }   /* Giving */
-.fab-item:nth-child(3) { right: 110px; top: calc(50% - 95px); }    /* Library */
-.fab-item:nth-child(4) { right: 120px; top: calc(50% - 30px); }    /* Bible */
-.fab-item:nth-child(5) { right: 120px; top: calc(50% + 35px); }    /* Sermons */
-.fab-item:nth-child(6) { right: 110px; top: calc(50% + 100px); }   /* Schedule */
-.fab-item:nth-child(7) { right: 85px;  top: calc(50% + 165px); }   /* Bulletin */
-.fab-item:nth-child(8) { right: 50px;  top: calc(50% + 225px); }   /* More - bottom */
+.fab-item:nth-child(1) { right: 55px;  top: calc(50% - 200px); }   /* Prayer - top */
+.fab-item:nth-child(2) { right: 88px;  top: calc(50% - 145px); }   /* Giving */
+.fab-item:nth-child(3) { right: 108px; top: calc(50% - 85px); }    /* Library */
+.fab-item:nth-child(4) { right: 115px; top: calc(50% - 25px); }    /* Bible */
+.fab-item:nth-child(5) { right: 115px; top: calc(50% + 35px); }    /* Sermons */
+.fab-item:nth-child(6) { right: 108px; top: calc(50% + 95px); }    /* Schedule */
+.fab-item:nth-child(7) { right: 88px;  top: calc(50% + 155px); }   /* Bulletin */
+.fab-item:nth-child(8) { right: 55px;  top: calc(50% + 210px); }   /* More - bottom */
 
 .fab-menu.active .fab-item:nth-child(1) { transition-delay: 0.05s; }
 .fab-menu.active .fab-item:nth-child(2) { transition-delay: 0.1s; }
