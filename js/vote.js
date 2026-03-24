@@ -11,16 +11,32 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzLQa5a5OpGCuTRRa6Q6
 const MIN_VOTES = 6;
 const FIXED_COSTS = { "Ridgy Vibrating Ball": 280, "Joyful Joseph": 5626, "Stan and Tasha": 750 };
 
-const CATEGORIES = [
-  { key: "cat1", name: "Church Planting", budget: 6140,
-    options: ["Hope Village","Stan and Tasha","Radical","Save for Future Giving"] },
-  { key: "cat2", name: "Orphans, Widows & Sojourners", budget: 6140,
-    options: ["Crisis Aid International","Lifesong for Orphans","Send Relief","Save for Future Giving"] },
-  { key: "cat3", name: "Persecuted Church", budget: 6140,
-    options: ["Open Doors International","Global Christian Relief","Save for Future Giving"] },
-  { key: "cat4", name: "Ministry of the Word & Global Church Needs", budget: 9210,
-    options: ["Joyful Joseph","Ridgy Vibrating Ball","Save for Future Giving"] }
+// Active poll — set to null when no poll is active
+const ACTIVE_POLL = null;
+
+// Archive of closed polls
+const PAST_POLLS = [
+  {
+    title: "Q1 2026 Giving Allocation",
+    closedDate: "March 2026",
+    scriptUrl: SCRIPT_URL,
+    minVotes: 6,
+    fixedCosts: { "Ridgy Vibrating Ball": 280, "Joyful Joseph": 5626, "Stan and Tasha": 750 },
+    categories: [
+      { key: "cat1", name: "Church Planting", budget: 6140,
+        options: ["Hope Village","Stan and Tasha","Radical","Save for Future Giving"] },
+      { key: "cat2", name: "Orphans, Widows & Sojourners", budget: 6140,
+        options: ["Crisis Aid International","Lifesong for Orphans","Send Relief","Save for Future Giving"] },
+      { key: "cat3", name: "Persecuted Church", budget: 6140,
+        options: ["Open Doors International","Global Christian Relief","Save for Future Giving"] },
+      { key: "cat4", name: "Ministry of the Word & Global Church Needs", budget: 9210,
+        options: ["Joyful Joseph","Ridgy Vibrating Ball","Save for Future Giving"] }
+    ]
+  }
 ];
+
+// Current active categories (used by active poll logic)
+const CATEGORIES = ACTIVE_POLL ? ACTIVE_POLL.categories : [];
 
 // ═══════════════════════════════════════
 // STATE
@@ -88,40 +104,97 @@ function voteAllocate(counts, budget) {
 // ═══════════════════════════════════════
 // RENDER
 // ═══════════════════════════════════════
-function renderVotePage() {
+function renderVoteCategoryCards(categories, fixedCosts, prefix, readOnly) {
   let catHtml = '';
-  CATEGORIES.forEach(cat => {
+  categories.forEach(cat => {
     let optsHtml = '';
     cat.options.forEach(opt => {
       const isSave = opt === "Save for Future Giving";
-      const isFixed = FIXED_COSTS[opt];
+      const isFixed = fixedCosts[opt];
       const slug = voteSlugify(opt);
       optsHtml += `
-        <div class="vote-opt-row ${isSave ? 'vote-save-opt' : ''}" data-cat="${escapeHtml(cat.key)}" data-opt="${escapeHtml(opt)}">
+        <div class="vote-opt-row ${isSave ? 'vote-save-opt' : ''}${readOnly ? ' vote-readonly' : ''}" ${readOnly ? '' : `data-cat="${escapeHtml(cat.key)}" data-opt="${escapeHtml(opt)}"`}>
           <div class="vote-opt-top">
-            <div class="vote-checkmark"></div>
+            ${readOnly ? '' : '<div class="vote-checkmark"></div>'}
             <div class="vote-opt-info">
               <div class="vote-opt-name">${isSave ? '🏦 ' : ''}${escapeHtml(opt)}
-                <span class="vote-tag-inline" id="vtag-${cat.key}-${slug}"></span>
+                <span class="vote-tag-inline" id="vtag-${prefix}${cat.key}-${slug}"></span>
               </div>
-              ${isFixed ? `<div class="vote-opt-note">Fixed cost: SAR ${FIXED_COSTS[opt].toLocaleString()}</div>` : ''}
+              ${isFixed ? `<div class="vote-opt-note">Fixed cost: SAR ${fixedCosts[opt].toLocaleString()}</div>` : ''}
             </div>
             <div class="vote-opt-stats">
-              <div class="vote-opt-votes" id="vvotes-${cat.key}-${slug}">0</div>
-              <div class="vote-opt-amount" id="vamt-${cat.key}-${slug}"></div>
+              <div class="vote-opt-votes" id="vvotes-${prefix}${cat.key}-${slug}">0</div>
+              <div class="vote-opt-amount" id="vamt-${prefix}${cat.key}-${slug}"></div>
             </div>
           </div>
-          <div class="vote-bar-bg"><div class="vote-bar-fill" id="vbar-${cat.key}-${slug}" style="width:0%"></div></div>
+          <div class="vote-bar-bg"><div class="vote-bar-fill" id="vbar-${prefix}${cat.key}-${slug}" style="width:0%"></div></div>
         </div>`;
     });
 
     catHtml += `
-      <div class="card vote-category-card" id="vcard-${cat.key}">
+      <div class="card vote-category-card" id="vcard-${prefix}${cat.key}">
         <h3 class="vote-cat-name">${escapeHtml(cat.name)}</h3>
-        <div class="vote-cat-budget">Budget: SAR ${cat.budget.toLocaleString()} · Min ${MIN_VOTES} votes to qualify</div>
+        <div class="vote-cat-budget">Budget: SAR ${cat.budget.toLocaleString()} · Min ${fixedCosts._minVotes || MIN_VOTES} votes to qualify</div>
         ${optsHtml}
       </div>`;
   });
+  return catHtml;
+}
+
+function renderPastPolls() {
+  if (PAST_POLLS.length === 0) {
+    return `
+      <div class="card coming-soon-card">
+        <div class="coming-soon-icon">📊</div>
+        <h3>No Past Polls</h3>
+        <p style="color: var(--muted); margin-top: 8px;">Past poll results will appear here when a poll is closed.</p>
+      </div>`;
+  }
+
+  return PAST_POLLS.map((poll, idx) => {
+    const prefix = `past${idx}-`;
+    const catCards = renderVoteCategoryCards(poll.categories, poll.fixedCosts, prefix, true);
+    return `
+      <div class="vote-past-poll" data-past-idx="${idx}" data-past-url="${poll.scriptUrl}">
+        <div class="card vote-past-header">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3 style="margin:0; color:var(--gold);">${escapeHtml(poll.title)}</h3>
+              <div style="color:var(--muted); font-size:0.85rem; margin-top:4px;">Closed · ${escapeHtml(poll.closedDate)}</div>
+            </div>
+            <span class="vote-tag vote-tag-closed">🔒 Closed</span>
+          </div>
+        </div>
+        <div class="vote-voter-count card">
+          Total votes submitted: <strong id="votePastTotal-${idx}">—</strong>
+        </div>
+        ${catCards}
+      </div>`;
+  }).join('');
+}
+
+function renderVotePage() {
+  let activeContent;
+  if (ACTIVE_POLL) {
+    const catHtml = renderVoteCategoryCards(CATEGORIES, FIXED_COSTS, '', false);
+    activeContent = `
+      <div class="card vote-name-section">
+        <label class="form-label">Your Name</label>
+        <div class="vote-hint">Enter your name to identify your vote</div>
+        <input type="text" class="form-input vote-name-input" id="voterName" placeholder="First and Last name" autocomplete="name">
+      </div>
+      <div class="vote-voter-count card">
+        Total votes submitted: <strong id="voteTotalVoters">—</strong>
+      </div>
+      ${catHtml}`;
+  } else {
+    activeContent = `
+      <div class="card coming-soon-card">
+        <div class="coming-soon-icon">🗳️</div>
+        <h3>No Active Poll</h3>
+        <p style="color: var(--muted); margin-top: 8px;">There's no poll open right now. Check Past Polls for previous results.</p>
+      </div>`;
+  }
 
   return `
     <div class="page vote-page">
@@ -129,36 +202,22 @@ function renderVotePage() {
       <p class="page-subtitle">Approval voting · Select options you support in each category</p>
 
       <div class="btn-group">
-        <button class="btn btn-primary" data-votetab="active">🗳️ Active Poll</button>
-        <button class="btn btn-outline" data-votetab="past">📊 Past Polls</button>
+        <button class="btn ${ACTIVE_POLL ? 'btn-primary' : 'btn-outline'}" data-votetab="active">🗳️ Active Poll</button>
+        <button class="btn ${ACTIVE_POLL ? 'btn-outline' : 'btn-primary'}" data-votetab="past">📊 Past Polls</button>
       </div>
 
       <!-- Active Poll Tab -->
-      <div class="vote-tab-content" id="voteTabActive">
-        <div class="card vote-name-section">
-          <label class="form-label">Your Name</label>
-          <div class="vote-hint">Enter your name to identify your vote</div>
-          <input type="text" class="form-input vote-name-input" id="voterName" placeholder="First and Last name" autocomplete="name">
-        </div>
-
-        <div class="vote-voter-count card">
-          Total votes submitted: <strong id="voteTotalVoters">—</strong>
-        </div>
-
-        ${catHtml}
+      <div class="vote-tab-content ${ACTIVE_POLL ? '' : 'hidden'}" id="voteTabActive">
+        ${activeContent}
       </div>
 
       <!-- Past Polls Tab -->
-      <div class="vote-tab-content hidden" id="voteTabPast">
-        <div class="card coming-soon-card">
-          <div class="coming-soon-icon">📊</div>
-          <h3>Past Polls</h3>
-          <p style="color: var(--muted); margin-top: 8px;">Coming soon — past poll results will appear here.</p>
-        </div>
+      <div class="vote-tab-content ${ACTIVE_POLL ? 'hidden' : ''}" id="voteTabPast">
+        ${renderPastPolls()}
       </div>
 
-      <!-- Fixed submit bar -->
-      <div class="vote-submit-wrap" id="voteSubmitWrap">
+      <!-- Fixed submit bar (hidden when no active poll) -->
+      <div class="vote-submit-wrap ${ACTIVE_POLL ? '' : 'hidden'}" id="voteSubmitWrap">
         <button class="btn vote-submit-btn" id="voteSubmitBtn">Submit Vote</button>
       </div>
 
@@ -304,6 +363,65 @@ async function voteSubmit() {
 }
 
 // ═══════════════════════════════════════
+// PAST POLL DATA LOADING
+// ═══════════════════════════════════════
+async function voteLoadPastPollResults(poll, idx) {
+  try {
+    const resp = await fetch(poll.scriptUrl);
+    const data = await resp.json();
+
+    const totalEl = document.getElementById(`votePastTotal-${idx}`);
+    if (totalEl) totalEl.textContent = data.totalVoters;
+
+    const prefix = `past${idx}-`;
+    const minVotes = poll.minVotes || MIN_VOTES;
+
+    poll.categories.forEach(cat => {
+      const counts = data[cat.key] || {};
+      const maxVotes = Math.max(...Object.values(counts), 1);
+      const { results, eliminated } = voteAllocate(counts, cat.budget);
+
+      cat.options.forEach(opt => {
+        const s = voteSlugify(opt);
+        const votes = counts[opt] || 0;
+        const isElim = eliminated.hasOwnProperty(opt);
+        const result = results[opt];
+        const pct = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+        const isSave = opt === "Save for Future Giving";
+
+        const votesEl = document.getElementById(`vvotes-${prefix}${cat.key}-${s}`);
+        if (votesEl) votesEl.textContent = votes;
+
+        const amtEl = document.getElementById(`vamt-${prefix}${cat.key}-${s}`);
+        const tagEl = document.getElementById(`vtag-${prefix}${cat.key}-${s}`);
+        if (amtEl && tagEl) {
+          if (result) {
+            amtEl.textContent = `SAR ${result.amount.toLocaleString()}`;
+            amtEl.className = 'vote-opt-amount';
+            tagEl.innerHTML = result.capped ? '<span class="vote-tag vote-tag-cap">🎉 Amount Reached</span>' : '';
+          } else if (isElim && votes > 0) {
+            amtEl.textContent = 'Threshold not reached';
+            amtEl.className = 'vote-opt-amount vote-eliminated';
+            tagEl.innerHTML = `<span class="vote-tag vote-tag-elim">&lt;${minVotes} votes</span>`;
+          } else {
+            amtEl.textContent = '';
+            tagEl.innerHTML = '';
+          }
+        }
+
+        const barEl = document.getElementById(`vbar-${prefix}${cat.key}-${s}`);
+        if (barEl) {
+          barEl.style.width = pct + '%';
+          barEl.className = 'vote-bar-fill' + (isElim ? ' eliminated' : (isSave ? ' green' : ''));
+        }
+      });
+    });
+  } catch (err) {
+    console.error(`Failed to load past poll ${idx}:`, err);
+  }
+}
+
+// ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
 function initVotePage() {
@@ -311,44 +429,50 @@ function initVotePage() {
   document.querySelectorAll('[data-votetab]').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.votetab;
-      // Update button styles
       document.querySelectorAll('[data-votetab]').forEach(b => {
         b.className = 'btn ' + (b.dataset.votetab === tab ? 'btn-primary' : 'btn-outline');
       });
-      // Show/hide tab content
       document.getElementById('voteTabActive').classList.toggle('hidden', tab !== 'active');
       document.getElementById('voteTabPast').classList.toggle('hidden', tab !== 'past');
-      // Show/hide submit button
       const submitWrap = document.getElementById('voteSubmitWrap');
-      if (submitWrap) submitWrap.style.display = tab === 'active' ? '' : 'none';
+      if (submitWrap) submitWrap.classList.toggle('hidden', tab !== 'active' || !ACTIVE_POLL);
     });
   });
 
-  // Option toggle (click on rows)
-  document.querySelectorAll('.vote-opt-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const cat = row.dataset.cat;
-      const opt = row.dataset.opt;
-      if (voteMySelections[cat].has(opt)) {
-        voteMySelections[cat].delete(opt);
-        row.classList.remove('selected');
-      } else {
-        voteMySelections[cat].add(opt);
-        row.classList.add('selected');
-      }
-      voteUpdateDisplay();
+  // Only wire up voting interactions if there's an active poll
+  if (ACTIVE_POLL) {
+    document.querySelectorAll('.vote-opt-row:not(.vote-readonly)').forEach(row => {
+      row.addEventListener('click', () => {
+        const cat = row.dataset.cat;
+        const opt = row.dataset.opt;
+        if (voteMySelections[cat].has(opt)) {
+          voteMySelections[cat].delete(opt);
+          row.classList.remove('selected');
+        } else {
+          voteMySelections[cat].add(opt);
+          row.classList.add('selected');
+        }
+        voteUpdateDisplay();
+      });
     });
-  });
 
-  // Submit button
-  const submitBtn = document.getElementById('voteSubmitBtn');
-  if (submitBtn) {
-    submitBtn.addEventListener('click', voteSubmit);
+    const submitBtn = document.getElementById('voteSubmitBtn');
+    if (submitBtn) submitBtn.addEventListener('click', voteSubmit);
+
+    voteInitState();
+    voteLoadResults();
+    if (voteRefreshInterval) clearInterval(voteRefreshInterval);
+    voteRefreshInterval = setInterval(voteLoadResults, 30000);
   }
 
-  // Load data and start auto-refresh
-  voteInitState();
-  voteLoadResults();
-  if (voteRefreshInterval) clearInterval(voteRefreshInterval);
-  voteRefreshInterval = setInterval(voteLoadResults, 30000);
+  // Load past poll data
+  PAST_POLLS.forEach((poll, idx) => {
+    voteLoadPastPollResults(poll, idx);
+  });
+
+  // Default to Past Polls tab when no active poll
+  if (!ACTIVE_POLL && PAST_POLLS.length > 0) {
+    const pastBtn = document.querySelector('[data-votetab="past"]');
+    if (pastBtn) pastBtn.click();
+  }
 }

@@ -2234,6 +2234,30 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   color: var(--green);
 }
 
+.vote-tag-closed {
+  background: rgba(184,134,11,0.15);
+  color: var(--gold);
+  font-size: 11px;
+  padding: 3px 10px;
+}
+
+.vote-opt-row.vote-readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+.vote-past-header {
+  margin-bottom: 0;
+}
+
+.vote-past-poll {
+  margin-bottom: 24px;
+}
+
+.vote-past-poll:last-child {
+  margin-bottom: 0;
+}
+
 /* Submit bar */
 .vote-submit-wrap {
   position: fixed;
