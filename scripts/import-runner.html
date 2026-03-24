@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transaction Import Runner</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <h1>Transaction Import Runner</h1>
+    <p>Open browser console and run <code>importTransactionsFromCSV()</code></p>
+    <button onclick="importTransactionsFromCSV()">Run Import</button>
+    
+    <script>
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXOsxK7LfwZQUDGWm8wN4M8a7lgJHNZbk",
+            authDomain: "ccr-app-71c20.firebaseapp.com",
+            projectId: "ccr-app-71c20",
+            storageBucket: "ccr-app-71c20.firebasestorage.app",
+            messagingSenderId: "1062037509945",
+            appId: "1:1062037509945:web:da3b5b5d7ac71236e2e66f"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+    <script src="import-transactions.js"></script>
+</body>
+</html>
