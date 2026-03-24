@@ -73,7 +73,7 @@ async function getFCMToken() {
   if (!messaging) return null;
 
   try {
-    const token = await messaging.getToken();
+    const token = await messaging.getToken({ vapidKey: 'BBMmlPVPIGEP3UQZ26covkZFXfVFFpSbL6o7Tk6IkbEatHKSyzUCHHW9KMnMNweybWKLXpjyruSL5MHlQFyF0AA' });
     if (token) {
       console.log('FCM token retrieved:', token.substring(0, 20) + '...');
       fcmToken = token;
@@ -120,7 +120,7 @@ function setupTokenRefresh() {
 
   messaging.onTokenRefresh(async () => {
     console.log('FCM token refreshed');
-    const newToken = await messaging.getToken();
+    const newToken = await messaging.getToken({ vapidKey: 'BBMmlPVPIGEP3UQZ26covkZFXfVFFpSbL6o7Tk6IkbEatHKSyzUCHHW9KMnMNweybWKLXpjyruSL5MHlQFyF0AA' });
     if (newToken) {
       fcmToken = newToken;
       await storeFCMToken(newToken);

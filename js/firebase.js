@@ -22,14 +22,16 @@ function initFirebase() {
     auth = firebase.auth();
     db = firebase.firestore();
     
-    // Initialize Firebase Messaging
-    if (firebase.messaging.isSupported()) {
-      messaging = firebase.messaging();
-      // Set VAPID key for web push
-      messaging.usePublicVapidKey("BBMmlPVPIGEP3UQZ26covkZFXfVFFpSbL6o7Tk6IkbEatHKSyzUCHHW9KMnMNweybWKLXpjyruSL5MHlQFyF0AA");
-      console.log('Firebase Messaging initialized');
-    } else {
-      console.warn('Firebase Messaging not supported in this browser');
+    // Initialize Firebase Messaging (VAPID key passed at getToken time, not here)
+    try {
+      if (firebase.messaging.isSupported()) {
+        messaging = firebase.messaging();
+        console.log('Firebase Messaging initialized');
+      } else {
+        console.warn('Firebase Messaging not supported in this browser');
+      }
+    } catch(e) {
+      console.warn('Firebase Messaging init failed:', e.message);
     }
     
     console.log('Firebase initialized successfully');
