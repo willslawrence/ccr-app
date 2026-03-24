@@ -456,7 +456,7 @@ const GIVING_CHARITIES = [
     updateText: "<strong>Ministry Trainee Year — 3 Growth Areas:</strong><br><br><strong>1. Character</strong> — Life-on-life mentoring and regular check-ins.<br><br><strong>2. Competency</strong> — Modelling and releasing in all elements of ministry: evangelism, Bible reading, teaching, preaching, and pastoring.<br><br><strong>3. Convictions</strong> — An online theology course.<br><br><strong>Why this is wise:</strong><br>• He has been faithful in serving the gathered church and sharing boldly with friends and family.<br>• His type of employment means a year out won't impact future work opportunities.<br>• He has a teaching gift which needs time to hone — no capacity to develop it in his current job."
   },
   {
-    name: "Ridgy Vibrating Ball",
+    name: "Daniel's Gift",
     image: 'img/daniel-ball-nobg.png',
     status: "given",
     type: "need",
@@ -470,7 +470,7 @@ const GIVING_CHARITIES = [
     link2: "https://www.google.com/search?q=vibrating+ball+special+needs+toys",
     lastUpdate: "Feb 2026",
     score: null,
-    updateText: "<strong>Ridgy Vibrating Ball — TFH Sensory Specialists</strong><br><br>A handheld textured silicone ball with 3 vibration levels (2,650–3,700 RPM). Designed for sensory exploration, proprioception, and calming.<br><br><strong>Key features:</strong><br>• Textured ridges for tactile feedback<br>• 3 adjustable vibration intensities<br>• Rechargeable via micro USB<br>• Auto-off feature<br>• 9 cm diameter, 14 oz<br><br><strong>Benefits:</strong> Muscle relaxation, deep tissue relief, improved body awareness, focus and engagement, pain management. Great for sensory room setups or standalone use."
+    updateText: "<strong>Daniel's Gift — TFH Sensory Specialists</strong><br><br>A handheld textured silicone ball with 3 vibration levels (2,650–3,700 RPM). Designed for sensory exploration, proprioception, and calming.<br><br><strong>Key features:</strong><br>• Textured ridges for tactile feedback<br>• 3 adjustable vibration intensities<br>• Rechargeable via micro USB<br>• Auto-off feature<br>• 9 cm diameter, 14 oz<br><br><strong>Benefits:</strong> Muscle relaxation, deep tissue relief, improved body awareness, focus and engagement, pain management. Great for sensory room setups or standalone use."
   },
   // ── LOCAL CHURCH ──
   {
@@ -510,5 +510,23 @@ const GIVING_CHARITIES = [
     lastUpdate: "Feb 2026",
     score: null,
     updateText: "<strong>Epson CO-FH01 Smart Video Projector</strong><br>• Full HD 1080p resolution<br>• 3LCD technology — no rainbow effect<br>• 3,000 lumens colour & white brightness<br>• Up to 378\" projection<br>• HDMI & USB connectivity<br>• Horizontal & vertical keystone correction<br>• Built-in speaker<br>• Compact and portable<br><br>Price: SAR 1,829–2,229 on Amazon.sa<br>SAR 1,500 received so far — needs ~329 more."
+  },
+  {
+    name: "Special Projects",
+    image: null,
+    status: "given",
+    type: "category",
+    category: "local",
+    categoryLabel: "Local Church",
+    amount: "SAR 1,200",
+    amountNum: 1200,
+    potentialAmount: "",
+    frequency: "Given",
+    description: "Catch-all for special projects including Kenyan Mother Financial Support, Projector fund, and other one-time church needs.",
+    fullDescription: "This category covers various special projects and one-time needs that arise in our church community. Current and recent projects include financial support for a Kenyan mother in need, funding for a church projector, and other ministry-specific needs that don't fit into regular fund allocations.",
+    link: null,
+    lastUpdate: "Mar 2026",
+    score: null,
+    updateText: "<strong>Recent Special Projects:</strong><br><br><strong>• Kenyan Mother Financial Support:</strong> SAR 800 total (400 out, 400 in)<br><strong>• Projector Fund:</strong> SAR 1,500 received, project ongoing<br><strong>• Daniel's Gift:</strong> SAR 275 for sensory ball<br><br>Special Projects fund allows us to respond quickly to specific needs and opportunities that arise in our community and ministry context."
   }
 ];
