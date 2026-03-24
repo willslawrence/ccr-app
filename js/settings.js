@@ -50,6 +50,18 @@ function renderSettingsPage() {
         </div>
       </div>
 
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="margin-bottom:16px;font-size:16px;">🔔 Notifications</h3>
+        <div id="notificationStatus" style="margin-bottom:12px;"></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="enableNotificationsBtn" style="display:none;">Enable Notifications</button>
+          <button class="btn btn-outline" id="testNotificationBtn" style="display:none;">Test Notification</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px;">
+          Get notified about prayer requests, bulletins, and schedule updates
+        </p>
+      </div>
+
       <div class="btn-group">
         <button class="btn btn-outline" id="signOutBtn" style="color:var(--red);border-color:var(--red);">
           Sign Out
@@ -66,6 +78,7 @@ function renderSettingsPage() {
 function initSettingsPage() {
   setupThemeToggle();
   setupSignOut();
+  setupNotificationSettings();
 }
 
 function setupThemeToggle() {
@@ -123,6 +136,71 @@ async function signOut() {
   } catch (error) {
     console.error('Sign out error:', error);
     alert('Failed to sign out. Please try again.');
+  }
+}
+
+function setupNotificationSettings() {
+  const statusEl = document.getElementById('notificationStatus');
+  const enableBtn = document.getElementById('enableNotificationsBtn');
+  const testBtn = document.getElementById('testNotificationBtn');
+  
+  if (!statusEl) return;
+
+  // Update status display
+  function updateNotificationUI() {
+    const status = getNotificationStatus();
+    
+    switch (status.status) {
+      case 'enabled':
+        statusEl.innerHTML = '<span style="color:var(--green);font-weight:500;">✅ Notifications enabled</span>';
+        enableBtn.style.display = 'none';
+        testBtn.style.display = 'inline-block';
+        break;
+        
+      case 'blocked':
+        statusEl.innerHTML = '<span style="color:var(--red);font-weight:500;">🚫 Notifications blocked</span><br><span style="font-size:12px;color:var(--muted);">Enable in browser settings</span>';
+        enableBtn.style.display = 'none';
+        testBtn.style.display = 'none';
+        break;
+        
+      case 'prompt':
+        statusEl.innerHTML = '<span style="color:var(--muted);font-weight:500;">🔕 Notifications disabled</span>';
+        enableBtn.style.display = 'inline-block';
+        testBtn.style.display = 'none';
+        break;
+        
+      default:
+        statusEl.innerHTML = '<span style="color:var(--muted);font-weight:500;">📱 Notifications not supported</span>';
+        enableBtn.style.display = 'none';
+        testBtn.style.display = 'none';
+        break;
+    }
+  }
+
+  // Initial update
+  updateNotificationUI();
+
+  // Enable button click
+  if (enableBtn) {
+    enableBtn.addEventListener('click', async () => {
+      const success = await enableNotifications();
+      if (success) {
+        updateNotificationUI();
+      }
+    });
+  }
+
+  // Test button click
+  if (testBtn) {
+    testBtn.addEventListener('click', () => {
+      if (areNotificationsEnabled()) {
+        new Notification('CCR Church App', {
+          body: 'Test notification - everything is working! 🎉',
+          icon: '/ccr-app/icon-192.svg',
+          tag: 'test-notification'
+        });
+      }
+    });
   }
 }
 

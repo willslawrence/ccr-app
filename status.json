@@ -1,0 +1,12 @@
+{
+  "app": "CCR Church App",
+  "version": "2.6.0",
+  "features": {
+    "push_notifications": true,
+    "firebase_messaging": true,
+    "service_worker": true,
+    "pwa": true
+  },
+  "build_date": "2026-03-24",
+  "status": "ready"
+}

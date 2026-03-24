@@ -34,6 +34,9 @@ async function initPushNotifications() {
   // If already granted, get token
   if (notificationPermission === 'granted') {
     await getFCMToken();
+  } else if (notificationPermission === 'default') {
+    // Show a subtle hint about enabling notifications, but don't ask immediately
+    console.log('Notifications available - user can enable in Settings');
   }
 }
 
@@ -184,7 +187,7 @@ function setupForegroundMessaging() {
       if (notificationPermission === 'granted') {
         const notification = new Notification(title, {
           body,
-          icon: icon || '/img/icon-192.png',
+          icon: icon || '/ccr-app/icon-192.svg',
           tag: 'ccr-app-notification'
         });
 
@@ -241,6 +244,24 @@ async function enableNotifications() {
     console.log('Notifications blocked - user can enable in browser settings');
     return false;
   }
+}
+
+/**
+ * Suggest enabling notifications on first content interaction
+ * Called when user creates their first prayer, etc.
+ */
+async function suggestNotifications() {
+  if (notificationPermission === 'default' && !localStorage.getItem('ccr_notifications_suggested')) {
+    // Mark that we've suggested it
+    localStorage.setItem('ccr_notifications_suggested', 'true');
+    
+    // Simple console message for now - could be a toast or modal
+    console.log('💡 Tip: Enable notifications in Settings to get alerts for new prayers and announcements');
+    
+    // Could show a subtle toast here if desired
+    return true;
+  }
+  return false;
 }
 
 /* ====================================

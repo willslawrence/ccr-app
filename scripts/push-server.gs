@@ -76,13 +76,13 @@ function sendFCMNotification(params) {
               title,
               body,
               url: url || '/ccr-app/',
-              icon: '/img/icon-192.png'
+              icon: '/ccr-app/icon-192.svg'
             },
             android: {
               notification: {
                 title,
                 body,
-                icon: '/img/icon-192.png',
+                icon: '/ccr-app/icon-192.svg',
                 click_action: url || '/ccr-app/'
               }
             },
@@ -102,7 +102,7 @@ function sendFCMNotification(params) {
               notification: {
                 title,
                 body,
-                icon: '/img/icon-192.png',
+                icon: '/ccr-app/icon-192.svg',
                 data: { url: url || '/ccr-app/' }
               }
             }

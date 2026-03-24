@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.5.2';
+const APP_VERSION = '2.6.0';
 
 // Global state
 const AppState = {
@@ -350,4 +350,16 @@ function initVersionModal() {
       }
     });
   }
+}
+
+// Listen for service worker navigation messages (from notification clicks)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'navigate') {
+      const url = event.data.url;
+      // Extract page from URL (e.g., '/prayer' -> 'prayer')
+      const page = url.replace('/', '').replace('#', '') || 'home';
+      navigateTo(page);
+    }
+  });
 }

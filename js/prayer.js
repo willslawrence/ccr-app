@@ -210,6 +210,9 @@ async function addPrayer() {
 
     // Send push notification
     await sendPushNotification('prayer', '🙏 New Prayer Request', shortDesc, 'all');
+    
+    // Suggest enabling notifications for first-time users
+    suggestNotifications();
 
     document.getElementById('prayerFormElement').reset();
     prayerState.showAddForm = false;

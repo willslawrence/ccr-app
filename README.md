@@ -24,7 +24,8 @@ open http://localhost:8000
 - 🎧 **Sermons** - Audio library with notes
 - 📅 **Schedule** - Events, volunteering, Order of Service
 - 📋 **Bulletin** - Weekly announcements
-- ⚙️ **Settings** - Dark mode, profile, preferences
+- 🔔 **Push Notifications** - Real-time alerts for prayers, bulletins, and updates
+- ⚙️ **Settings** - Dark mode, profile, preferences, notification controls
 
 ## 📱 Pages (10 Total)
 
