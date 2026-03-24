@@ -198,8 +198,8 @@ function renderVotePage() {
 
   return `
     <div class="page vote-page">
-      <h1 class="page-title">Giving Vote</h1>
-      <p class="page-subtitle">Approval voting · Select options you support in each category</p>
+      <h1 class="page-title">Voting</h1>
+      <p class="page-subtitle">Vote on church matters · Finances, nominations, elections & more</p>
 
       <div class="btn-group">
         <button class="btn ${ACTIVE_POLL ? 'btn-primary' : 'btn-outline'}" data-votetab="active">🗳️ Active Poll</button>
