@@ -8,7 +8,8 @@ let activeGivingCat = 'all'; // Category filter for charities
 let givingState = {
   transactions: [],
   showAddForm: false,
-  editingId: null
+  editingId: null,
+  expandedTransId: null
 };
 
 // Fund fractions for "All" allocations
@@ -120,12 +121,50 @@ function calculateTotals() {
   return { totalIn, totalOut, balance, churchRatio };
 }
 
-// Calculate total given (excluding Local Church)
+// Calculate total given from transactions (outgoing, excluding transfers and LC1 internal)
 function getTotalGiven() {
-  if (!window.GIVING_CHARITIES) return 0;
-  return GIVING_CHARITIES
-    .filter(charity => charity.status === 'given' && charity.name !== 'Local Church (Us)')
-    .reduce((sum, charity) => sum + charity.amountNum, 0);
+  return Math.abs(givingState.transactions
+    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR' && !t.allocation.startsWith('LC1'))
+    .reduce((sum, t) => sum + t.amount, 0));
+}
+
+// Calculate amount given per charity from transactions (maps transaction descriptions to charity names)
+function getCharityTransactionTotals() {
+  const totals = {};
+  const charityMap = {
+    'Hope Village': 'Special Needs Sports Ministry',
+    'Special Needs Sports': 'Special Needs Sports Ministry',
+    'Stan and Tasha': 'Stan and Tasha',
+    'Radical': 'Radical',
+    'Crisis Aid': 'Crisis Aid International',
+    'Lifesong': 'Lifesong for Orphans',
+    'Send Relief': 'Send Relief',
+    'Open Doors': 'Open Doors International',
+    'Global Christian': 'Global Christian Relief',
+    'Help The Persecuted': 'Help The Persecuted',
+    'PreBorn': 'PreBorn!',
+    'Joyful Joseph': 'Joyful Joseph',
+    'Joyful Joshef': 'Joyful Joseph',
+    'Daniels Gift': "Daniel's Gift",
+    "Daniel's Gift": "Daniel's Gift",
+    'Vibrating Ball': "Daniel's Gift",
+    'Kenyan Mother': 'Special Projects',
+    'Projector': 'Special Projects',
+  };
+
+  givingState.transactions
+    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR')
+    .forEach(t => {
+      const desc = t.description;
+      for (const [key, charityName] of Object.entries(charityMap)) {
+        if (desc.toLowerCase().includes(key.toLowerCase())) {
+          totals[charityName] = (totals[charityName] || 0) + Math.abs(t.amount);
+          return;
+        }
+      }
+    });
+
+  return totals;
 }
 
 // Format amount for display (no currency symbol in transaction list)
@@ -143,6 +182,7 @@ async function renderGivingPage() {
   const totals = calculateTotals();
   const fundBalances = calculateFundBalances();
   const totalGiven = getTotalGiven();
+  const charityTotals = getCharityTransactionTotals();
 
   return `
     <div class="page giving-page">
@@ -161,18 +201,18 @@ async function renderGivingPage() {
 
         <!-- Summary Card -->
         <div class="card" style="margin-bottom:20px;">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:center;margin-bottom:16px;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;margin-bottom:16px;">
             <div>
-              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Incoming Total</div>
-              <div class="mono" style="font-size:24px;font-weight:700;color:var(--green);">SAR ${totals.totalIn.toLocaleString()}</div>
+              <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Incoming</div>
+              <div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">SAR ${Math.round(totals.totalIn).toLocaleString()}</div>
             </div>
             <div>
-              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Outgoing Total</div>
-              <div class="mono" style="font-size:24px;font-weight:700;color:var(--red);">${formatAmount(totals.totalOut, true)}</div>
+              <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Outgoing</div>
+              <div class="mono" style="font-size:16px;font-weight:700;color:var(--red);">SAR ${Math.round(totals.totalOut).toLocaleString()}</div>
             </div>
             <div>
-              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
-              <div class="mono" style="font-size:24px;font-weight:700;color:var(--accent);">SAR ${totals.balance.toLocaleString()}</div>
+              <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Balance</div>
+              <div class="mono" style="font-size:16px;font-weight:700;color:var(--accent);">SAR ${Math.round(totals.balance).toLocaleString()}</div>
             </div>
           </div>
           
@@ -195,7 +235,7 @@ async function renderGivingPage() {
           </div>
         </div>
 
-        ${isAdmin() ? `
+        ${isAdmin() || isEditor() ? `
           <button class="btn btn-primary" id="addTransactionBtn" style="margin-bottom:20px;">+ Add Transaction</button>
         ` : ''}
 
@@ -244,27 +284,27 @@ async function renderGivingPage() {
                   <option value="Transfer within CCR">Transfer within CCR</option>
                 </select>
               </div>
+              <div class="form-group">
+                <label class="form-label">Donor</label>
+                <input type="text" class="form-input" id="transDonor" placeholder="Optional">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Receipt ID</label>
+                <input type="text" class="form-input" id="transReceiptId" placeholder="Optional">
+              </div>
               ${isAdmin() ? `
-                <div class="form-group">
-                  <label class="form-label">Donor</label>
-                  <input type="text" class="form-input" id="transDonor" placeholder="Optional">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Receipt ID</label>
-                  <input type="text" class="form-input" id="transReceiptId" placeholder="Optional">
-                </div>
                 <div class="form-group">
                   <label class="form-label">Status</label>
                   <select class="form-select" id="transStatus">
-                    <option value="Complete">Complete</option>
                     <option value="Pending">Pending</option>
+                    <option value="Complete">Complete</option>
                   </select>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Receipt Image URL</label>
-                  <input type="url" class="form-input" id="transReceiptUrl" placeholder="https://...">
-                </div>
               ` : ''}
+              <div class="form-group">
+                <label class="form-label">Receipt Image URL</label>
+                <input type="url" class="form-input" id="transReceiptUrl" placeholder="https://...">
+              </div>
               <div class="btn-group" style="margin-top:20px;">
                 <button type="submit" class="btn btn-primary">${givingState.editingId ? 'Save Changes' : 'Add Transaction'}</button>
                 <button type="button" class="btn btn-outline" id="cancelTransBtn">Cancel</button>
@@ -281,31 +321,40 @@ async function renderGivingPage() {
               <div class="empty-text">No transactions yet</div>
               <div class="empty-sub">Add your first transaction above</div>
             </div>
-          ` : givingState.transactions.map(trans => `
-            <div class="card" style="margin-bottom:12px;">
-              <div class="card-header">
-                <div style="flex:1;">
-                  <div class="card-meta">${formatDate(trans.date)}</div>
-                  <div class="card-title">${escapeHtml(trans.description)}</div>
-                  <div class="card-meta" style="margin-top:4px;">
-                    ${trans.allocation} • ${trans.status}
-                    ${trans.receiptUrl ? ' • <a href="' + trans.receiptUrl + '" target="_blank" style="color:var(--accent);">Receipt</a>' : ''}
-                  </div>
+          ` : givingState.transactions.map(trans => {
+            const isExpanded = givingState.expandedTransId === trans.id;
+            return `
+            <div class="card card-clickable" style="margin-bottom:8px;padding:10px 12px;" onclick="toggleTransaction('${trans.id}')">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="flex:1;min-width:0;">
+                  <div class="card-meta" style="font-size:11px;">${formatDate(trans.date)} · ${trans.allocation}</div>
+                  <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(trans.description)}</div>
                 </div>
-                <div style="text-align:right;">
-                  <div class="mono" style="font-size:20px;font-weight:700;color:${trans.amount > 0 ? 'var(--green)' : 'var(--red)'};">
-                    ${trans.amount > 0 ? '+' : '-'}${formatAmount(trans.amount)}
-                  </div>
+                <div class="mono" style="font-size:15px;font-weight:700;color:${trans.amount > 0 ? 'var(--green)' : 'var(--red)'};white-space:nowrap;margin-left:8px;">
+                  ${trans.amount > 0 ? '+' : '-'}${formatAmount(trans.amount)}
                 </div>
               </div>
-              ${isAdmin() ? `
-                <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                  <button class="btn btn-outline" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="editTransaction('${trans.id}')">✏️</button>
-                  <button class="btn btn-outline" style="font-size:10px;padding:4px 8px;min-height:auto;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️</button>
+              ${isExpanded ? `
+              <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;" onclick="event.stopPropagation();">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">
+                  <div><span style="color:var(--muted);">Type:</span> ${trans.type}</div>
+                  <div><span style="color:var(--muted);">Status:</span> <span style="color:${trans.status === 'Pending' ? '#d97706' : 'var(--green)'};font-weight:600;">${trans.status}</span></div>
+                  <div><span style="color:var(--muted);">Via:</span> ${escapeHtml(trans.via || '')}</div>
+                  <div><span style="color:var(--muted);">Allocation:</span> ${trans.allocation}</div>
+                  ${trans.donor ? `<div><span style="color:var(--muted);">Donor:</span> ${escapeHtml(trans.donor)}</div>` : ''}
+                  ${trans.receiptId ? `<div><span style="color:var(--muted);">Receipt #:</span> ${escapeHtml(trans.receiptId)}</div>` : ''}
                 </div>
+                ${trans.receiptUrl ? `<div style="margin-top:8px;"><a href="${escapeHtml(trans.receiptUrl)}" target="_blank" style="color:var(--accent);font-size:12px;">📎 View Receipt</a></div>` : ''}
+                ${isAdmin() ? `
+                  <div style="display:flex;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+                    <button class="btn btn-outline" style="font-size:10px;padding:4px 10px;min-height:auto;" onclick="editTransaction('${trans.id}')">✏️ Edit</button>
+                    <button class="btn btn-outline" style="font-size:10px;padding:4px 10px;min-height:auto;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️ Delete</button>
+                  </div>
+                ` : ''}
+              </div>
               ` : ''}
             </div>
-          `).join('')}
+          `}).join('')}
         </div>
       </div>
 
@@ -357,7 +406,7 @@ async function renderGivingPage() {
                 <h3 class="charity-name">${escapeHtml(charity.name)}</h3>
                 <p class="charity-desc">${escapeHtml(shortDesc)}</p>
                 <div class="charity-footer">
-                  <div class="charity-amount">${charity.amount} ${statusBadge}</div>
+                  <div class="charity-amount">SAR ${Math.round(charityTotals[charity.name] || charity.amountNum || 0).toLocaleString()} ${statusBadge}</div>
                 </div>
               </div>
             `;
@@ -444,7 +493,7 @@ function openCharityModal(charityName) {
       ${charity.status === 'given' ? '<span class="status-badge status-given">✓ Given</span>' : '<span class="status-badge status-new">★ New</span>'}
     </div>
     <div style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--accent);">
-      ${charity.amount}
+      SAR ${Math.round(getCharityTransactionTotals()[charity.name] || charity.amountNum || 0).toLocaleString()}
     </div>
   `;
   
@@ -667,15 +716,16 @@ async function saveTransaction() {
     const via = document.getElementById('transVia').value.trim();
     const allocation = document.getElementById('transAllocation').value;
     
-    // Admin-only fields
-    const donor = isAdmin() && document.getElementById('transDonor') ? 
+    // Fields available to both editor and admin
+    const donor = document.getElementById('transDonor') ? 
       document.getElementById('transDonor').value.trim() || null : null;
-    const receiptId = isAdmin() && document.getElementById('transReceiptId') ? 
+    const receiptId = document.getElementById('transReceiptId') ? 
       document.getElementById('transReceiptId').value.trim() || null : null;
-    const status = isAdmin() && document.getElementById('transStatus') ? 
-      document.getElementById('transStatus').value : 'Complete';
-    const receiptUrl = isAdmin() && document.getElementById('transReceiptUrl') ? 
+    const receiptUrl = document.getElementById('transReceiptUrl') ? 
       document.getElementById('transReceiptUrl').value.trim() || null : null;
+    // Status: only admin can set, editors default to Pending
+    const status = isAdmin() && document.getElementById('transStatus') ? 
+      document.getElementById('transStatus').value : 'Pending';
 
     const transactionData = {
       date,
@@ -714,6 +764,16 @@ async function saveTransaction() {
   }
 }
 
+// Toggle transaction expand
+function toggleTransaction(id) {
+  givingState.expandedTransId = givingState.expandedTransId === id ? null : id;
+  // Re-render just the transaction list
+  renderGivingPage().then(html => {
+    document.getElementById('app').innerHTML = html;
+    initGivingPage();
+  });
+}
+
 // Edit transaction
 function editTransaction(id) {
   const trans = givingState.transactions.find(t => t.id === id);
@@ -729,13 +789,12 @@ function editTransaction(id) {
   document.getElementById('transVia').value = trans.via;
   document.getElementById('transAllocation').value = trans.allocation;
   
-  // Admin fields
-  if (isAdmin()) {
-    if (document.getElementById('transDonor')) document.getElementById('transDonor').value = trans.donor || '';
-    if (document.getElementById('transReceiptId')) document.getElementById('transReceiptId').value = trans.receiptId || '';
-    if (document.getElementById('transStatus')) document.getElementById('transStatus').value = trans.status || 'Complete';
-    if (document.getElementById('transReceiptUrl')) document.getElementById('transReceiptUrl').value = trans.receiptUrl || '';
-  }
+  // Shared fields (editor + admin)
+  if (document.getElementById('transDonor')) document.getElementById('transDonor').value = trans.donor || '';
+  if (document.getElementById('transReceiptId')) document.getElementById('transReceiptId').value = trans.receiptId || '';
+  if (document.getElementById('transReceiptUrl')) document.getElementById('transReceiptUrl').value = trans.receiptUrl || '';
+  // Admin-only
+  if (isAdmin() && document.getElementById('transStatus')) document.getElementById('transStatus').value = trans.status || 'Pending';
   
   document.getElementById('addTransactionForm').style.display = 'block';
   document.getElementById('transDate').focus();
