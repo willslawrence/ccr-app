@@ -104,21 +104,16 @@ function calculateTotals() {
 
   const balance = totalIn - totalOut;
 
-  // Calculate church ratio (LC1 outgoing / total outgoing)
-  const lc1Outgoing = Math.abs(nonTransfers
-    .filter(t => t.type === 'Outgoing' && 
-      (t.allocation === 'LC1 - Church Needs' || 
-       (t.allocation === 'All' && t.amount < 0)))
-    .reduce((sum, t) => {
-      if (t.allocation === 'All') {
-        return sum + (Math.abs(t.amount) * FUND_FRACTIONS['LC1']);
-      }
-      return sum + Math.abs(t.amount);
-    }, 0));
+  // Program Expense Ratio — calculated from fund allocations, not just spending
+  // External = everything except LC1 (Church Needs is internal overhead)
+  // Special Project counts as external
+  const fundBals = calculateFundBalances();
+  const totalFunds = Object.values(fundBals).reduce((s, v) => s + v, 0);
+  const internalFunds = fundBals['LC1'] || 0;
+  const externalFunds = totalFunds - internalFunds;
+  const programRatio = totalFunds > 0 ? (externalFunds / totalFunds) * 100 : 0;
 
-  const churchRatio = totalOut > 0 ? (lc1Outgoing / totalOut) * 100 : 0;
-
-  return { totalIn, totalOut, balance, churchRatio };
+  return { totalIn, totalOut, balance, programRatio };
 }
 
 // Calculate total given from transactions (outgoing, excluding transfers and LC1 internal)
@@ -216,10 +211,10 @@ async function renderGivingPage() {
             </div>
           </div>
           
-          <!-- Church Ratio -->
+          <!-- Program Expense Ratio -->
           <div style="text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;margin-bottom:16px;">
-            <span style="font-size:12px;color:var(--muted);">Internal Use:</span>
-            <span style="font-size:14px;font-weight:600;margin-left:4px;">${totals.churchRatio.toFixed(1)}%</span>
+            <span style="font-size:12px;color:var(--muted);">Program Expense Ratio:</span>
+            <span style="font-size:14px;font-weight:600;margin-left:4px;color:var(--green);">${totals.programRatio.toFixed(1)}%</span>
           </div>
 
           <!-- Fund Balances Grid -->
