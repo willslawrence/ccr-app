@@ -300,8 +300,8 @@ async function renderGivingPage() {
               </div>
               ${isAdmin() ? `
                 <div class="btn-group" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                  <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;" onclick="editTransaction('${trans.id}')">✏️ Edit</button>
-                  <button class="btn btn-outline" style="font-size:13px;padding:8px 16px;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️ Delete</button>
+                  <button class="btn btn-outline" style="font-size:10px;padding:4px 8px;min-height:auto;" onclick="editTransaction('${trans.id}')">✏️</button>
+                  <button class="btn btn-outline" style="font-size:10px;padding:4px 8px;min-height:auto;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️</button>
                 </div>
               ` : ''}
             </div>
