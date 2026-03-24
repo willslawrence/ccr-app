@@ -298,7 +298,7 @@ async function renderGivingPage() {
               ` : ''}
               <div class="form-group">
                 <label class="form-label">Receipt Photo</label>
-                <input type="file" class="form-input" id="transReceiptFile" accept="image/*" capture="environment" style="font-size:12px;">
+                <input type="file" class="form-input" id="transReceiptFile" accept="image/*" style="font-size:12px;">
                 <input type="hidden" id="transReceiptUrl" value="">
                 <div id="receiptPreview" style="margin-top:8px;display:none;">
                   <img id="receiptPreviewImg" style="max-width:100%;max-height:200px;border-radius:6px;">
