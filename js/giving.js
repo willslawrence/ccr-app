@@ -302,8 +302,14 @@ async function renderGivingPage() {
                 </div>
               ` : ''}
               <div class="form-group">
-                <label class="form-label">Receipt Image URL</label>
-                <input type="url" class="form-input" id="transReceiptUrl" placeholder="https://...">
+                <label class="form-label">Receipt Photo</label>
+                <input type="file" class="form-input" id="transReceiptFile" accept="image/*" capture="environment" style="font-size:12px;">
+                <input type="hidden" id="transReceiptUrl" value="">
+                <div id="receiptPreview" style="margin-top:8px;display:none;">
+                  <img id="receiptPreviewImg" style="max-width:100%;max-height:200px;border-radius:6px;">
+                  <button type="button" class="btn btn-outline" style="font-size:10px;padding:2px 8px;margin-top:4px;" onclick="clearReceiptUpload()">✕ Remove</button>
+                </div>
+                <div id="receiptUploadProgress" style="display:none;margin-top:4px;font-size:11px;color:var(--muted);">Uploading...</div>
               </div>
               <div class="btn-group" style="margin-top:20px;">
                 <button type="submit" class="btn btn-primary">${givingState.editingId ? 'Save Changes' : 'Add Transaction'}</button>
@@ -704,6 +710,31 @@ async function initGivingPage() {
       await saveTransaction();
     });
   }
+
+  // Receipt file preview
+  const fileInput = document.getElementById('transReceiptFile');
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      const preview = document.getElementById('receiptPreview');
+      const img = document.getElementById('receiptPreviewImg');
+      if (file && preview && img) {
+        const reader = new FileReader();
+        reader.onload = (e) => { img.src = e.target.result; preview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+}
+
+// Clear receipt upload
+function clearReceiptUpload() {
+  const fileInput = document.getElementById('transReceiptFile');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('receiptPreview');
+  if (preview) preview.style.display = 'none';
+  const hidden = document.getElementById('transReceiptUrl');
+  if (hidden) hidden.value = '';
 }
 
 // Save transaction
@@ -721,8 +752,35 @@ async function saveTransaction() {
       document.getElementById('transDonor').value.trim() || null : null;
     const receiptId = document.getElementById('transReceiptId') ? 
       document.getElementById('transReceiptId').value.trim() || null : null;
-    const receiptUrl = document.getElementById('transReceiptUrl') ? 
+    // Receipt URL — either from file upload or existing value
+    let receiptUrl = document.getElementById('transReceiptUrl') ? 
       document.getElementById('transReceiptUrl').value.trim() || null : null;
+    
+    // Upload receipt file to ImgBB if selected
+    const fileInput = document.getElementById('transReceiptFile');
+    if (fileInput && fileInput.files.length > 0) {
+      const progressEl = document.getElementById('receiptUploadProgress');
+      if (progressEl) { progressEl.style.display = 'block'; progressEl.textContent = 'Uploading receipt...'; }
+      try {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('image', file);
+        const resp = await fetch('https://api.imgbb.com/1/upload?key=715755d5fd0228b1579d318f1e7feb91', {
+          method: 'POST',
+          body: formData
+        });
+        const result = await resp.json();
+        if (result.success) {
+          receiptUrl = result.data.display_url;
+        } else {
+          throw new Error(result.error?.message || 'Upload failed');
+        }
+        if (progressEl) progressEl.style.display = 'none';
+      } catch (uploadErr) {
+        console.error('Receipt upload failed:', uploadErr);
+        if (progressEl) { progressEl.textContent = 'Upload failed — saving without receipt'; }
+      }
+    }
     // Status: only admin can set, editors default to Pending
     const status = isAdmin() && document.getElementById('transStatus') ? 
       document.getElementById('transStatus').value : 'Pending';
@@ -793,6 +851,12 @@ function editTransaction(id) {
   if (document.getElementById('transDonor')) document.getElementById('transDonor').value = trans.donor || '';
   if (document.getElementById('transReceiptId')) document.getElementById('transReceiptId').value = trans.receiptId || '';
   if (document.getElementById('transReceiptUrl')) document.getElementById('transReceiptUrl').value = trans.receiptUrl || '';
+  // Show existing receipt preview if editing
+  if (trans.receiptUrl) {
+    const preview = document.getElementById('receiptPreview');
+    const img = document.getElementById('receiptPreviewImg');
+    if (preview && img) { img.src = trans.receiptUrl; preview.style.display = 'block'; }
+  }
   // Admin-only
   if (isAdmin() && document.getElementById('transStatus')) document.getElementById('transStatus').value = trans.status || 'Pending';
   
