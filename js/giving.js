@@ -30,7 +30,7 @@ const FUND_NAMES = {
   'PC2': 'PC2 Church Planting',
   'HH1': 'HH1 Orphans/Widows/Sojourners',
   'HH2': 'HH2 Persecuted Church',
-  'SP': 'Special Project'
+  'SP': 'Special Projects'
 };
 
 // Load transactions from Firestore
