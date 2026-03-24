@@ -44,7 +44,7 @@ function renderSettingsPage() {
           <h3 style="margin-bottom:12px;font-size:16px;">About</h3>
           <div style="display:grid;gap:6px;font-size:13px;">
             <div><strong>App Name:</strong> CCR Church App</div>
-            <div><strong>Version:</strong> 1.8.3</div>
+            <div><strong>Version:</strong> ${APP_VERSION}</div>
             <div><strong>Build:</strong> ${new Date().getFullYear()}.03</div>
           </div>
         </div>
