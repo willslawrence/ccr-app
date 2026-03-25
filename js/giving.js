@@ -164,7 +164,7 @@ function getCharityTransactionTotals() {
 
 // Format amount for display (no currency symbol in transaction list)
 function formatAmount(amount, showCurrency = false) {
-  const prefix = showCurrency ? 'SAR ' : '';
+  const prefix = showCurrency ? '<span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ' : '';
   const val = Math.abs(amount);
   // Round to whole numbers for clean display, but keep decimals if they exist on individual transactions
   const display = Number.isInteger(val) || val >= 100 ? Math.round(val).toLocaleString() : val.toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -199,15 +199,15 @@ async function renderGivingPage() {
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;margin-bottom:16px;">
             <div>
               <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Incoming</div>
-              <div class="mono" style="font-size:16px;font-weight:700;color:var(--green);">SAR ${Math.round(totals.totalIn).toLocaleString()}</div>
+              <div class="mono" style="font-size:16px;font-weight:700;color:var(--green);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.totalIn).toLocaleString()}</div>
             </div>
             <div>
               <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Outgoing</div>
-              <div class="mono" style="font-size:16px;font-weight:700;color:var(--red);">SAR ${Math.round(totals.totalOut).toLocaleString()}</div>
+              <div class="mono" style="font-size:16px;font-weight:700;color:var(--red);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.totalOut).toLocaleString()}</div>
             </div>
             <div>
               <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Balance</div>
-              <div class="mono" style="font-size:16px;font-weight:700;color:var(--accent);">SAR ${Math.round(totals.balance).toLocaleString()}</div>
+              <div class="mono" style="font-size:16px;font-weight:700;color:var(--accent);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.balance).toLocaleString()}</div>
             </div>
           </div>
           
@@ -365,7 +365,7 @@ async function renderGivingPage() {
         <!-- Total Given Summary -->
         <div class="card giving-summary">
           <h3>Total Given</h3>
-          <div class="giving-total">SAR ${totalGiven.toLocaleString()}</div>
+          <div class="giving-total"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${totalGiven.toLocaleString()}</div>
           <p style="color: var(--muted); font-size: 14px; margin-top: 8px;">
             Across ${(GIVING_CHARITIES || []).filter(c => c.status === 'given').length} charities and ministries
           </p>
@@ -408,7 +408,7 @@ async function renderGivingPage() {
                 <h3 class="charity-name">${escapeHtml(charity.name)}</h3>
                 <p class="charity-desc">${escapeHtml(shortDesc)}</p>
                 <div class="charity-footer">
-                  <div class="charity-amount">SAR ${Math.round(charityTotals[charity.name] || charity.amountNum || 0).toLocaleString()} ${statusBadge}</div>
+                  <div class="charity-amount"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(charityTotals[charity.name] || charity.amountNum || 0).toLocaleString()} ${statusBadge}</div>
                 </div>
               </div>
             `;
@@ -495,7 +495,7 @@ function openCharityModal(charityName) {
       ${charity.status === 'given' ? '<span class="status-badge status-given">✓ Given</span>' : '<span class="status-badge status-new">★ New</span>'}
     </div>
     <div style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--accent);">
-      SAR ${Math.round(getCharityTransactionTotals()[charity.name] || charity.amountNum || 0).toLocaleString()}
+      <span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(getCharityTransactionTotals()[charity.name] || charity.amountNum || 0).toLocaleString()}
     </div>
   `;
   
