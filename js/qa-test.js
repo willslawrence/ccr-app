@@ -16,13 +16,19 @@ async function qaCreatePrayer() {
     }
 
     const testData = {
-      title: '[QA Test] Prayer Request',
-      description: 'This is a test prayer request created by the QA test function. Please pray for successful testing!',
+      text: '[QA Test] Prayer for successful testing',
+      shortDesc: '[QA Test] Prayer for successful testing',
+      longDesc: 'This is a test prayer request created by the QA test function.',
       author: user.name,
-      uid: user.uid,
-      status: 'pending',
+      authorId: user.uid,
+      submittedBy: user.uid,
+      submitterName: user.name,
+      anonymous: false,
+      answered: false,
+      answeredAt: null,
+      prayingCount: 0,
+      prayedBy: [],
       createdAt: firebase.firestore.Timestamp.now(),
-      isAnonymous: false,
       qa_test: true
     };
 
@@ -32,7 +38,7 @@ async function qaCreatePrayer() {
     // Trigger push notification
     try {
       if (typeof sendPushNotification === 'function') {
-        await sendPushNotification('prayer', '🙏 New Prayer Request', testData.title, 'all');
+        await sendPushNotification('prayer', '🙏 New Prayer Request', testData.shortDesc, 'all');
         console.log('✅ Push notification sent');
       }
     } catch (e) {
@@ -63,14 +69,14 @@ async function qaCreateBulletin() {
     }
 
     const testData = {
-      title: '[QA Test] Bulletin',
-      content: 'This is a test bulletin created by the QA test function. It contains sample content for testing purposes.',
-      createdAt: firebase.firestore.Timestamp.now(),
-      updatedAt: firebase.firestore.Timestamp.now(),
-      author: user.name,
-      authorUid: user.uid,
+      date: new Date().toISOString().split('T')[0],
+      sections: [
+        { heading: '[QA Test] Announcements', content: 'This is a test bulletin section.' },
+        { heading: '[QA Test] Upcoming', content: 'QA test content for the upcoming section.' }
+      ],
       published: true,
-      publishedAt: firebase.firestore.Timestamp.now(),
+      createdBy: user.uid,
+      createdAt: firebase.firestore.Timestamp.now(),
       qa_test: true
     };
 
@@ -80,7 +86,7 @@ async function qaCreateBulletin() {
     // Trigger push notification
     try {
       if (typeof sendPushNotification === 'function') {
-        await sendPushNotification('bulletin', '📰 New Bulletin', testData.title, 'all');
+        await sendPushNotification('bulletin', '📰 New Bulletin', testData.sections[0].heading, 'all');
         console.log('✅ Push notification sent');
       }
     } catch (e) {
@@ -118,19 +124,21 @@ async function qaCreateOoS() {
 
     const testData = {
       date: dateStr,
+      venueName: '[QA Test] Venue',
+      venueUrl: '',
+      instructions: 'QA test instructions',
       items: [
-        { type: 'song', title: '[QA Test] Opening Song', details: 'Amazing Grace' },
-        { type: 'prayer', title: '[QA Test] Opening Prayer', details: 'Led by Pastor' },
-        { type: 'sermon', title: '[QA Test] Sermon', details: 'Test Topic' },
-        { type: 'song', title: '[QA Test] Closing Song', details: 'How Great Thou Art' }
+        { title: '[QA Test] Opening Song', leader: '', details: 'Amazing Grace' },
+        { title: '[QA Test] Prayer', leader: '', details: '' },
+        { title: '[QA Test] Sermon', leader: '', details: 'Test Topic' },
+        { title: '[QA Test] Closing Song', leader: '', details: 'How Great Thou Art' }
       ],
+      childrenSection: '',
       createdAt: firebase.firestore.Timestamp.now(),
-      createdBy: user.uid,
-      creatorName: user.name,
       qa_test: true
     };
 
-    const docRef = await db.collection('orderOfService').add(testData);
+    const docRef = await db.collection('order_of_service').add(testData);
     console.log('✅ Order of Service created:', docRef.id);
 
     // Trigger push notification
@@ -173,15 +181,16 @@ async function qaCreateTransaction() {
 
     const testData = {
       date: new Date().toISOString().split('T')[0],
-      type: 'income',
-      category: 'Tithes & Offerings',
-      amount: 100.00,
-      currency: 'SAR',
-      description: '[QA Test] Test Transaction',
-      notes: 'Created by QA test function',
+      type: 'Incoming',
+      allocation: 'All',
+      amount: 100,
+      description: '[QA Test] Tithe test',
+      via: 'Cash',
+      donor: '',
+      status: 'Pending',
+      receiptId: '',
+      receiptUrl: '',
       createdAt: firebase.firestore.Timestamp.now(),
-      createdBy: user.uid,
-      creatorName: user.name,
       qa_test: true
     };
 
@@ -191,7 +200,7 @@ async function qaCreateTransaction() {
     // Trigger admin push notification
     try {
       if (typeof sendPushNotification === 'function') {
-        const description = `${testData.type === 'income' ? '+' : '-'}${testData.amount} ${testData.currency} - ${testData.category}`;
+        const description = testData.description;
         await sendPushNotification('transaction', '💰 New Transaction', description, 'admin');
         console.log('✅ Push notification sent to admins');
       }
@@ -211,7 +220,7 @@ async function qaCreateTransaction() {
  */
 async function qaCleanup() {
   try {
-    const collections = ['prayers', 'bulletins', 'orderOfService', 'transactions', 'sermons'];
+    const collections = ['prayers', 'bulletins', 'order_of_service', 'transactions', 'sermons'];
     let totalDeleted = 0;
 
     for (const collectionName of collections) {
