@@ -127,6 +127,12 @@ function renderBulletinEditor() {
   const editor = document.getElementById('bulletinEditor');
   editor.style.display = 'block';
 
+  // Update heading and button text based on edit vs new
+  const heading = editor.querySelector('h3');
+  const submitBtn = editor.querySelector('button[type="submit"]');
+  if (heading) heading.textContent = bulletinState.editingId ? 'Edit Bulletin' : 'New Bulletin';
+  if (submitBtn) submitBtn.textContent = bulletinState.editingId ? 'Save Changes' : 'Create Bulletin';
+
   // Load existing bulletin data if editing
   if (bulletinState.editingId) {
     const bulletin = bulletinState.bulletins.find(b => b.id === bulletinState.editingId);
@@ -147,10 +153,16 @@ function renderBulletinEditor() {
     renderSections([{ heading: '', content: '' }]);
   }
 
-  // Setup event listeners
-  document.getElementById('bulletinForm').addEventListener('submit', handleBulletinSubmit);
-  document.getElementById('cancelBulletinBtn').addEventListener('click', cancelBulletinEdit);
-  document.getElementById('addSectionBtn').addEventListener('click', addSection);
+  // Remove old listeners to prevent duplicates, then re-add
+  const form = document.getElementById('bulletinForm');
+  form.removeEventListener('submit', handleBulletinSubmit);
+  form.addEventListener('submit', handleBulletinSubmit);
+  const cancelBtn = document.getElementById('cancelBulletinBtn');
+  cancelBtn.removeEventListener('click', cancelBulletinEdit);
+  cancelBtn.addEventListener('click', cancelBulletinEdit);
+  const addBtn = document.getElementById('addSectionBtn');
+  addBtn.removeEventListener('click', addSection);
+  addBtn.addEventListener('click', addSection);
 
   // Scroll to editor
   editor.scrollIntoView({ behavior: 'smooth' });
