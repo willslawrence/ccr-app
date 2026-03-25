@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.6.3';
+const APP_VERSION = '2.7.0';
 
 // Global state
 const AppState = {
@@ -201,6 +201,7 @@ async function init() {
             uid: user.uid,
             name: userData.name || user.displayName || user.email,
             email: user.email,
+            username: userData.username || user.email?.replace('@ccr.app', '') || '',
             role: userData.role || 'member'
           };
           console.log('User signed in:', AppState.currentUser);

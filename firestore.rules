@@ -107,5 +107,12 @@ service cloud.firestore {
       allow create, update: if isAuth() && request.auth.uid == request.resource.data.uid;
       allow delete: if isAuth() && request.auth.uid == resource.data.uid;
     }
+
+    // Approved members whitelist - anyone can read (needed for signup check), only admin can write
+    match /approvedMembers/{username} {
+      allow get: if true; // Allow unauthenticated reads for signup whitelist check
+      allow list: if isAdmin(); // Only admin can list all members
+      allow write: if isAdmin(); // Only admin can add/remove/update approved members
+    }
   }
 }

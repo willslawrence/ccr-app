@@ -26,8 +26,8 @@ function renderSettingsPage() {
               <div style="font-weight:500;font-size:14px;">${escapeHtml(user.name)}</div>
             </div>
             <div>
-              <div class="text-muted" style="font-size:12px;margin-bottom:2px;">Email</div>
-              <div style="font-weight:500;font-size:14px;">${escapeHtml(user.email)}</div>
+              <div class="text-muted" style="font-size:12px;margin-bottom:2px;">Username</div>
+              <div style="font-weight:500;font-size:14px;">${escapeHtml(user.username || user.email?.replace('@ccr.app', '') || '')}</div>
             </div>
             <div>
               <div class="text-muted" style="font-size:12px;margin-bottom:2px;">Role</div>
@@ -62,6 +62,53 @@ function renderSettingsPage() {
         </p>
       </div>
 
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="margin-bottom:16px;font-size:16px;">📱 Phone Number</h3>
+        <div id="phoneNumberStatus" style="margin-bottom:12px;"></div>
+        <div id="phoneLinkSection" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" class="form-input" id="linkPhoneNumber" placeholder="+966512345678" style="margin-bottom:8px;">
+            <p style="font-size:11px;color:var(--muted);margin-top:4px;">Include country code (e.g., +966)</p>
+          </div>
+          <div id="linkPhoneRecaptcha"></div>
+          <div id="phoneError" class="form-error" style="display:none;"></div>
+          <button class="btn btn-primary" id="sendPhoneCodeBtn" style="width:100%;">Send Verification Code</button>
+
+          <div id="phoneVerifySection" style="display:none;margin-top:16px;">
+            <div class="form-group">
+              <label class="form-label">Verification Code</label>
+              <input type="text" class="form-input" id="phoneVerificationCode" placeholder="123456">
+            </div>
+            <button class="btn btn-primary" id="verifyPhoneLinkBtn" style="width:100%;">Verify & Link</button>
+          </div>
+        </div>
+        <div id="phoneResetSection" style="display:none;">
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Reset your password using your linked phone number</p>
+          <div id="resetPhoneRecaptcha"></div>
+          <button class="btn btn-outline" id="resetPasswordViaPhoneBtn" style="width:100%;">Reset Password via Phone</button>
+
+          <div id="resetVerifySection" style="display:none;margin-top:16px;">
+            <div class="form-group">
+              <label class="form-label">Verification Code</label>
+              <input type="text" class="form-input" id="resetVerificationCode" placeholder="123456">
+            </div>
+            <button class="btn btn-primary" id="verifyResetCodeBtn" style="width:100%;">Verify Code</button>
+          </div>
+
+          <div id="newPasswordSection" style="display:none;margin-top:16px;">
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-input" id="newPasswordInput" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary" id="updatePasswordBtn" style="width:100%;">Update Password</button>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px;">
+          Link your phone number to enable sign-in and password reset via SMS
+        </p>
+      </div>
+
       <div class="btn-group">
         <button class="btn btn-outline" id="signOutBtn" style="color:var(--red);border-color:var(--red);">
           Sign Out
@@ -79,6 +126,7 @@ function initSettingsPage() {
   setupThemeToggle();
   setupSignOut();
   setupNotificationSettings();
+  setupPhoneNumberLinking();
 }
 
 function setupThemeToggle() {
@@ -296,3 +344,212 @@ body.dark-theme .btn-outline:hover {
   background: rgba(255,255,255,0.05);
 }
 */
+
+/* ====================================
+   PHONE NUMBER LINKING
+   ==================================== */
+
+function setupPhoneNumberLinking() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  const phoneStatusEl = document.getElementById('phoneNumberStatus');
+  const phoneLinkSection = document.getElementById('phoneLinkSection');
+  const phoneResetSection = document.getElementById('phoneResetSection');
+  const sendCodeBtn = document.getElementById('sendPhoneCodeBtn');
+  const verifyLinkBtn = document.getElementById('verifyPhoneLinkBtn');
+  const phoneVerifySection = document.getElementById('phoneVerifySection');
+  const phoneErrorEl = document.getElementById('phoneError');
+
+  let phoneLinkRecaptchaVerifier = null;
+  let phoneConfirmationResult = null;
+
+  // Check if user has phone number linked
+  function checkPhoneLinked() {
+    const hasPhone = user.providerData.some(provider => provider.providerId === 'phone');
+
+    if (hasPhone) {
+      const phoneNumber = user.providerData.find(p => p.providerId === 'phone')?.phoneNumber || 'Unknown';
+      phoneStatusEl.innerHTML = `<span style="color:var(--green);font-weight:500;">✅ Phone linked: ${phoneNumber}</span>`;
+      phoneLinkSection.style.display = 'none';
+      phoneResetSection.style.display = 'block';
+    } else {
+      phoneStatusEl.innerHTML = '<span style="color:var(--muted);font-weight:500;">📱 No phone number linked</span>';
+      phoneLinkSection.style.display = 'block';
+      phoneResetSection.style.display = 'none';
+
+      // Initialize reCAPTCHA for phone linking
+      if (!phoneLinkRecaptchaVerifier) {
+        try {
+          phoneLinkRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('linkPhoneRecaptcha', {
+            size: 'normal',
+            callback: () => {
+              console.log('reCAPTCHA verified for phone linking');
+            }
+          });
+          phoneLinkRecaptchaVerifier.render();
+        } catch (e) {
+          console.error('reCAPTCHA initialization error:', e);
+        }
+      }
+    }
+  }
+
+  checkPhoneLinked();
+
+  // Send verification code
+  if (sendCodeBtn) {
+    sendCodeBtn.addEventListener('click', async () => {
+      const phoneNumber = document.getElementById('linkPhoneNumber').value.trim();
+
+      if (!phoneNumber) {
+        phoneErrorEl.textContent = 'Please enter a phone number';
+        phoneErrorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const provider = new firebase.auth.PhoneAuthProvider();
+        const verificationId = await provider.verifyPhoneNumber(phoneNumber, phoneLinkRecaptchaVerifier);
+        phoneConfirmationResult = verificationId;
+        phoneVerifySection.style.display = 'block';
+        phoneErrorEl.style.display = 'none';
+        sendCodeBtn.textContent = 'Code Sent!';
+        sendCodeBtn.disabled = true;
+      } catch (error) {
+        console.error('Phone verification error:', error);
+        phoneErrorEl.textContent = error.message || 'Failed to send verification code';
+        phoneErrorEl.style.display = 'block';
+      }
+    });
+  }
+
+  // Verify and link phone
+  if (verifyLinkBtn) {
+    verifyLinkBtn.addEventListener('click', async () => {
+      const code = document.getElementById('phoneVerificationCode').value.trim();
+
+      if (!code) {
+        phoneErrorEl.textContent = 'Please enter the verification code';
+        phoneErrorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const credential = firebase.auth.PhoneAuthProvider.credential(phoneConfirmationResult, code);
+        await user.linkWithCredential(credential);
+        phoneErrorEl.style.display = 'none';
+        alert('Phone number linked successfully!');
+        checkPhoneLinked(); // Refresh UI
+      } catch (error) {
+        console.error('Phone linking error:', error);
+        phoneErrorEl.textContent = error.message || 'Invalid verification code';
+        phoneErrorEl.style.display = 'block';
+      }
+    });
+  }
+
+  // Password reset via phone
+  setupPasswordResetViaPhone();
+}
+
+function setupPasswordResetViaPhone() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+
+  const resetBtn = document.getElementById('resetPasswordViaPhoneBtn');
+  const resetVerifySection = document.getElementById('resetVerifySection');
+  const newPasswordSection = document.getElementById('newPasswordSection');
+  const verifyResetCodeBtn = document.getElementById('verifyResetCodeBtn');
+  const updatePasswordBtn = document.getElementById('updatePasswordBtn');
+  const phoneErrorEl = document.getElementById('phoneError');
+
+  let resetRecaptchaVerifier = null;
+  let resetConfirmationResult = null;
+
+  if (resetBtn) {
+    resetBtn.addEventListener('click', async () => {
+      const phoneNumber = user.providerData.find(p => p.providerId === 'phone')?.phoneNumber;
+
+      if (!phoneNumber) {
+        alert('No phone number linked to this account.');
+        return;
+      }
+
+      try {
+        // Initialize reCAPTCHA for reset
+        if (!resetRecaptchaVerifier) {
+          resetRecaptchaVerifier = new firebase.auth.RecaptchaVerifier('resetPhoneRecaptcha', {
+            size: 'normal',
+            callback: () => {
+              console.log('reCAPTCHA verified for password reset');
+            }
+          });
+          resetRecaptchaVerifier.render();
+        }
+
+        const provider = new firebase.auth.PhoneAuthProvider();
+        const verificationId = await provider.verifyPhoneNumber(phoneNumber, resetRecaptchaVerifier);
+        resetConfirmationResult = verificationId;
+        resetVerifySection.style.display = 'block';
+        phoneErrorEl.style.display = 'none';
+        resetBtn.textContent = 'Code Sent!';
+        resetBtn.disabled = true;
+      } catch (error) {
+        console.error('Password reset error:', error);
+        phoneErrorEl.textContent = error.message || 'Failed to send verification code';
+        phoneErrorEl.style.display = 'block';
+      }
+    });
+  }
+
+  if (verifyResetCodeBtn) {
+    verifyResetCodeBtn.addEventListener('click', async () => {
+      const code = document.getElementById('resetVerificationCode').value.trim();
+
+      if (!code) {
+        phoneErrorEl.textContent = 'Please enter the verification code';
+        phoneErrorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const credential = firebase.auth.PhoneAuthProvider.credential(resetConfirmationResult, code);
+        await user.reauthenticateWithCredential(credential);
+        phoneErrorEl.style.display = 'none';
+        newPasswordSection.style.display = 'block';
+        resetVerifySection.style.display = 'none';
+      } catch (error) {
+        console.error('Verification error:', error);
+        phoneErrorEl.textContent = 'Invalid verification code';
+        phoneErrorEl.style.display = 'block';
+      }
+    });
+  }
+
+  if (updatePasswordBtn) {
+    updatePasswordBtn.addEventListener('click', async () => {
+      const newPassword = document.getElementById('newPasswordInput').value;
+
+      if (!newPassword || newPassword.length < 6) {
+        phoneErrorEl.textContent = 'Password must be at least 6 characters';
+        phoneErrorEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        await user.updatePassword(newPassword);
+        phoneErrorEl.style.display = 'none';
+        alert('Password updated successfully!');
+        newPasswordSection.style.display = 'none';
+        // Reset UI
+        document.getElementById('resetPasswordViaPhoneBtn').disabled = false;
+        document.getElementById('resetPasswordViaPhoneBtn').textContent = 'Reset Password via Phone';
+      } catch (error) {
+        console.error('Password update error:', error);
+        phoneErrorEl.textContent = error.message || 'Failed to update password';
+        phoneErrorEl.style.display = 'block';
+      }
+    });
+  }
+}
