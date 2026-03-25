@@ -14,14 +14,15 @@ const firebaseConfig = {
 
 // Firebase SDK loaded via CDN <script> tags in index.html
 // Initialize Firebase
-let app, auth, db, messaging;
+let app, auth, db, messaging, storage;
 
 function initFirebase() {
   if (typeof firebase !== 'undefined') {
     app = firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
-    
+    storage = firebase.storage();
+
     // Initialize Firebase Messaging (VAPID key passed at getToken time, not here)
     try {
       if (firebase.messaging.isSupported()) {

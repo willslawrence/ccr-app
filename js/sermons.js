@@ -62,10 +62,11 @@ function renderSermonsPage() {
             <div class="form-group">
               <label class="form-label">Audio File *</label>
               <input type="file" class="form-input" id="sermonAudioFile" accept="audio/*,.m4a,.mp3,.wav,.aac,.ogg,.wma,.flac,.caf" required>
-              <div style="margin-top:8px;padding:12px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--muted);">
-                <strong>Note:</strong> Audio upload functionality requires Firebase Storage.
-                For now, this simulates the upload process with mock data.
-                In production, files would be uploaded to Firebase Storage and URLs stored in Firestore.
+              <div id="uploadProgress" style="display:none;margin-top:12px;">
+                <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+                  <div id="uploadProgressBar" style="height:100%;width:0%;background:var(--accent);transition:width 0.3s;"></div>
+                </div>
+                <div style="margin-top:6px;font-size:12px;color:var(--muted);text-align:center;" id="uploadProgressText">Uploading...</div>
               </div>
             </div>
             <div class="btn-group" style="margin-top:20px;">
@@ -169,28 +170,85 @@ async function handleSermonUpload(e) {
     const audioFile = document.getElementById('sermonAudioFile').files[0];
     const user = getCurrentUser();
 
-    // Mock audio URL (in production, this would be Firebase Storage URL)
-    const mockAudioUrl = audioFile ? `https://storage.firebase.app/sermons/${audioFile.name}` : '';
+    if (!audioFile) {
+      alert('Please select an audio file');
+      return;
+    }
 
-    await db.collection('sermons').add({
-      title,
-      speaker,
-      date,
-      duration: duration || 'Unknown',
-      scriptureRef: scripture,
-      description,
-      audioUrl: mockAudioUrl,
-      audioFileName: audioFile ? audioFile.name : '',
-      uploadedBy: user.uid,
-      uploaderName: user.name,
-      createdAt: firebase.firestore.Timestamp.now()
-    });
+    // Show upload progress
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const progressText = document.getElementById('uploadProgressText');
+    progressDiv.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = 'Uploading...';
 
-    sermonsState.showUploadForm = false;
-    document.getElementById('sermonUploadForm').style.display = 'none';
-    document.getElementById('sermonForm').reset();
-    await loadSermons();
-    renderSermons();
+    // Disable submit button
+    const submitBtn = document.querySelector('#sermonForm button[type="submit"]');
+    submitBtn.disabled = true;
+
+    // Create unique filename with timestamp
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${audioFile.name}`;
+    const storageRef = storage.ref(`sermons/${fileName}`);
+
+    // Upload file with progress tracking
+    const uploadTask = storageRef.put(audioFile);
+
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        // Track upload progress
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        progressBar.style.width = progress + '%';
+        progressText.textContent = `Uploading... ${Math.round(progress)}%`;
+      },
+      (error) => {
+        // Handle upload error
+        console.error('Upload error:', error);
+        alert('Error uploading file: ' + error.message);
+        progressDiv.style.display = 'none';
+        submitBtn.disabled = false;
+      },
+      async () => {
+        // Upload complete - get download URL
+        try {
+          const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+          progressText.textContent = 'Upload complete! Saving...';
+
+          // Save sermon data to Firestore
+          await db.collection('sermons').add({
+            title,
+            speaker,
+            date,
+            duration: duration || 'Unknown',
+            scriptureRef: scripture,
+            description,
+            audioUrl: downloadURL,
+            audioFileName: audioFile.name,
+            storageFileName: fileName,
+            uploadedBy: user.uid,
+            uploaderName: user.name,
+            createdAt: firebase.firestore.Timestamp.now()
+          });
+
+          // Reset form
+          sermonsState.showUploadForm = false;
+          document.getElementById('sermonUploadForm').style.display = 'none';
+          document.getElementById('sermonForm').reset();
+          progressDiv.style.display = 'none';
+          submitBtn.disabled = false;
+
+          // Reload sermons list
+          await loadSermons();
+          renderSermons();
+        } catch (error) {
+          console.error('Error saving sermon:', error);
+          alert('Error saving sermon. Please try again.');
+          progressDiv.style.display = 'none';
+          submitBtn.disabled = false;
+        }
+      }
+    );
   } catch (error) {
     console.error('Error uploading sermon:', error);
     alert('Error uploading sermon. Please try again.');
@@ -265,24 +323,26 @@ function openSermonModal(id) {
 
     <div style="margin-bottom:20px;">
       <strong>Audio Player:</strong>
-      <div style="margin-top:8px;padding:12px;background:var(--surface);border-radius:12px;display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-primary" style="width:44px;height:44px;min-width:44px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;" onclick="togglePlaySermon('${sermon.id}')">
-          ▶︎
-        </button>
-        <div style="flex:1;min-width:0;">
-          <div style="height:4px;background:var(--border);border-radius:2px;position:relative;">
-            <div style="position:absolute;top:0;left:0;height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width 0.3s;"></div>
+      <div style="margin-top:8px;padding:12px;background:var(--surface);border-radius:12px;">
+        <audio id="audioPlayer_${sermon.id}" src="${sermon.audioUrl}" style="display:none;"></audio>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn btn-primary" id="playBtn_${sermon.id}" style="width:44px;height:44px;min-width:44px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;" onclick="togglePlaySermon('${sermon.id}')">
+            ▶︎
+          </button>
+          <div style="flex:1;min-width:0;">
+            <div id="progressBarContainer_${sermon.id}" style="height:6px;background:var(--border);border-radius:3px;position:relative;cursor:pointer;" onclick="seekAudio('${sermon.id}', event)">
+              <div id="progressBar_${sermon.id}" style="position:absolute;top:0;left:0;height:100%;width:0%;background:var(--accent);border-radius:3px;"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted);">
+              <span id="currentTime_${sermon.id}">0:00</span>
+              <span id="totalTime_${sermon.id}">${sermon.duration}</span>
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted);">
-            <span>0:00</span>
-            <span>${sermon.duration}</span>
-          </div>
+          <button class="btn btn-outline" style="width:36px;height:36px;min-width:36px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;" onclick="downloadSermon('${sermon.id}')">
+            ⬇︎
+          </button>
         </div>
-        <button class="btn btn-outline" style="width:36px;height:36px;min-width:36px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;" onclick="downloadSermon('${sermon.id}')">
-          ⬇︎
-        </button>
       </div>
-      <div style="margin-top:6px;font-size:11px;color:var(--muted);font-style:italic;">Audio playback coming soon — upload real audio files to enable playback.</div>
     </div>
 
     ${isEditor() ? `
@@ -295,24 +355,93 @@ function openSermonModal(id) {
 
   modal.classList.add('active');
 
+  // Setup audio player event listeners
+  setupAudioPlayer(sermon.id);
+
   // Click outside to close
   modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('active'); };
 }
 
-function togglePlaySermon(id) {
-  if (sermonsState.playingId === id) {
+function setupAudioPlayer(id) {
+  const audio = document.getElementById(`audioPlayer_${id}`);
+  const playBtn = document.getElementById(`playBtn_${id}`);
+  const progressBar = document.getElementById(`progressBar_${id}`);
+  const currentTimeEl = document.getElementById(`currentTime_${id}`);
+  const totalTimeEl = document.getElementById(`totalTime_${id}`);
+
+  if (!audio) return;
+
+  // Update total time when metadata loads
+  audio.addEventListener('loadedmetadata', () => {
+    totalTimeEl.textContent = formatTime(audio.duration);
+  });
+
+  // Update progress bar and time during playback
+  audio.addEventListener('timeupdate', () => {
+    const progress = (audio.currentTime / audio.duration) * 100;
+    progressBar.style.width = progress + '%';
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+  });
+
+  // Reset play button when audio ends
+  audio.addEventListener('ended', () => {
+    playBtn.textContent = '▶︎';
     sermonsState.playingId = null;
-  } else {
+  });
+}
+
+function formatTime(seconds) {
+  if (!seconds || isNaN(seconds)) return '0:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function togglePlaySermon(id) {
+  const audio = document.getElementById(`audioPlayer_${id}`);
+  const playBtn = document.getElementById(`playBtn_${id}`);
+
+  if (!audio) return;
+
+  if (audio.paused) {
+    // Pause any other playing sermon
+    if (sermonsState.playingId && sermonsState.playingId !== id) {
+      const otherAudio = document.getElementById(`audioPlayer_${sermonsState.playingId}`);
+      const otherBtn = document.getElementById(`playBtn_${sermonsState.playingId}`);
+      if (otherAudio) otherAudio.pause();
+      if (otherBtn) otherBtn.textContent = '▶︎';
+    }
+
+    audio.play();
+    playBtn.textContent = '⏸';
     sermonsState.playingId = id;
+  } else {
+    audio.pause();
+    playBtn.textContent = '▶︎';
+    sermonsState.playingId = null;
   }
-  renderSermons();
+}
+
+function seekAudio(id, event) {
+  const audio = document.getElementById(`audioPlayer_${id}`);
+  const progressContainer = document.getElementById(`progressBarContainer_${id}`);
+
+  if (!audio || !progressContainer) return;
+
+  const rect = progressContainer.getBoundingClientRect();
+  const clickX = event.clientX - rect.left;
+  const width = rect.width;
+  const percentage = clickX / width;
+
+  audio.currentTime = percentage * audio.duration;
 }
 
 function downloadSermon(id) {
   const sermon = sermonsState.sermons.find(s => s.id === id);
-  if (!sermon) return;
+  if (!sermon || !sermon.audioUrl) return;
 
-  alert(`Download functionality:\n\nIn production, this would download the audio file from:\n${sermon.audioUrl}\n\nFile: ${sermon.audioFileName}`);
+  // Open audio URL in new tab for download
+  window.open(sermon.audioUrl, '_blank');
 }
 
 function editSermon(id) {
@@ -378,7 +507,23 @@ async function deleteSermon(id) {
   if (!confirm('Delete this sermon? This cannot be undone.')) return;
 
   try {
+    // Get sermon data to find the storage file
+    const sermon = sermonsState.sermons.find(s => s.id === id);
+
+    // Delete from Firestore
     await db.collection('sermons').doc(id).delete();
+
+    // Delete audio file from Storage (if it exists)
+    if (sermon && sermon.storageFileName) {
+      try {
+        const storageRef = storage.ref(`sermons/${sermon.storageFileName}`);
+        await storageRef.delete();
+        console.log('Audio file deleted from Storage');
+      } catch (storageError) {
+        console.warn('Error deleting audio file from Storage (may not exist):', storageError.message);
+      }
+    }
+
     await loadSermons();
     renderSermons();
   } catch (error) {
