@@ -807,8 +807,8 @@ async function saveTransaction() {
         createdAt: firebase.firestore.Timestamp.now()
       });
 
-      // Send push notification to admins for new transactions
-      await sendPushNotification('transaction', '💰 New Transaction', description, 'admin');
+      // Send push notification to admins for new transactions (non-blocking)
+      try { if (typeof sendPushNotification === 'function') await sendPushNotification('transaction', '💰 New Transaction', description, 'admin'); } catch(e){ console.warn('Push failed:',e.message); }
     }
 
     givingState.showAddForm = false;

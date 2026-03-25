@@ -926,7 +926,7 @@ async function saveOoS() {
         month: 'long', 
         day: 'numeric' 
       });
-      await sendPushNotification('oos', '📋 Order of Service', formattedDate, 'all');
+      try { if (typeof sendPushNotification === 'function') { await sendPushNotification('oos', '📋 Order of Service', formattedDate, 'all'); } } catch(e) { console.warn('Push failed:', e.message); }
     }
 
     scheduleState.showAddForm = false;

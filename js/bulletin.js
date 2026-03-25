@@ -261,10 +261,16 @@ async function handleBulletinSubmit(e) {
         // Store the published timestamp so we can detect new bulletins
         const publishKey = latestPublished.id + '_' + (latestPublished.updatedAt || latestPublished.createdAt);
         localStorage.setItem('ccr_bulletin_latest', publishKey);
-        // Send push notification
-        const firstSection = latestPublished.sections && latestPublished.sections[0];
-        const body = firstSection ? firstSection.heading : 'New bulletin published';
-        await sendPushNotification('bulletin', '📰 New Bulletin', body, 'all');
+        // Send push notification (non-blocking — don't break save if push fails)
+        try {
+          if (typeof sendPushNotification === 'function') {
+            const firstSection = latestPublished.sections && latestPublished.sections[0];
+            const body = firstSection ? firstSection.heading : 'New bulletin published';
+            await sendPushNotification('bulletin', '📰 New Bulletin', body, 'all');
+          }
+        } catch (pushErr) {
+          console.warn('Push notification failed (non-blocking):', pushErr.message);
+        }
       }
     }
   } catch (error) {

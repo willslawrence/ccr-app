@@ -209,7 +209,7 @@ async function addPrayer() {
     await loadPrayers();
 
     // Send push notification
-    await sendPushNotification('prayer', '🙏 New Prayer Request', shortDesc, 'all');
+    try { if (typeof sendPushNotification === 'function') { await sendPushNotification('prayer', '🙏 New Prayer Request', shortDesc, 'all'); } } catch(e) { console.warn('Push failed:', e.message); }
     
     // Suggest enabling notifications for first-time users
     suggestNotifications();
