@@ -6,7 +6,7 @@ let scheduleState = {
   events: [],
   volunteerSchedule: [],
   orderOfService: [],
-  currentTab: 'events', // 'events', 'volunteering', 'oos'
+  currentTab: 'oos', // 'events', 'volunteering', 'oos'
   searchQuery: '',
   showAddForm: false,
   editingId: null
