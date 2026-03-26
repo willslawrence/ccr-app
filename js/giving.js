@@ -519,6 +519,14 @@ function openCharityModal(charityName) {
   // Full description
   content += '<div class="modal-desc">' + (r.fullDescription || r.description) + '</div>';
 
+  // Ministry Location
+  if (r.location) {
+    content += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding:10px 14px;background:var(--bg, #f8fafc);border:1px solid var(--border, #e2e5ed);border-radius:8px">';
+    content += '<span style="font-size:16px">📍</span>';
+    content += '<div><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted, #6b7185);margin-bottom:2px">Ministry Location</div>';
+    content += '<div style="font-size:13px;font-weight:500">' + r.location + '</div></div></div>';
+  }
+
   // Links
   if (r.link) content += '<a class="modal-link" href="' + r.link + '" target="_blank">' + r.link + ' ↗</a><br>';
   if (r.link2) content += '<a class="modal-link" href="' + r.link2 + '" target="_blank">' + r.link2 + ' ↗</a><br>';
