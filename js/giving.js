@@ -395,35 +395,45 @@ async function renderGivingPage() {
           <button class="cat-btn ${activeGivingCat === 'global' ? 'active' : ''}" data-cat="global" onclick="filterGivingCategory('global')">🌍 Global Church Needs</button>
         </div>
 
-        <!-- Charity Cards Grid -->
+        <!-- Charity Cards Grid — Dashboard Style -->
         <div class="charity-grid" id="charityGrid">
-          ${(GIVING_CHARITIES || []).map(charity => {
+          ${(GIVING_CHARITIES || []).map((charity, idx) => {
             const isVisible = activeGivingCat === 'all' || charity.category === activeGivingCat || (charity.categories && charity.categories.some(c => c.cat === activeGivingCat));
-            const statusBadge = charity.status === 'given' ? 
-              '<span class="status-badge status-given" style="position:absolute;top:auto;bottom:8px;right:8px;">✓ Given</span>' : 
-              '<span class="status-badge status-new">★ New</span>';
-            const scoreCircle = charity.score === 100 ? 
-              '<div class="score-circle score-100">100</div>' : 
-              charity.score === 75 ? '<div class="score-circle score-75">75</div>' : 
-              charity.score === -1 ? '<div class="score-circle score-warning">⚠️</div>' : '';
-            
-            // Truncate description to 2-3 lines
-            const shortDesc = charity.description.length > 120 ? 
-              charity.description.substring(0, 120) + '...' : charity.description;
 
-            return `
-              <div class="giving-charity-card ${isVisible ? '' : 'dimmed'}" data-category="${charity.category}" onclick="openCharityModal('${charity.name.replace(/'/g, "\\'")}')">
-                ${scoreCircle}
-                <div class="charity-card-header">
-                  <span class="category-tag cat-${charity.category}">${charity.categoryLabel}</span>
-                </div>
-                <h3 class="charity-name">${escapeHtml(charity.name)}</h3>
-                <p class="charity-desc">${escapeHtml(shortDesc)}</p>
-                <div class="charity-footer">
-                  <div class="charity-amount"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(charityTotals[charity.name] || charity.amountNum || 0).toLocaleString()} ${statusBadge}</div>
-                </div>
-              </div>
-            `;
+            // Score circle (top-right)
+            let scoreHtml = '';
+            if (charity.score === 100) scoreHtml = '<div class="card-score score-green">' + (charity.scoreLabel || '100') + '</div>';
+            else if (charity.score > 0 && charity.score < 100) scoreHtml = '<div class="card-score score-yellow">' + (charity.scoreLabel || charity.score) + '</div>';
+            else if (charity.score === -1) scoreHtml = '<div class="card-score score-red">' + (charity.scoreLabel || '⚠') + '</div>';
+            else if (charity.score === null && charity.type === 'org') scoreHtml = '<div class="card-score score-na">' + (charity.scoreLabel || 'N/R') + '</div>';
+
+            // Badge
+            let badgeClass, badgeText;
+            if (charity.status === 'given') { badgeClass = 'badge-given'; badgeText = '✓ Given'; }
+            else if (charity.status === 'new') { badgeClass = 'badge-new'; badgeText = '★ New'; }
+            else if (charity.type === 'org') { badgeClass = 'badge-org'; badgeText = 'Organization'; }
+            else { badgeClass = 'badge-potential'; badgeText = 'Potential'; }
+
+            // Category tag
+            const catTag = charity.categories
+              ? charity.categories.map(c => '<span class="cat-tag cat-tag-' + c.cat + '">' + c.label + '</span>').join(' ')
+              : '<span class="cat-tag cat-tag-' + charity.category + '">' + charity.categoryLabel + '</span>';
+
+            // Amounts from transactions
+            const givenAmt = Math.round(charityTotals[charity.name] || charity.amountNum || 0);
+            const amountClass = givenAmt === 0 ? 'zero' : '';
+            const amountText = givenAmt === 0 ? 'TBD' : 'SAR ' + givenAmt.toLocaleString();
+
+            // Short description
+            const shortDesc = charity.description.length > 120 ? charity.description.substring(0, 120) + '...' : charity.description;
+
+            return '<div class="giving-charity-card ' + (isVisible ? '' : 'dimmed') + ' cat-' + charity.category + '" data-category="' + charity.category + '" data-categories="' + (charity.categories ? charity.categories.map(c => c.cat).join(',') : charity.category) + '" data-index="' + idx + '" onclick="openCharityModal(\'' + charity.name.replace(/'/g, "\\\\'") + '\')">' +
+              scoreHtml +
+              (charity.image ? '<div class="card-img"><img src="' + charity.image + '" alt="' + escapeHtml(charity.name) + '"></div>' : '') +
+              '<div class="card-top"><div>' + catTag + '<div class="card-name">' + escapeHtml(charity.name) + '</div></div><span class="card-badge ' + badgeClass + '">' + badgeText + '</span></div>' +
+              '<div class="card-desc">' + escapeHtml(shortDesc) + '</div>' +
+              '<div class="card-footer"><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">' + (charity.givenLabel || 'Previously Given') + '</div><div class="card-amount ' + amountClass + '" style="color:#60a5fa">' + (charity.givenAmount || (charity.status === 'given' ? amountText : '—')) + '</div><div class="card-freq">' + (charity.frequency || '') + '</div></div><div style="text-align:right"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">' + (charity.potentialLabel || 'Potential') + '</div><div class="card-amount" style="color:#ec4899">' + (charity.potentialAmount || '—') + '</div><div style="font-size:11px;color:var(--accent);margin-top:4px;cursor:pointer">Click for details</div></div></div>' +
+            '</div>';
           }).join('')}
         </div>
       </div>
@@ -431,248 +441,224 @@ async function renderGivingPage() {
   `;
 }
 
-// Filter charities by category (single-select)
+// Filter charities by category — matches dashboard filterCat()
 function filterGivingCategory(cat) {
-  // Deselect all other buttons
-  document.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.classList.remove('active');
-  });
-  
-  // Select clicked button
-  document.querySelector(`.cat-btn[data-cat="${cat}"]`).classList.add('active');
-  
   activeGivingCat = cat;
-  
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.cat === cat);
+  });
   const grid = document.getElementById('charityGrid');
-  const cards = Array.from(document.querySelectorAll('.giving-charity-card'));
-  
-  // Sort cards: matching category first, then others
-  cards.sort((a, b) => {
-    const aMatches = cat === 'all' || a.dataset.category === cat;
-    const bMatches = cat === 'all' || b.dataset.category === cat;
-    
-    if (aMatches && !bMatches) return -1;
-    if (!aMatches && bMatches) return 1;
-    return 0;
-  });
-  
-  // Clear and re-append in new order
-  cards.forEach(card => grid.removeChild(card));
-  cards.forEach(card => {
-    const isVisible = cat === 'all' || card.dataset.category === cat;
-    card.classList.toggle('dimmed', !isVisible);
-    grid.appendChild(card);
-  });
+  if (!grid) return;
+  const cards = Array.from(grid.children);
+
+  if (cat === 'all') {
+    cards.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+    cards.forEach(card => {
+      card.classList.remove('dimmed');
+      grid.appendChild(card);
+    });
+  } else {
+    const matching = [];
+    const dimmed = [];
+    cards.forEach(card => {
+      const cardCats = (card.dataset.categories || card.dataset.category).split(',');
+      if (cardCats.includes(cat)) {
+        card.classList.remove('dimmed');
+        matching.push(card);
+      } else {
+        card.classList.add('dimmed');
+        dimmed.push(card);
+      }
+    });
+    matching.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+    dimmed.sort((a, b) => Number(a.dataset.index) - Number(b.dataset.index));
+    matching.forEach(c => grid.appendChild(c));
+    dimmed.forEach(c => grid.appendChild(c));
+  }
 }
 
-// Open charity modal - Fixed to properly expand modals
+// Open charity modal — matches dashboard openModal() exactly
 function openCharityModal(charityName) {
-  if (!window.GIVING_CHARITIES) {
-    console.error('GIVING_CHARITIES not loaded');
-    return;
+  if (!window.GIVING_CHARITIES) { console.error('GIVING_CHARITIES not loaded'); return; }
+  var r = GIVING_CHARITIES.find(function(c) { return c.name === charityName; });
+  if (!r) { console.error('Charity not found:', charityName); return; }
+
+  // Create overlay + modal if needed
+  var overlay = document.getElementById('charityModalOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'charityModalOverlay';
+    overlay.className = 'charity-modal-overlay';
+    overlay.innerHTML = '<div class="charity-modal" id="charityModalContent"></div>';
+    overlay.onclick = function(e) { if (e.target === overlay) closeCharityModal(); };
+    document.body.appendChild(overlay);
   }
-  
-  const charity = GIVING_CHARITIES.find(c => c.name === charityName);
-  if (!charity) {
-    console.error('Charity not found:', charityName);
-    return;
+  var modal = document.getElementById('charityModalContent');
+
+  // Get Firestore-based amount
+  var totals = getCharityTransactionTotals();
+  var givenAmt = Math.round(totals[r.name] || r.amountNum || 0);
+  var amountDisplay = givenAmt > 0 ? 'SAR ' + givenAmt.toLocaleString() : (r.amount || 'TBD');
+
+  var content = '<button class="modal-close" onclick="closeCharityModal()">&times;</button>';
+
+  // Header with image + name
+  if (r.image) {
+    content += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">';
+    content += '<img src="' + r.image + '" style="width:64px;height:64px;object-fit:contain;border-radius:10px;background:var(--card-hover);padding:4px" alt="' + escapeHtml(r.name) + '">';
+    content += '<h2 style="margin:0">' + escapeHtml(r.name) + '</h2></div>';
+  } else {
+    content += '<h2>' + escapeHtml(r.name) + '</h2>';
   }
-  
-  // Find or create modal
-  let modal = document.getElementById('charityDetailModal');
-  if (!modal) {
-    // Create modal if it doesn't exist
-    modal = document.createElement('div');
-    modal.id = 'charityDetailModal';
-    modal.className = 'modal-overlay';
-    modal.innerHTML = '<div class="modal"></div>';
-    document.body.appendChild(modal);
-  }
-  
-  const modalContent = modal.querySelector('.modal');
-  
-  // Build modal content
-  let content = `
-    <div class="modal-header">
-      <h2>${escapeHtml(charity.name)}</h2>
-      <button class="modal-close" onclick="closeCharityModal()">&times;</button>
-    </div>
-    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-  `;
-  
-  // Category and amount
-  content += `
-    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-      <span class="category-tag cat-${charity.category}">${charity.categoryLabel}</span>
-      ${charity.status === 'given' ? '<span class="status-badge status-given">✓ Given</span>' : '<span class="status-badge status-new">★ New</span>'}
-    </div>
-    <div style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: var(--accent);">
-      <span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(getCharityTransactionTotals()[charity.name] || charity.amountNum || 0).toLocaleString()}
-    </div>
-  `;
-  
+
+  // Category tag + frequency + amount
+  var catColors = {church:'#60a5fa',orphan:'#d4a017',persecuted:'#f97316',word:'#22c55e',local:'#4ade80',global:'#6088e0'};
+  var cc = catColors[r.category] || 'var(--muted)';
+  content += '<div class="modal-sub"><span style="color:' + cc + ';font-weight:600">' + r.categoryLabel + '</span> · ' + (r.frequency || '') + ' · ' + amountDisplay + '</div>';
+
   // Full description
-  content += `<div style="margin-bottom: 16px;">${charity.fullDescription || charity.description}</div>`;
-  
-  // Link if available
-  if (charity.link) {
-    content += `<div style="margin-bottom: 16px;"><a href="${charity.link}" target="_blank" class="btn btn-outline">Visit Website</a></div>`;
+  content += '<div class="modal-desc">' + (r.fullDescription || r.description) + '</div>';
+
+  // Links
+  if (r.link) content += '<a class="modal-link" href="' + r.link + '" target="_blank">' + r.link + ' ↗</a><br>';
+  if (r.link2) content += '<a class="modal-link" href="' + r.link2 + '" target="_blank">' + r.link2 + ' ↗</a><br>';
+
+  // Stats bar (orgs)
+  if (r.type === 'org' && r.stats) {
+    content += '<div class="modal-stats">';
+    content += '<div class="modal-stat"><div class="stat-label">$ to Mission</div><div class="stat-value">' + r.stats.programs + '</div></div>';
+    if (r.stats.ceoPay) content += '<div class="modal-stat"><div class="stat-label">Fundraiser Efficiency</div><div class="stat-value">' + r.stats.ceoPay + '</div></div>';
+    content += '<div class="modal-stat"><div class="stat-label">Revenue</div><div class="stat-value">' + r.stats.revenue + '</div></div>';
+    content += '</div>';
   }
-  
-  // Stats row for orgs
-  if (charity.stats) {
-    content += `
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; padding: 12px; background: var(--card-hover); border-radius: 8px;">
-        <div style="text-align: center;">
-          <div style="font-size: 12px; color: var(--muted);">Programs</div>
-          <div style="font-weight: 600;">${charity.stats.programs}</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 12px; color: var(--muted);">Fundraising</div>
-          <div style="font-weight: 600;">${charity.stats.ceoPay}</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 12px; color: var(--muted);">Revenue</div>
-          <div style="font-weight: 600;">${charity.stats.revenue}</div>
-        </div>
-      </div>
-    `;
-  }
-  
-  // Audit section if available
-  if (charity.audit) {
-    const audit = charity.audit;
-    content += `<div style="margin-bottom: 16px;">`;
-    
-    // Mission
-    if (audit.mission) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--accent);">Mission</h4>
-        <div style="margin-bottom: 16px; font-style: italic;">${audit.mission}</div>
-      `;
-    }
-    
+
+  // Full audit section
+  if (r.type === 'org' && r.audit) {
+    var a = r.audit;
+    var scoreColor = a.score >= 80 ? '#16a34a' : a.score >= 60 ? '#ca8a04' : a.score === null ? '#94a3b8' : '#dc2626';
+    var scoreBg = a.score >= 80 ? '#dcfce7' : a.score >= 60 ? '#fef9c3' : a.score === null ? '#f1f5f9' : '#fee2e2';
+
+    content += '<div style="border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:12px;background:var(--card-hover)">';
+
+    // Charity Audit header + score circle
+    content += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px">';
+    content += '<div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Charity Audit</div>';
+    content += '<div style="font-size:11px;color:var(--muted)">' + a.ein + ' · ' + (a.location || '') + '</div></div>';
+    content += '<div style="text-align:center"><div style="width:52px;height:52px;border-radius:50%;border:3px solid ' + scoreColor + ';background:' + scoreBg + ';display:flex;flex-direction:column;align-items:center;justify-content:center">';
+    content += '<div style="font-size:18px;font-weight:800;color:' + scoreColor + '">' + (a.score !== null ? a.score : 'N/R') + '</div></div>';
+    content += '<div style="font-size:9px;color:var(--muted);margin-top:2px">' + (a.scoreSource || 'Charity Navigator') + '</div></div></div>';
+
     // What They Do
-    if (audit.programs) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--accent);">What They Do</h4>
-        <ul style="margin-bottom: 16px;">
-          ${audit.programs.map(p => `<li>${p}</li>`).join('')}
-        </ul>
-      `;
+    if (a.programs) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">What They Do</div>';
+      content += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-bottom:14px">';
+      a.programs.forEach(function(p) {
+        var parts = p.split(' — ');
+        var bold = parts[0];
+        var rest = parts.length > 1 ? ' — ' + parts.slice(1).join(' — ') : '';
+        content += '<div style="font-size:11px;display:flex;align-items:baseline;gap:5px"><span style="color:#2563eb">•</span><span><strong>' + bold + '</strong>' + rest + '</span></div>';
+      });
+      content += '</div>';
     }
-    
+
+    // Mission & Outreach
+    if (a.mission) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Mission & Outreach</div>';
+      content += '<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-left:4px solid #2563eb;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;color:#1e40af;margin-bottom:14px">' + a.mission + '</div>';
+    }
+
     // Financials table
-    if (audit.financials) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--accent);">Financials</h4>
-        <div style="margin-bottom: 16px;">
-      `;
-      audit.financials.forEach(item => {
-        const colorClass = item.ratingColor === 'green' ? 'color: var(--green)' : 
-                          item.ratingColor === 'amber' ? 'color: #d97706' : 
-                          item.ratingColor === 'red' ? 'color: var(--red)' : '';
-        content += `
-          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
-            <span>${item.metric}</span>
-            <span style="${colorClass}; font-weight: 600;">${item.value}</span>
-          </div>
-        `;
+    if (a.financials) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Financials</div>';
+      content += '<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:14px">';
+      a.financials.forEach(function(f, i) {
+        var bg = i % 2 === 0 ? 'var(--card-hover)' : 'transparent';
+        var pill = f.rating ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:' + (f.ratingColor === 'green' ? '#dcfce7' : f.ratingColor === 'red' ? '#fee2e2' : '#fef9c3') + ';color:' + (f.ratingColor === 'green' ? '#166534' : f.ratingColor === 'red' ? '#991b1b' : '#854d0e') + '">' + f.rating + '</span>' : '';
+        content += '<tr style="background:' + bg + '"><td style="padding:5px 8px;color:var(--muted)">' + f.metric + '</td><td style="padding:5px 8px;font-weight:700">' + f.value + '</td><td style="padding:5px 8px">' + pill + '</td></tr>';
       });
-      content += `</div>`;
+      content += '</table>';
     }
-    
+
     // Leadership table
-    if (audit.leaders) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--accent);">Leadership</h4>
-        <div style="margin-bottom: 16px;">
-      `;
-      audit.leaders.forEach(leader => {
-        content += `
-          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border);">
-            <span>${leader.name} (${leader.role})</span>
-            <span style="font-weight: 600;">${leader.comp}</span>
-          </div>
-        `;
+    if (a.leaders) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Leadership</div>';
+      content += '<table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:14px">';
+      a.leaders.forEach(function(l, i) {
+        var bg = i % 2 === 0 ? 'var(--card-hover)' : 'transparent';
+        content += '<tr style="background:' + bg + '"><td style="padding:4px 8px;font-weight:600">' + l.name + '</td><td style="padding:4px 8px;color:var(--muted)">' + l.role + '</td><td style="padding:4px 8px;font-weight:700">' + l.comp + '</td></tr>';
       });
-      if (audit.leaderNote) {
-        content += `<div style="font-size: 12px; color: var(--muted); margin-top: 8px;">${audit.leaderNote}</div>`;
-      }
-      content += `</div>`;
+      content += '</table>';
+      if (a.leaderNote) content += '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">' + a.leaderNote + '</div>';
     }
-    
-    // Governance checkmarks
-    if (audit.governance) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--accent);">Governance</h4>
-        <ul style="margin-bottom: 16px;">
-          ${audit.governance.map(g => `<li style="color: var(--green);">✓ ${g}</li>`).join('')}
-        </ul>
-      `;
+
+    // Governance
+    if (a.governance) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #2563eb;display:inline-block;padding-bottom:2px">Governance</div>';
+      content += '<div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px">';
+      a.governance.forEach(function(g) { content += '<span style="font-size:11px;color:#166534">✓ ' + g + '</span>'; });
+      content += '</div>';
     }
-    
-    // Critics Say (red box)
-    if (audit.critics) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--red);">Critics Say</h4>
-        <div style="background: rgba(220, 38, 38, 0.1); border-left: 4px solid var(--red); padding: 12px; margin-bottom: 16px;">
-          <ul>
-            ${audit.critics.map(c => `<li>${c}</li>`).join('')}
-          </ul>
-        </div>
-      `;
+
+    // Critics Say
+    if (a.critics && a.critics.length) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #dc2626;display:inline-block;padding-bottom:2px">⚖️ Critics Say</div>';
+      content += '<div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:8px;padding:10px 12px;margin-bottom:14px">';
+      a.critics.forEach(function(c) { content += '<div style="font-size:12px;line-height:1.6;margin-bottom:4px;display:flex;gap:6px"><span style="color:#dc2626;flex-shrink:0">✗</span><span>' + c + '</span></div>'; });
+      content += '</div>';
     }
-    
-    // Ambassadors Say (green box)
-    if (audit.ambassadors) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--green);">Ambassadors Say</h4>
-        <div style="background: rgba(22, 163, 74, 0.1); border-left: 4px solid var(--green); padding: 12px; margin-bottom: 16px;">
-          <ul>
-            ${audit.ambassadors.map(a => `<li>${a}</li>`).join('')}
-          </ul>
-        </div>
-      `;
+
+    // Ambassadors Say
+    if (a.ambassadors && a.ambassadors.length) {
+      content += '<div style="font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;border-bottom:2px solid #16a34a;display:inline-block;padding-bottom:2px">🤝 Ambassadors Say</div>';
+      content += '<div style="background:#f0fdf4;border-left:4px solid #16a34a;border-radius:8px;padding:10px 12px;margin-bottom:14px">';
+      a.ambassadors.forEach(function(c) { content += '<div style="font-size:12px;line-height:1.6;margin-bottom:4px;display:flex;gap:6px"><span style="color:#16a34a;flex-shrink:0">✓</span><span>' + c + '</span></div>'; });
+      content += '</div>';
     }
-    
+
+    // Red flags
+    if (a.redflags) {
+      var rfBg = a.redflagLevel === 'clean' ? '#dcfce7' : a.redflagLevel === 'warning' ? '#fee2e2' : '#fef3c7';
+      var rfBorder = a.redflagLevel === 'clean' ? '#16a34a' : a.redflagLevel === 'warning' ? '#dc2626' : '#d97706';
+      content += '<div style="border-left:4px solid ' + rfBorder + ';background:' + rfBg + ';border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:14px">' + a.redflags + '</div>';
+    }
+
     // Verdict
-    if (audit.verdict) {
-      content += `
-        <h4 style="margin-bottom: 8px; color: var(--accent);">Verdict</h4>
-        <div style="margin-bottom: 16px; font-weight: 500;">${audit.verdict}</div>
-      `;
+    if (a.verdict) {
+      content += '<div style="background:var(--card-hover);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.6">' + a.verdict + '</div>';
     }
-    
-    content += `</div>`;
+
+    if (a.sources) content += '<div style="font-size:9px;color:var(--muted);margin-top:8px">' + a.sources + '</div>';
+    content += '</div>'; // close audit box
   }
-  
-  // Update text if available
-  if (charity.updateText) {
-    content += `
-      <h4 style="margin-bottom: 8px; color: var(--accent);">Latest Update</h4>
-      <div style="margin-bottom: 16px;">${charity.updateText}</div>
-    `;
+
+  // Update box
+  if (r.updatePdf) {
+    content += '<div class="update-box" style="background:var(--card-hover);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;max-height:none;overflow:visible">';
+    content += '<h3 style="font-size:13px;color:var(--muted);margin-bottom:8px">📋 Latest Update</h3>';
+    content += '<div style="font-size:13px;line-height:1.8;white-space:normal;word-wrap:break-word;margin-bottom:12px">' + (r.updateText || '') + '</div>';
+    content += '<iframe style="width:100%;height:500px;border:1px solid var(--border);border-radius:8px;margin-top:12px" src="' + r.updatePdf + '"></iframe>';
+    if (r.lastUpdate) content += '<p style="margin-top:12px;font-size:11px;color:var(--muted)">Last updated: ' + r.lastUpdate + '</p>';
+    content += '</div>';
+  } else {
+    content += '<div class="update-box" style="background:var(--card-hover);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;max-height:none;overflow:visible">';
+    content += '<h3 style="font-size:13px;color:var(--muted);margin-bottom:8px">📋 Latest Update</h3>';
+    content += '<div style="font-size:13px;line-height:1.8;white-space:normal;word-wrap:break-word">' + (r.updateText || 'No updates yet.') + '</div>';
+    if (r.lastUpdate) content += '<p style="margin-top:12px;font-size:11px;color:var(--muted)">Last updated: ' + r.lastUpdate + '</p>';
+    content += '</div>';
   }
-  
-  content += `</div>`;
-  
-  modalContent.innerHTML = content;
-  modal.classList.add('active');
-  
-  // Click outside to close
-  modal.onclick = (e) => { 
-    if (e.target === modal) closeCharityModal(); 
-  };
+
+  modal.innerHTML = content;
+  overlay.classList.add('show');
 }
 
 // Close charity modal
 function closeCharityModal() {
-  const modal = document.getElementById('charityDetailModal');
-  if (modal) {
-    modal.classList.remove('active');
-  }
+  var overlay = document.getElementById('charityModalOverlay');
+  if (overlay) overlay.classList.remove('show');
 }
+
+// Escape key closes charity modal
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCharityModal(); });
 
 // Initialize Giving page
 async function initGivingPage() {
