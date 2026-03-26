@@ -6,7 +6,8 @@ let sermonsState = {
   sermons: [],
   searchQuery: '',
   showUploadForm: false,
-  playingId: null
+  playingId: null,
+  dataLoaded: false  // Cache flag
 };
 
 function renderSermonsPage() {
@@ -134,7 +135,8 @@ async function initSermonsPage() {
   }
 }
 
-async function loadSermons() {
+async function loadSermons(forceRefresh = false) {
+  if (sermonsState.dataLoaded && !forceRefresh) return;
   try {
     const snapshot = await db.collection('sermons').orderBy('date', 'desc').get();
     sermonsState.sermons = snapshot.docs.map(doc => {
@@ -151,6 +153,7 @@ async function loadSermons() {
           : data.createdAt
       };
     });
+    sermonsState.dataLoaded = true;
   } catch (error) {
     console.error('Error loading sermons:', error);
     sermonsState.sermons = [];

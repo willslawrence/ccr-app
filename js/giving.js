@@ -9,7 +9,8 @@ let givingState = {
   transactions: [],
   showAddForm: false,
   editingId: null,
-  expandedTransId: null
+  expandedTransId: null,
+  transactionsLoaded: false  // Cache flag — only fetch once per session
 };
 
 // Fund fractions for "All" allocations
@@ -33,8 +34,9 @@ const FUND_NAMES = {
   'SP': 'Special Projects'
 };
 
-// Load transactions from Firestore
-async function loadTransactions() {
+// Load transactions from Firestore (cached — only fetches once per session)
+async function loadTransactions(forceRefresh = false) {
+  if (givingState.transactionsLoaded && !forceRefresh) return;
   try {
     const snapshot = await db.collection('transactions').orderBy('date', 'desc').get();
     givingState.transactions = snapshot.docs.map(doc => {
@@ -51,6 +53,7 @@ async function loadTransactions() {
           : data.createdAt
       };
     });
+    givingState.transactionsLoaded = true;
   } catch (error) {
     console.error('Error loading transactions:', error);
     givingState.transactions = [];
@@ -172,6 +175,54 @@ function formatAmount(amount, showCurrency = false) {
 }
 
 // Render Giving page
+// Render just the transaction list HTML (used by toggleTransaction for partial updates)
+function renderTransactionList() {
+  if (givingState.transactions.length === 0) {
+    return `
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-text">No transactions yet</div>
+        <div class="empty-sub">Add your first transaction above</div>
+      </div>
+    `;
+  }
+  return givingState.transactions.map(trans => {
+    const isExpanded = givingState.expandedTransId === trans.id;
+    return `
+      <div class="card card-clickable" style="margin-bottom:8px;padding:10px 12px;" onclick="toggleTransaction('${trans.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="flex:1;min-width:0;">
+            <div class="card-meta" style="font-size:11px;">${formatDate(trans.date)} · ${trans.allocation}</div>
+            <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(trans.description)}</div>
+          </div>
+          <div class="mono" style="font-size:15px;font-weight:700;color:${trans.amount > 0 ? 'var(--green)' : 'var(--red)'};white-space:nowrap;margin-left:8px;">
+            ${trans.amount > 0 ? '+' : '-'}${formatAmount(trans.amount)}
+          </div>
+        </div>
+        ${isExpanded ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;" onclick="event.stopPropagation();">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">
+            <div><span style="color:var(--muted);">Type:</span> ${trans.type}</div>
+            <div><span style="color:var(--muted);">Status:</span> <span style="color:${trans.status === 'Pending' ? '#d97706' : 'var(--green)'};font-weight:600;">${trans.status}</span></div>
+            <div><span style="color:var(--muted);">Via:</span> ${escapeHtml(trans.via || '')}</div>
+            <div><span style="color:var(--muted);">Allocation:</span> ${trans.allocation}</div>
+            ${trans.donor ? `<div><span style="color:var(--muted);">Donor:</span> ${escapeHtml(trans.donor)}</div>` : ''}
+            ${trans.receiptId ? `<div><span style="color:var(--muted);">Receipt #:</span> ${escapeHtml(trans.receiptId)}</div>` : ''}
+          </div>
+          ${trans.receiptUrl ? `<div style="margin-top:8px;"><a href="${escapeHtml(trans.receiptUrl)}" target="_blank" style="color:var(--accent);font-size:12px;">📎 View Receipt</a></div>` : ''}
+          ${isAdmin() ? `
+            <div style="display:flex;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
+              <button class="btn btn-outline" style="font-size:10px;padding:4px 10px;min-height:auto;" onclick="editTransaction('${trans.id}')">✏️ Edit</button>
+              <button class="btn btn-outline" style="font-size:10px;padding:4px 10px;min-height:auto;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️ Delete</button>
+            </div>
+          ` : ''}
+        </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
 async function renderGivingPage() {
   await loadTransactions();
   const totals = calculateTotals();
@@ -316,46 +367,7 @@ async function renderGivingPage() {
 
         <!-- Transaction List -->
         <div id="transactionList">
-          ${givingState.transactions.length === 0 ? `
-            <div class="empty-state">
-              <div class="empty-icon">📊</div>
-              <div class="empty-text">No transactions yet</div>
-              <div class="empty-sub">Add your first transaction above</div>
-            </div>
-          ` : givingState.transactions.map(trans => {
-            const isExpanded = givingState.expandedTransId === trans.id;
-            return `
-            <div class="card card-clickable" style="margin-bottom:8px;padding:10px 12px;" onclick="toggleTransaction('${trans.id}')">
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div style="flex:1;min-width:0;">
-                  <div class="card-meta" style="font-size:11px;">${formatDate(trans.date)} · ${trans.allocation}</div>
-                  <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(trans.description)}</div>
-                </div>
-                <div class="mono" style="font-size:15px;font-weight:700;color:${trans.amount > 0 ? 'var(--green)' : 'var(--red)'};white-space:nowrap;margin-left:8px;">
-                  ${trans.amount > 0 ? '+' : '-'}${formatAmount(trans.amount)}
-                </div>
-              </div>
-              ${isExpanded ? `
-              <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;" onclick="event.stopPropagation();">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">
-                  <div><span style="color:var(--muted);">Type:</span> ${trans.type}</div>
-                  <div><span style="color:var(--muted);">Status:</span> <span style="color:${trans.status === 'Pending' ? '#d97706' : 'var(--green)'};font-weight:600;">${trans.status}</span></div>
-                  <div><span style="color:var(--muted);">Via:</span> ${escapeHtml(trans.via || '')}</div>
-                  <div><span style="color:var(--muted);">Allocation:</span> ${trans.allocation}</div>
-                  ${trans.donor ? `<div><span style="color:var(--muted);">Donor:</span> ${escapeHtml(trans.donor)}</div>` : ''}
-                  ${trans.receiptId ? `<div><span style="color:var(--muted);">Receipt #:</span> ${escapeHtml(trans.receiptId)}</div>` : ''}
-                </div>
-                ${trans.receiptUrl ? `<div style="margin-top:8px;"><a href="${escapeHtml(trans.receiptUrl)}" target="_blank" style="color:var(--accent);font-size:12px;">📎 View Receipt</a></div>` : ''}
-                ${isAdmin() ? `
-                  <div style="display:flex;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">
-                    <button class="btn btn-outline" style="font-size:10px;padding:4px 10px;min-height:auto;" onclick="editTransaction('${trans.id}')">✏️ Edit</button>
-                    <button class="btn btn-outline" style="font-size:10px;padding:4px 10px;min-height:auto;color:var(--red);" onclick="deleteTransaction('${trans.id}')">🗑️ Delete</button>
-                  </div>
-                ` : ''}
-              </div>
-              ` : ''}
-            </div>
-          `}).join('')}
+          ${renderTransactionList()}
         </div>
       </div>
 
@@ -666,12 +678,18 @@ function closeCharityModal() {
 async function initGivingPage() {
   await loadTransactions();
 
-  // Tab switching
+  // Tab switching — toggle visibility instead of full re-render
   document.querySelectorAll('button[data-tab]').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       currentGivingTab = btn.dataset.tab;
-      document.getElementById('app').innerHTML = await renderGivingPage();
-      await initGivingPage();
+      // Update button styles
+      document.querySelectorAll('button[data-tab]').forEach(b => {
+        b.className = `btn ${b.dataset.tab === currentGivingTab ? 'btn-primary' : 'btn-outline'}`;
+      });
+      // Toggle tab content visibility
+      document.querySelectorAll('.giving-tab-content').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === currentGivingTab);
+      });
     });
   });
 
@@ -813,6 +831,7 @@ async function saveTransaction() {
 
     givingState.showAddForm = false;
     givingState.editingId = null;
+    givingState.transactionsLoaded = false; // Force refresh after save
     document.getElementById('app').innerHTML = await renderGivingPage();
     await initGivingPage();
   } catch (error) {
@@ -824,11 +843,11 @@ async function saveTransaction() {
 // Toggle transaction expand
 function toggleTransaction(id) {
   givingState.expandedTransId = givingState.expandedTransId === id ? null : id;
-  // Re-render just the transaction list
-  renderGivingPage().then(html => {
-    document.getElementById('app').innerHTML = html;
-    initGivingPage();
-  });
+  // Re-render only the transaction list, not the whole page
+  const listEl = document.getElementById('transactionList');
+  if (listEl) {
+    listEl.innerHTML = renderTransactionList();
+  }
 }
 
 // Edit transaction
@@ -869,6 +888,7 @@ async function deleteTransaction(id) {
 
   try {
     await db.collection('transactions').doc(id).delete();
+    givingState.transactionsLoaded = false; // Force refresh after delete
     document.getElementById('app').innerHTML = await renderGivingPage();
     await initGivingPage();
   } catch (error) {

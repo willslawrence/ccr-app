@@ -9,7 +9,8 @@ let scheduleState = {
   currentTab: 'oos', // 'events', 'volunteering', 'oos'
   searchQuery: '',
   showAddForm: false,
-  editingId: null
+  editingId: null,
+  dataLoaded: false  // Cache flag
 };
 
 function renderSchedulePage() {
@@ -55,7 +56,8 @@ async function initSchedulePage() {
   document.getElementById('oosTabBtn').addEventListener('click', () => switchTab('oos'));
 }
 
-async function loadScheduleData() {
+async function loadScheduleData(forceRefresh = false) {
+  if (scheduleState.dataLoaded && !forceRefresh) return;
   try {
     // Load events from Firestore
     const eventsSnapshot = await db.collection('events').orderBy('date', 'asc').get();
@@ -92,6 +94,7 @@ async function loadScheduleData() {
         updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
       };
     });
+    scheduleState.dataLoaded = true;
   } catch (error) {
     console.error('Error loading schedule data from Firestore:', error);
     alert('Failed to load schedule data. Please try again.');

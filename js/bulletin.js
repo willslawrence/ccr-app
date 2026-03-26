@@ -7,7 +7,8 @@ let bulletinState = {
   currentBulletinId: null,
   showEditor: false,
   editingId: null,
-  searchQuery: ''
+  searchQuery: '',
+  dataLoaded: false
 };
 
 function renderBulletinPage() {
@@ -96,7 +97,8 @@ async function initBulletinPage() {
   });
 }
 
-async function loadBulletins() {
+async function loadBulletins(forceRefresh = false) {
+  if (bulletinState.dataLoaded && !forceRefresh) return;
   try {
     const snapshot = await db.collection('bulletins').orderBy('date', 'desc').get();
 
@@ -116,6 +118,7 @@ async function loadBulletins() {
     if (publishedBulletins.length > 0) {
       bulletinState.currentBulletinId = publishedBulletins[0].id;
     }
+    bulletinState.dataLoaded = true;
   } catch (error) {
     console.error('Error loading bulletins:', error);
     alert('Failed to load bulletins: ' + error.message);

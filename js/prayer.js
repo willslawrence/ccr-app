@@ -9,7 +9,8 @@ let prayerState = {
   showAddForm: false,
   showSearch: false,
   editingId: null,
-  prayedThisSession: new Set()
+  prayedThisSession: new Set(),
+  dataLoaded: false
 };
 
 function renderPrayerPage() {
@@ -161,7 +162,8 @@ async function initPrayerPage() {
   });
 }
 
-async function loadPrayers() {
+async function loadPrayers(forceRefresh = false) {
+  if (prayerState.dataLoaded && !forceRefresh) return;
   try {
     const snapshot = await db.collection('prayers')
       .orderBy('createdAt', 'desc')
@@ -173,6 +175,7 @@ async function loadPrayers() {
       createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
       answeredAt: doc.data().answeredAt?.toDate?.()?.toISOString() || doc.data().answeredAt
     }));
+    prayerState.dataLoaded = true;
   } catch (error) {
     console.error('Error loading prayers:', error);
     prayerState.prayers = [];
