@@ -530,3 +530,6 @@ const GIVING_CHARITIES = [
     updateText: "<strong>Recent Special Projects:</strong><br><br><strong>• Kenyan Mother Financial Support:</strong> SAR 800 total (400 out, 400 in)<br><strong>• Projector Fund:</strong> SAR 1,500 received, project ongoing<br><strong>• Daniel's Gift:</strong> SAR 275 for sensory ball<br><br>Special Projects fund allows us to respond quickly to specific needs and opportunities that arise in our community and ministry context."
   }
 ];
+
+// Expose on window so openCharityModal() can access it
+window.GIVING_CHARITIES = GIVING_CHARITIES;
