@@ -21,6 +21,15 @@ function initFirebase() {
     app = firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true })
+      .then(() => console.log('Firestore offline persistence enabled'))
+      .catch(err => {
+        if (err.code === 'failed-precondition') {
+          console.warn('Persistence failed: multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Persistence not supported in this browser');
+        }
+      });
     storage = firebase.storage();
 
     // Initialize Firebase Messaging (VAPID key passed at getToken time, not here)
