@@ -61,6 +61,33 @@ async function loadTransactions(forceRefresh = false) {
 }
 
 // Calculate fund balances based on allocation rules
+// Calculate how incoming money is allocated across funds (ignores spending)
+function calculateIncomingAllocations() {
+  const allocations = {
+    'LC1': 0, 'LC2': 0, 'PC1': 0, 'PC2': 0, 'HH1': 0, 'HH2': 0, 'SP': 0
+  };
+
+  givingState.transactions.forEach(trans => {
+    if (trans.allocation === 'Transfer within CCR') return;
+    if (trans.type !== 'Incoming') return;
+
+    if (trans.allocation === 'All') {
+      Object.keys(FUND_FRACTIONS).forEach(fund => {
+        allocations[fund] += trans.amount * FUND_FRACTIONS[fund];
+      });
+    } else {
+      const fundMatch = trans.allocation.match(/^(LC1|LC2|PC1|PC2|HH1|HH2)/);
+      if (fundMatch) {
+        allocations[fundMatch[1]] += trans.amount;
+      } else if (trans.allocation === 'Special Project') {
+        allocations['SP'] += trans.amount;
+      }
+    }
+  });
+
+  return allocations;
+}
+
 function calculateFundBalances() {
   const balances = {
     'LC1': 0, 'LC2': 0, 'PC1': 0, 'PC2': 0, 'HH1': 0, 'HH2': 0, 'SP': 0
@@ -117,13 +144,13 @@ function calculateTotals() {
   const externalSpending = totalSpending - lc1Spending;
   const programRatioActual = totalSpending > 0 ? (externalSpending / totalSpending) * 100 : 0;
 
-  // Program Expense Ratio — EXPECTED (based on fund balances = earmarked money)
-  // Shows where ALL money (incoming + outgoing) is allocated
-  const fundBals = calculateFundBalances();
-  const totalFunds = Object.values(fundBals).reduce((s, v) => s + v, 0);
-  const internalFunds = fundBals['LC1'] || 0;
-  const externalFunds = totalFunds - internalFunds;
-  const programRatioExpected = totalFunds > 0 ? (externalFunds / totalFunds) * 100 : 0;
+  // Program Expense Ratio — EXPECTED (based on incoming allocations only)
+  // Shows how tithes/donations are earmarked — spending doesn't change this
+  const incomingAlloc = calculateIncomingAllocations();
+  const totalAllocated = Object.values(incomingAlloc).reduce((s, v) => s + v, 0);
+  const internalAllocated = incomingAlloc['LC1'] || 0;
+  const externalAllocated = totalAllocated - internalAllocated;
+  const programRatioExpected = totalAllocated > 0 ? (externalAllocated / totalAllocated) * 100 : 0;
 
   return { totalIn, totalOut, balance, programRatioActual, programRatioExpected };
 }
@@ -150,12 +177,12 @@ function getLocalChurchLiveStats() {
     .filter(t => t.type === 'Outgoing')
     .reduce((sum, t) => sum + t.amount, 0));
   
-  // Expected PER — based on fund balances (earmarked money)
-  const fundBals = calculateFundBalances();
-  const totalFunds = Object.values(fundBals).reduce((s, v) => s + v, 0);
-  const internalFunds = fundBals['LC1'] || 0;
-  const externalFunds = totalFunds - internalFunds;
-  const expectedPER = totalFunds > 0 ? Math.round((externalFunds / totalFunds) * 100) : 0;
+  // Expected PER — based on incoming allocations only (how tithes are earmarked)
+  const incomingAllocations = calculateIncomingAllocations();
+  const totalAllocated = Object.values(incomingAllocations).reduce((s, v) => s + v, 0);
+  const internalAllocated = incomingAllocations['LC1'] || 0;
+  const externalAllocated = totalAllocated - internalAllocated;
+  const expectedPER = totalAllocated > 0 ? Math.round((externalAllocated / totalAllocated) * 100) : 0;
   
   return { ytdIncome, ytdExpenses, expectedPER };
 }
