@@ -107,16 +107,25 @@ function calculateTotals() {
 
   const balance = totalIn - totalOut;
 
-  // Program Expense Ratio — calculated from fund allocations, not just spending
-  // External = everything except LC1 (Church Needs is internal overhead)
-  // Special Project counts as external
+  // Program Expense Ratio — ACTUAL (based on spending only)
+  // External spending = all outgoing except LC1. LC1 = internal overhead.
+  const outgoing = nonTransfers.filter(t => t.type === 'Outgoing');
+  const lc1Spending = Math.abs(outgoing
+    .filter(t => t.allocation && t.allocation.startsWith('LC1'))
+    .reduce((sum, t) => sum + t.amount, 0));
+  const totalSpending = Math.abs(outgoing.reduce((sum, t) => sum + t.amount, 0));
+  const externalSpending = totalSpending - lc1Spending;
+  const programRatioActual = totalSpending > 0 ? (externalSpending / totalSpending) * 100 : 0;
+
+  // Program Expense Ratio — EXPECTED (based on fund balances = earmarked money)
+  // Shows where ALL money (incoming + outgoing) is allocated
   const fundBals = calculateFundBalances();
   const totalFunds = Object.values(fundBals).reduce((s, v) => s + v, 0);
   const internalFunds = fundBals['LC1'] || 0;
   const externalFunds = totalFunds - internalFunds;
-  const programRatio = totalFunds > 0 ? (externalFunds / totalFunds) * 100 : 0;
+  const programRatioExpected = totalFunds > 0 ? (externalFunds / totalFunds) * 100 : 0;
 
-  return { totalIn, totalOut, balance, programRatio };
+  return { totalIn, totalOut, balance, programRatioActual, programRatioExpected };
 }
 
 // Calculate total given from transactions (outgoing, excluding transfers and LC1 internal)
@@ -263,9 +272,17 @@ async function renderGivingPage() {
           </div>
           
           <!-- Program Expense Ratio -->
-          <div style="text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;margin-bottom:16px;">
-            <span style="font-size:12px;color:var(--muted);">Program Expense Ratio:</span>
-            <span style="font-size:14px;font-weight:600;margin-left:4px;color:var(--green);">${totals.programRatio.toFixed(1)}%</span>
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Actual PER</div>
+              <div style="font-size:16px;font-weight:700;color:var(--green);">${totals.programRatioActual.toFixed(1)}%</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on spending</div>
+            </div>
+            <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Expected PER</div>
+              <div style="font-size:16px;font-weight:700;color:var(--accent);">${totals.programRatioExpected.toFixed(1)}%</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on fund balances</div>
+            </div>
           </div>
 
           <!-- Fund Balances Grid -->
