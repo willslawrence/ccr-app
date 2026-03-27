@@ -150,21 +150,14 @@ function getLocalChurchLiveStats() {
     .filter(t => t.type === 'Outgoing')
     .reduce((sum, t) => sum + t.amount, 0));
   
-  // LC1 spending (internal overhead)
-  const lc1Spending = Math.abs(nonTransfers
-    .filter(t => t.type === 'Outgoing' && t.allocation && t.allocation.startsWith('LC1'))
-    .reduce((sum, t) => sum + t.amount, 0));
+  // Expected PER — based on fund balances (earmarked money)
+  const fundBals = calculateFundBalances();
+  const totalFunds = Object.values(fundBals).reduce((s, v) => s + v, 0);
+  const internalFunds = fundBals['LC1'] || 0;
+  const externalFunds = totalFunds - internalFunds;
+  const expectedPER = totalFunds > 0 ? Math.round((externalFunds / totalFunds) * 100) : 0;
   
-  // External spending = everything not LC1
-  const externalSpending = ytdExpenses - lc1Spending;
-  
-  // Program ratio (actual PER)
-  const programRatio = ytdExpenses > 0 ? Math.round((externalSpending / ytdExpenses) * 100) : 0;
-  
-  // Fundraising efficiency — church has $0 fundraising cost
-  const fundraisingCost = 0;
-  
-  return { ytdIncome, ytdExpenses, programRatio, fundraisingCost, externalSpending };
+  return { ytdIncome, ytdExpenses, expectedPER };
 }
 
 // Inject live stats into the Local Church charity object before rendering
@@ -175,16 +168,21 @@ function updateLocalChurchCharityData() {
   const lc = GIVING_CHARITIES.find(c => c.name === 'Local Church (Us)');
   if (!lc) return;
   
-  lc.amount = 'SAR ' + Math.round(stats.ytdIncome).toLocaleString();
+  const incomeStr = Math.round(stats.ytdIncome).toLocaleString();
+  const expenseStr = Math.round(stats.ytdExpenses).toLocaleString();
+  
+  lc.amount = 'SAR ' + incomeStr;
   lc.amountNum = Math.round(stats.ytdIncome);
-  lc.potentialAmount = 'SAR ' + Math.round(stats.ytdExpenses).toLocaleString();
-  lc.givenAmount = 'SAR ' + Math.round(stats.ytdIncome).toLocaleString();
+  lc.potentialAmount = '';
+  lc.givenAmount = 'SAR ' + incomeStr;
+  lc.givenLabel = 'Year to Date';
   lc.stats = {
-    programs: stats.programRatio + '% to external',
+    programs: stats.expectedPER + '% to external',
     ceoPay: '$0.00 to raise $1',
-    revenue: 'SAR ' + Math.round(stats.ytdIncome).toLocaleString() + ' / ' + Math.round(stats.ytdExpenses).toLocaleString()
+    revenue: 'SAR ' + incomeStr + ' / ' + expenseStr
   };
-  lc.description = 'Our local church. No fundraising costs. ' + stats.programRatio + '% of budget goes to external programs and missions beyond the local body. YTD: SAR ' + Math.round(stats.ytdIncome).toLocaleString() + ' in, SAR ' + Math.round(stats.ytdExpenses).toLocaleString() + ' out.';
+  lc.description = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.';
+  lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Year to Date: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.';
 }
 
 function getCharityTransactionTotals() {
