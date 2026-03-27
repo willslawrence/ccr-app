@@ -570,7 +570,7 @@ function openCharityModal(charityName) {
   var givenAmt = Math.round(totals[r.name] || r.amountNum || 0);
   // For Local Church, use the live YTD income instead of outgoing charity total
   if (r.name === 'Local Church (Us)') givenAmt = r.amountNum;
-  var amountDisplay = givenAmt > 0 ? 'SAR ' + givenAmt.toLocaleString() : (r.amount || 'TBD');
+  var amountDisplay = givenAmt > 0 ? 'SAR ' + givenAmt.toLocaleString() : 'TBD';
 
   var content = '<button class="modal-close" onclick="closeCharityModal()">&times;</button>';
 
