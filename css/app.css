@@ -129,6 +129,110 @@ h1, h2, h3, h4, h5, h6 {
    FLOATING ACTION BUTTON NAVIGATION
    ==================================== */
 
+/* ====================================
+   PULL-DOWN NAVIGATION
+   ==================================== */
+.pulldown-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100;
+  background: var(--card);
+  border-bottom: 2px solid var(--accent);
+  transform: translateY(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: env(safe-area-inset-top, 8px) 12px 12px 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.pulldown-nav.active {
+  transform: translateY(0);
+}
+
+.pulldown-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 4px auto 10px;
+}
+
+.pulldown-items {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+}
+
+.pulldown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  background: var(--card-hover);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pulldown-item span {
+  font-size: 9px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pulldown-item:active,
+.pulldown-item.current {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.pulldown-item.current span {
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.pulldown-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1050;
+  color: var(--muted);
+  font-size: 18px;
+  opacity: 0.4;
+  padding: env(safe-area-inset-top, 2px) 12px 2px 12px;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.pulldown-nav.active ~ .pulldown-indicator {
+  opacity: 0;
+}
+
+/* Backdrop when pulldown is open */
+.pulldown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1099;
+  background: rgba(0,0,0,0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.pulldown-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 #fab-nav {
   position: fixed;
   right: 0;
