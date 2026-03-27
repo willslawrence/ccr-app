@@ -128,10 +128,10 @@ function calculateTotals() {
   return { totalIn, totalOut, balance, programRatioActual, programRatioExpected };
 }
 
-// Calculate total given from transactions (outgoing, excluding transfers and LC1 internal)
+// Calculate total given from transactions (outgoing, excluding transfers, LC1 and LC2)
 function getTotalGiven() {
   return Math.abs(givingState.transactions
-    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR' && !t.allocation.startsWith('LC1'))
+    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR' && !t.allocation.startsWith('LC1') && !t.allocation.startsWith('LC2'))
     .reduce((sum, t) => sum + t.amount, 0));
 }
 
@@ -496,12 +496,12 @@ async function renderGivingPage() {
             // Short description
             const shortDesc = charity.description.length > 120 ? charity.description.substring(0, 120) + '...' : charity.description;
 
-            return '<div class="giving-charity-card ' + (isVisible ? '' : 'dimmed') + ' cat-' + charity.category + '" data-category="' + charity.category + '" data-categories="' + (charity.categories ? charity.categories.map(c => c.cat).join(',') : charity.category) + '" data-index="' + idx + '" onclick="openCharityModal(\'' + charity.name.replace(/'/g, "\\\\'") + '\')">' +
+            return '<div class="giving-charity-card ' + (isVisible ? '' : 'dimmed') + ' cat-' + charity.category + '" data-category="' + charity.category + '" data-categories="' + (charity.categories ? charity.categories.map(c => c.cat).join(',') : charity.category) + '" data-index="' + idx + '" data-charity-name="' + escapeHtml(charity.name) + '" onclick="openCharityModal(this.dataset.charityName)">' +
               scoreHtml +
               (charity.image ? '<div class="card-img"><img src="' + charity.image + '" alt="' + escapeHtml(charity.name) + '"></div>' : '') +
               '<div class="card-top"><div>' + catTag + '<div class="card-name">' + escapeHtml(charity.name) + '</div></div><span class="card-badge ' + badgeClass + '">' + badgeText + '</span></div>' +
               '<div class="card-desc">' + escapeHtml(shortDesc) + '</div>' +
-              '<div class="card-footer"><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">' + (charity.givenLabel || 'Previously Given') + '</div><div class="card-amount ' + amountClass + '" style="color:#60a5fa">' + (charity.givenAmount || (charity.status === 'given' ? amountText : '—')) + '</div><div class="card-freq">' + (charity.frequency || '') + '</div></div><div style="text-align:right"><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">' + (charity.potentialLabel || 'Potential') + '</div><div class="card-amount" style="color:#ec4899">' + (charity.potentialAmount || '—') + '</div><div style="font-size:11px;color:var(--accent);margin-top:4px;cursor:pointer">Click for details</div></div></div>' +
+              '<div class="card-footer"><div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">' + (charity.givenLabel || 'Previously Given') + '</div><div class="card-amount ' + amountClass + '" style="color:#60a5fa">' + (charity.givenAmount || (charity.status === 'given' ? amountText : '—')) + '</div><div class="card-freq">' + (charity.frequency || '') + '</div></div><div style="text-align:right"><div style="font-size:11px;color:var(--accent);margin-top:4px;cursor:pointer">Click for details</div></div></div>' +
             '</div>';
           }).join('')}
         </div>

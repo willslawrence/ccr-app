@@ -534,12 +534,12 @@ const GIVING_CHARITIES = [
     amountNum: 1200,
     potentialAmount: "",
     frequency: "Given",
-    description: "Catch-all for special projects including Kenyan Mother Financial Support, Projector fund, and other one-time church needs.",
-    fullDescription: "This category covers various special projects and one-time needs that arise in our church community. Current and recent projects include financial support for a Kenyan mother in need, funding for a church projector, and other ministry-specific needs that don't fit into regular fund allocations.",
+    description: "Catch-all for special projects including Kenyan Mother Financial Support, Projector fund, Joyful Joseph, and other one-time church needs.",
+    fullDescription: "This category covers various special projects and one-time needs that arise in our church community. Current and recent projects include financial support for a Kenyan mother in need, funding for a church projector, extra giving to Joyful Joseph, and other ministry-specific needs that don't fit into regular fund allocations.",
     link: null,
     lastUpdate: "Mar 2026",
     score: null,
-    updateText: "<strong>Recent Special Projects:</strong><br><br><strong>• Kenyan Mother Financial Support:</strong> SAR 800 total (400 out, 400 in)<br><strong>• Projector Fund:</strong> SAR 1,500 received, project ongoing<br><strong>• Daniel's Gift:</strong> SAR 275 for sensory ball<br><br>Special Projects fund allows us to respond quickly to specific needs and opportunities that arise in our community and ministry context."
+    updateText: "<strong>Recent Special Projects:</strong><br><br><strong>• Kenyan Mother Financial Support:</strong> Ongoing monthly support<br><strong>• Joyful Joseph:</strong> Extra giving beyond regular allocation — if you'd like to give specifically to Joyful Joseph, mark it as Special Project<br><strong>• Projector Fund:</strong> SAR 1,500 received, project ongoing<br><br>Special Projects fund allows us to respond quickly to specific needs and opportunities that arise in our community and ministry context."
   }
 ];
 
