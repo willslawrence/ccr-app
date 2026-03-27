@@ -136,6 +136,57 @@ function getTotalGiven() {
 }
 
 // Calculate amount given per charity from transactions (maps transaction descriptions to charity names)
+// Compute live Local Church stats from Firestore transactions
+function getLocalChurchLiveStats() {
+  const nonTransfers = givingState.transactions.filter(t => t.allocation !== 'Transfer within CCR');
+  
+  // YTD Income = all incoming (non-transfer)
+  const ytdIncome = nonTransfers
+    .filter(t => t.type === 'Incoming')
+    .reduce((sum, t) => sum + t.amount, 0);
+  
+  // YTD Expenses = all outgoing (non-transfer)  
+  const ytdExpenses = Math.abs(nonTransfers
+    .filter(t => t.type === 'Outgoing')
+    .reduce((sum, t) => sum + t.amount, 0));
+  
+  // LC1 spending (internal overhead)
+  const lc1Spending = Math.abs(nonTransfers
+    .filter(t => t.type === 'Outgoing' && t.allocation && t.allocation.startsWith('LC1'))
+    .reduce((sum, t) => sum + t.amount, 0));
+  
+  // External spending = everything not LC1
+  const externalSpending = ytdExpenses - lc1Spending;
+  
+  // Program ratio (actual PER)
+  const programRatio = ytdExpenses > 0 ? Math.round((externalSpending / ytdExpenses) * 100) : 0;
+  
+  // Fundraising efficiency — church has $0 fundraising cost
+  const fundraisingCost = 0;
+  
+  return { ytdIncome, ytdExpenses, programRatio, fundraisingCost, externalSpending };
+}
+
+// Inject live stats into the Local Church charity object before rendering
+function updateLocalChurchCharityData() {
+  if (!window.GIVING_CHARITIES || givingState.transactions.length === 0) return;
+  
+  const stats = getLocalChurchLiveStats();
+  const lc = GIVING_CHARITIES.find(c => c.name === 'Local Church (Us)');
+  if (!lc) return;
+  
+  lc.amount = 'SAR ' + Math.round(stats.ytdIncome).toLocaleString();
+  lc.amountNum = Math.round(stats.ytdIncome);
+  lc.potentialAmount = 'SAR ' + Math.round(stats.ytdExpenses).toLocaleString();
+  lc.givenAmount = 'SAR ' + Math.round(stats.ytdIncome).toLocaleString();
+  lc.stats = {
+    programs: stats.programRatio + '% to external',
+    ceoPay: '$0.00 to raise $1',
+    revenue: 'SAR ' + Math.round(stats.ytdIncome).toLocaleString() + ' / ' + Math.round(stats.ytdExpenses).toLocaleString()
+  };
+  lc.description = 'Our local church. No fundraising costs. ' + stats.programRatio + '% of budget goes to external programs and missions beyond the local body. YTD: SAR ' + Math.round(stats.ytdIncome).toLocaleString() + ' in, SAR ' + Math.round(stats.ytdExpenses).toLocaleString() + ' out.';
+}
+
 function getCharityTransactionTotals() {
   const totals = {};
   const charityMap = {
@@ -238,6 +289,7 @@ async function renderGivingPage() {
   const fundBalances = calculateFundBalances();
   const totalGiven = getTotalGiven();
   const charityTotals = getCharityTransactionTotals();
+  updateLocalChurchCharityData();
 
   return `
     <div class="page giving-page">
@@ -512,9 +564,14 @@ function openCharityModal(charityName) {
   }
   var modal = document.getElementById('charityModalContent');
 
+  // Refresh Local Church live stats before displaying modal
+  updateLocalChurchCharityData();
+  
   // Get Firestore-based amount
   var totals = getCharityTransactionTotals();
   var givenAmt = Math.round(totals[r.name] || r.amountNum || 0);
+  // For Local Church, use the live YTD income instead of outgoing charity total
+  if (r.name === 'Local Church (Us)') givenAmt = r.amountNum;
   var amountDisplay = givenAmt > 0 ? 'SAR ' + givenAmt.toLocaleString() : (r.amount || 'TBD');
 
   var content = '<button class="modal-close" onclick="closeCharityModal()">&times;</button>';
