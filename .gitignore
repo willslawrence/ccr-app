@@ -1,3 +1,4 @@
 ccr-church-app-firebase*
 scripts/.secrets/
 push-server/Setup.gs
+node_modules/
