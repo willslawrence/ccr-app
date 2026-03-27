@@ -349,16 +349,17 @@ async function renderGivingPage() {
           </div>
           
           <!-- Program Expense Ratio -->
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Program Expense Ratio</div>
           <div style="display:flex;gap:8px;margin-bottom:16px;">
             <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Actual PER</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Actual</div>
               <div style="font-size:16px;font-weight:700;color:var(--green);">${totals.programRatioActual.toFixed(1)}%</div>
               <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on spending</div>
             </div>
             <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Expected PER</div>
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Expected</div>
               <div style="font-size:16px;font-weight:700;color:var(--accent);">${totals.programRatioExpected.toFixed(1)}%</div>
-              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on fund balances</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on incoming allocations</div>
             </div>
           </div>
 
