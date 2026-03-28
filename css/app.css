@@ -95,6 +95,50 @@ body {
   padding-bottom: 40px;
 }
 
+/* Page swipe transition */
+#app.slide-left {
+  animation: slideInFromRight 0.25s ease-out;
+}
+#app.slide-right {
+  animation: slideInFromLeft 0.25s ease-out;
+}
+@keyframes slideInFromRight {
+  from { transform: translateX(30px); opacity: 0.7; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideInFromLeft {
+  from { transform: translateX(-30px); opacity: 0.7; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Page indicator dots */
+.page-indicator {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 90;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.page-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  transition: all 0.2s;
+}
+.page-indicator .dot.active {
+  background: var(--gold, #b8860b);
+  width: 18px;
+  border-radius: 3px;
+}
+
 /* ====================================
    TYPOGRAPHY
    ==================================== */

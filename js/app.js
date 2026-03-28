@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.9.0';
 
 // Global state
 const AppState = {
@@ -10,11 +10,42 @@ const AppState = {
   currentPage: 'login'
 };
 
+// Page order for swipe navigation
+const PAGE_ORDER = ['home','prayer','giving','library','bible','sermons','schedule','bulletin','settings'];
+
 // Router
-function navigateTo(page) {
+function navigateTo(page, slideDirection) {
+  const oldPage = AppState.currentPage;
   AppState.currentPage = page;
+  window.currentPage = page;
+
+  // Slide animation
+  const appEl = document.getElementById('app');
+  if (slideDirection && appEl) {
+    appEl.classList.remove('slide-left', 'slide-right');
+    void appEl.offsetWidth; // force reflow
+    appEl.classList.add(slideDirection === 'left' ? 'slide-left' : 'slide-right');
+    appEl.addEventListener('animationend', () => {
+      appEl.classList.remove('slide-left', 'slide-right');
+    }, { once: true });
+  } else if (!slideDirection && oldPage !== page) {
+    // Auto-detect direction for non-swipe navigations
+    const oldIdx = PAGE_ORDER.indexOf(oldPage);
+    const newIdx = PAGE_ORDER.indexOf(page);
+    if (oldIdx !== -1 && newIdx !== -1 && appEl) {
+      const dir = newIdx > oldIdx ? 'slide-left' : 'slide-right';
+      appEl.classList.remove('slide-left', 'slide-right');
+      void appEl.offsetWidth;
+      appEl.classList.add(dir);
+      appEl.addEventListener('animationend', () => {
+        appEl.classList.remove('slide-left', 'slide-right');
+      }, { once: true });
+    }
+  }
+
   render();
   updateFABHighlight(page);
+  updatePageIndicator(page);
 
   // Close FAB menu after navigation
   const fabMenu = document.getElementById('fabMenu');
@@ -23,6 +54,21 @@ function navigateTo(page) {
     fabMenu.classList.remove('active');
     fabTrigger.classList.remove('active');
   }
+}
+
+// Page indicator dots
+function updatePageIndicator(page) {
+  const indicator = document.getElementById('page-indicator');
+  if (!indicator) return;
+  const idx = PAGE_ORDER.indexOf(page);
+  if (idx === -1 || page === 'login' || page === 'vote') {
+    indicator.style.display = 'none';
+    return;
+  }
+  indicator.style.display = 'flex';
+  indicator.innerHTML = PAGE_ORDER.map((p, i) =>
+    `<div class="dot${i === idx ? ' active' : ''}"></div>`
+  ).join('');
 }
 
 function updateFABHighlight(page) {
@@ -442,3 +488,61 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
+
+// ====================================
+// HORIZONTAL SWIPE NAVIGATION
+// ====================================
+(function() {
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+  let swiping = false;
+
+  document.addEventListener('touchstart', function(e) {
+    // Skip if pulldown nav is open
+    if (document.querySelector('.pulldown-nav.active')) return;
+    // Skip login page
+    if (!AppState.currentUser) return;
+    // Skip if touch is inside a modal or form
+    const el = e.target;
+    if (el.closest('.charity-modal, .modal-overlay, .transaction-form, input, textarea, select')) return;
+
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+    swiping = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!swiping) return;
+    const dy = Math.abs(e.touches[0].clientY - swipeStartY);
+    const dx = Math.abs(e.touches[0].clientX - swipeStartX);
+
+    // If scrolling vertically, cancel swipe detection
+    if (dy > 30 && dy > dx) {
+      swiping = false;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!swiping) return;
+    swiping = false;
+
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY);
+    const absDx = Math.abs(dx);
+
+    // Need a clear horizontal swipe: >80px, more horizontal than vertical
+    if (absDx < 80 || dy > absDx * 0.7) return;
+
+    const currentPage = AppState.currentPage;
+    const idx = PAGE_ORDER.indexOf(currentPage);
+    if (idx === -1) return;
+
+    if (dx < 0 && idx < PAGE_ORDER.length - 1) {
+      // Swipe left → next page
+      navigateTo(PAGE_ORDER[idx + 1], 'left');
+    } else if (dx > 0 && idx > 0) {
+      // Swipe right → previous page
+      navigateTo(PAGE_ORDER[idx - 1], 'right');
+    }
+  }, { passive: true });
+})();
