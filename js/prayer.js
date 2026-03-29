@@ -239,31 +239,60 @@ function prayForRequest(id) {
   renderPrayers();
 }
 
+const _prayerBusy = new Set();
+
 async function markAnswered(id) {
+  if (_prayerBusy.has(id)) return;
+  _prayerBusy.add(id);
+
+  // Optimistic: update local state + re-render immediately
+  const prayer = prayerState.prayers.find(p => p.id === id);
+  if (prayer) {
+    prayer.answered = true;
+    prayer.answeredAt = new Date().toISOString();
+    renderPrayers();
+  }
+
   try {
     await db.collection('prayers').doc(id).update({
       answered: true,
       answeredAt: firebase.firestore.Timestamp.now()
     });
-    await loadPrayers();
-    renderPrayers();
   } catch (error) {
     console.error('Error marking prayer as answered:', error);
+    // Revert on failure
+    if (prayer) { prayer.answered = false; prayer.answeredAt = null; renderPrayers(); }
     alert('Failed to mark as answered. Please try again.');
+  } finally {
+    _prayerBusy.delete(id);
   }
 }
 
 async function unmarkAnswered(id) {
+  if (_prayerBusy.has(id)) return;
+  _prayerBusy.add(id);
+
+  // Optimistic: update local state + re-render immediately
+  const prayer = prayerState.prayers.find(p => p.id === id);
+  const prevAnsweredAt = prayer?.answeredAt;
+  if (prayer) {
+    prayer.answered = false;
+    prayer.answeredAt = null;
+    renderPrayers();
+  }
+
   try {
     await db.collection('prayers').doc(id).update({
       answered: false,
       answeredAt: null
     });
-    await loadPrayers();
-    renderPrayers();
   } catch (error) {
     console.error('Error unmarking prayer:', error);
+    // Revert on failure
+    if (prayer) { prayer.answered = true; prayer.answeredAt = prevAnsweredAt; renderPrayers(); }
     alert('Failed to unmark as answered. Please try again.');
+  } finally {
+    _prayerBusy.delete(id);
   }
 }
 
