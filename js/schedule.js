@@ -187,7 +187,7 @@ function renderEventsTab() {
             </div>
             ${event.description ? `
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                <p style="margin:0;">${escapeHtml(event.description)}</p>
+                <p style="margin:0;white-space:pre-wrap;">${escapeHtml(event.description)}</p>
               </div>
             ` : ''}
             ${canEdit ? `
