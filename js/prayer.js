@@ -253,6 +253,20 @@ async function markAnswered(id) {
   }
 }
 
+async function unmarkAnswered(id) {
+  try {
+    await db.collection('prayers').doc(id).update({
+      answered: false,
+      answeredAt: null
+    });
+    await loadPrayers();
+    renderPrayers();
+  } catch (error) {
+    console.error('Error unmarking prayer:', error);
+    alert('Failed to unmark as answered. Please try again.');
+  }
+}
+
 async function deletePrayer(id) {
   if (!confirm('Delete this prayer request?')) return;
 
@@ -404,6 +418,7 @@ function renderPrayers() {
 
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                   ${!prayer.answered && canAnswer ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;" onclick="markAnswered('${prayer.id}')">✓ Answered</button>` : ''}
+                  ${prayer.answered && canAnswer ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;color:var(--gold);" onclick="unmarkAnswered('${prayer.id}')">↩ Unmark</button>` : ''}
                   ${canEdit ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;" onclick="startEditPrayer('${prayer.id}')">✏️ Edit</button>` : ''}
                   ${canEdit ? `<button class="btn btn-outline" style="font-size:11px;padding:4px 10px;min-height:28px;border-radius:6px;color:var(--red);" onclick="deletePrayer('${prayer.id}')">🗑️</button>` : ''}
                 </div>
