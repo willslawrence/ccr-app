@@ -372,9 +372,8 @@ function renderPrayers() {
     );
   }
 
-  // Sort: answered last, newest first
+  // Sort: newest first (by date only, regardless of answered status)
   prayers = [...prayers].sort((a, b) => {
-    if (a.answered !== b.answered) return a.answered ? 1 : -1;
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
