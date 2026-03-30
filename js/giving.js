@@ -946,6 +946,7 @@ function toggleTransaction(id) {
 
 // Edit transaction
 function editTransaction(id) {
+  if (!isAdmin()) return;
   const trans = givingState.transactions.find(t => t.id === id);
   if (!trans) return;
 
@@ -978,6 +979,7 @@ function editTransaction(id) {
 
 // Delete transaction
 async function deleteTransaction(id) {
+  if (!isAdmin()) return;
   if (!confirm('Delete this transaction?')) return;
 
   try {
