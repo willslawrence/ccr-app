@@ -336,93 +336,110 @@ function renderVolunteeringTab() {
   const canEdit = isEditor();
   const now = new Date();
 
-  const sortedSchedule = [...scheduleState.volunteerSchedule].sort((a, b) =>
-    new Date(b.date) - new Date(a.date)
-  );
+  // Group weeks by month (YYYY-MM)
+  const monthGroups = {};
+  scheduleState.volunteerSchedule.forEach(week => {
+    const monthKey = week.date.substring(0, 7); // YYYY-MM
+    if (!monthGroups[monthKey]) monthGroups[monthKey] = [];
+    monthGroups[monthKey].push(week);
+  });
+
+  // Sort months descending (newest first), weeks within month ascending
+  const sortedMonths = Object.keys(monthGroups).sort((a, b) => b.localeCompare(a));
+  sortedMonths.forEach(key => {
+    monthGroups[key].sort((a, b) => a.date.localeCompare(b.date));
+  });
+
+  // Determine current month key
+  const currentMonthKey = now.toISOString().substring(0, 7);
+
+  const ROLE_COLS = [
+    { key: 'location', label: 'Location', icon: '📍' },
+    { key: 'setupCleanup', label: 'Set Up / Clean Up', icon: '🧹' },
+    { key: 'gospel', label: 'Gospel', icon: '📖' },
+    { key: 'kids', label: 'Kids', icon: '👶' },
+    { key: 'it', label: 'IT', icon: '💻' },
+    { key: 'songs', label: 'Songs', icon: '🎵' },
+    { key: 'passageTheme', label: 'Passage', icon: '📜' },
+  ];
 
   return `
-    <button class="btn btn-primary" id="addVolunteerBtn" style="display:none;">+ Add Week</button>
-    <div id="volunteerForm" style="display:none;margin-bottom:24px;">
+    <button class="btn btn-primary" id="addVolunteerBtn" style="display:none;">+ Add Month</button>
+
+    <!-- Monthly edit form (hidden by default) -->
+    <div id="volunteerMonthForm" style="display:none;margin-bottom:24px;">
       <div class="card">
-        <h3 style="margin-bottom:16px;">${scheduleState.editingId ? 'Edit Week' : 'New Week'}</h3>
-        <form id="volunteerFormElement">
+        <h3 style="margin-bottom:16px;" id="volMonthFormTitle">New Month</h3>
+        <form id="volunteerMonthFormElement">
           <div class="form-group">
-            <label class="form-label">Date *</label>
-            <input type="date" class="form-input" id="volDate" required>
+            <label class="form-label">Month *</label>
+            <input type="month" class="form-input" id="volMonth" required>
           </div>
-          <div class="form-group">
-            <label class="form-label">Location *</label>
-            <input type="text" class="form-input" id="volLocation" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Set Up/Clean Up</label>
-            <input type="text" class="form-input" id="volSetup" placeholder="Names, comma-separated">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Gospel</label>
-            <input type="text" class="form-input" id="volGospel">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Kids</label>
-            <input type="text" class="form-input" id="volKids" placeholder="Names, comma-separated">
-          </div>
-          <div class="form-group">
-            <label class="form-label">IT</label>
-            <input type="text" class="form-input" id="volIT">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Songs</label>
-            <input type="text" class="form-input" id="volSongs">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Passage Theme</label>
-            <input type="text" class="form-input" id="volPassage">
+          <div id="volMonthWeeks"></div>
+          <div style="margin-bottom:16px;">
+            <button type="button" class="btn btn-outline" onclick="addVolunteerWeekRow()" style="font-size:12px;padding:6px 14px;">+ Add Week</button>
           </div>
           <div class="btn-group" style="margin-top:20px;">
-            <button type="submit" class="btn btn-primary">${scheduleState.editingId ? 'Save Changes' : 'Add Week'}</button>
-            <button type="button" class="btn btn-outline" id="cancelVolunteerBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="volMonthSubmitBtn">Save Month</button>
+            <button type="button" class="btn btn-outline" id="cancelVolunteerMonthBtn">Cancel</button>
           </div>
         </form>
       </div>
     </div>
 
     <div id="volunteerList">
-      ${sortedSchedule.length === 0 ? `
+      ${sortedMonths.length === 0 ? `
         <div class="empty-state">
           <div class="empty-icon">👥</div>
           <div class="empty-text">No volunteer schedule yet</div>
-          <div class="empty-sub">Add weeks to the schedule</div>
+          <div class="empty-sub">Add a month to get started</div>
+          ${canEdit ? '<button class="btn btn-primary" style="margin-top:12px;font-size:13px;" onclick="document.getElementById(\'addVolunteerBtn\').click()">+ New Month</button>' : ''}
         </div>
-      ` : sortedSchedule.map(week => {
-        const weekDate = new Date(week.date);
-        const isCurrentWeek = isThisWeek(weekDate);
-        const isPast = weekDate < now && !isCurrentWeek;
+      ` : sortedMonths.map(monthKey => {
+        const weeks = monthGroups[monthKey];
+        const monthDate = new Date(monthKey + '-01');
+        const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const isCurrent = monthKey === currentMonthKey;
+        const isPast = monthKey < currentMonthKey;
 
         return `
-          <div class="card" style="margin-bottom:10px;padding:12px 14px;${isCurrentWeek ? 'border:2px solid var(--accent);' : ''}${isPast ? 'opacity:0.5;' : ''}position:relative;">
-            <button class="copy-card-btn" onclick="event.stopPropagation(); copyVolunteerCard('${week.id}', this)" title="Copy for sharing">📋</button>
-            <div class="card-header" style="padding:0;margin-bottom:0;">
-              <div style="flex:1;">
-                <div class="card-title" style="font-size:15px;">${formatDate(week.date)}</div>
-                <div class="text-muted" style="font-size:12px;margin-top:2px;">📍 ${escapeHtml(week.location)}</div>
+          <div class="card vol-month-card" style="margin-bottom:16px;padding:0;overflow:hidden;${isCurrent ? 'border:2px solid var(--accent);' : ''}${isPast ? 'opacity:0.6;' : ''}position:relative;">
+            <div style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-bottom:1px solid var(--border);">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:16px;">👥</span>
+                <strong style="font-size:15px;">${monthLabel}</strong>
+                ${isCurrent ? '<span class="badge" style="background:var(--accent);color:white;font-size:10px;padding:3px 8px;">CURRENT</span>' : ''}
               </div>
-              ${isCurrentWeek ? '<span class="badge" style="background:var(--accent);color:white;font-size:10px;padding:3px 8px;">THIS WEEK</span>' : ''}
+              <button class="copy-card-btn" onclick="event.stopPropagation(); copyVolunteerMonth('${monthKey}', this)" title="Copy month for sharing" style="position:static;">📋</button>
             </div>
-            <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-              <div style="display:grid;gap:3px;font-size:13px;">
-                ${week.setupCleanup ? `<div>🧹 <strong>Set Up/Clean Up:</strong> ${escapeHtml(week.setupCleanup)}</div>` : ''}
-                ${week.gospel ? `<div>📖 <strong>Gospel:</strong> ${escapeHtml(week.gospel)}</div>` : ''}
-                ${week.kids ? `<div>👶 <strong>Kids:</strong> ${escapeHtml(week.kids)}</div>` : ''}
-                ${week.it ? `<div>💻 <strong>IT:</strong> ${escapeHtml(week.it)}</div>` : ''}
-                ${week.songs ? `<div>🎵 <strong>Songs:</strong> ${escapeHtml(week.songs)}</div>` : ''}
-                ${week.passageTheme ? `<div>📜 <strong>Passage Theme:</strong> ${escapeHtml(week.passageTheme)}</div>` : ''}
-              </div>
+            <div class="vol-grid-scroll">
+              <table class="vol-grid-table">
+                <thead>
+                  <tr>
+                    <th class="vol-grid-th">Date</th>
+                    ${ROLE_COLS.map(c => `<th class="vol-grid-th">${c.icon} ${c.label}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${weeks.map(week => {
+                    const weekDate = new Date(week.date + 'T00:00:00');
+                    const isCurrentWeek = isThisWeek(weekDate);
+                    const dayLabel = weekDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    return `
+                      <tr class="${isCurrentWeek ? 'vol-grid-current' : ''}">
+                        <td class="vol-grid-td vol-grid-date">${dayLabel}</td>
+                        ${ROLE_COLS.map(c => `<td class="vol-grid-td">${escapeHtml(week[c.key] || '—')}</td>`).join('')}
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
             </div>
             ${canEdit ? `
-              <div class="btn-group" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
-                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="editVolunteerWeek('${week.id}')">✏️ Edit</button>
-                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;color:var(--red);" onclick="(async () => await deleteVolunteerWeek('${week.id}'))()">🗑️ Delete</button>
-                <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="document.getElementById('addVolunteerBtn').click()">+ New</button>
+              <div class="btn-group" style="padding:10px 14px;border-top:1px solid var(--border);">
+                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;" onclick="editVolunteerMonth('${monthKey}')">✏️ Edit</button>
+                <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;color:var(--red);" onclick="(async () => await deleteVolunteerMonth('${monthKey}'))()">🗑️ Delete</button>
+                <button class="btn btn-primary" style="font-size:11px;padding:5px 12px;" onclick="document.getElementById('addVolunteerBtn').click()">+ New Month</button>
               </div>
             ` : ''}
           </div>
@@ -434,15 +451,22 @@ function renderVolunteeringTab() {
 
 function initVolunteeringTab() {
   const addBtn = document.getElementById('addVolunteerBtn');
-  const cancelBtn = document.getElementById('cancelVolunteerBtn');
-  const form = document.getElementById('volunteerFormElement');
+  const cancelBtn = document.getElementById('cancelVolunteerMonthBtn');
+  const form = document.getElementById('volunteerMonthFormElement');
 
   if (addBtn) {
     addBtn.addEventListener('click', () => {
       scheduleState.showAddForm = true;
       scheduleState.editingId = null;
-      document.getElementById('volunteerForm').style.display = 'block';
-      document.getElementById('volLocation').focus();
+      document.getElementById('volMonthFormTitle').textContent = 'New Month';
+      document.getElementById('volMonthSubmitBtn').textContent = 'Save Month';
+      document.getElementById('volMonth').value = '';
+      document.getElementById('volMonth').disabled = false;
+      document.getElementById('volMonthWeeks').innerHTML = '';
+      // Add 4 empty week rows by default
+      for (let i = 0; i < 4; i++) addVolunteerWeekRow();
+      document.getElementById('volunteerMonthForm').style.display = 'block';
+      document.getElementById('volMonth').focus();
     });
   }
 
@@ -450,120 +474,170 @@ function initVolunteeringTab() {
     cancelBtn.addEventListener('click', () => {
       scheduleState.showAddForm = false;
       scheduleState.editingId = null;
-      document.getElementById('volunteerForm').style.display = 'none';
-      form.reset();
+      document.getElementById('volunteerMonthForm').style.display = 'none';
     });
   }
 
   if (form) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      await saveVolunteerWeek();
+      await saveVolunteerMonth();
     });
   }
 }
 
-async function saveVolunteerWeek() {
-  const date = document.getElementById('volDate').value;
-  const location = document.getElementById('volLocation').value.trim();
-  const setupCleanup = document.getElementById('volSetup').value.trim();
-  const gospel = document.getElementById('volGospel').value.trim();
-  const kids = document.getElementById('volKids').value.trim();
-  const it = document.getElementById('volIT').value.trim();
-  const songs = document.getElementById('volSongs').value.trim();
-  const passageTheme = document.getElementById('volPassage').value.trim();
+// Add a week row to the month form
+window.addVolunteerWeekRow = function(data) {
+  const container = document.getElementById('volMonthWeeks');
+  const idx = container.querySelectorAll('.vol-week-row').length + 1;
+  const row = document.createElement('div');
+  row.className = 'vol-week-row';
+  row.style.cssText = 'padding:12px;margin-bottom:12px;background:var(--surface);border-radius:8px;';
+  row.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <strong style="font-size:13px;">Week ${idx}</strong>
+      <button type="button" onclick="this.closest('.vol-week-row').remove()" style="width:24px;height:24px;border:none;background:rgba(192,57,43,0.1);color:var(--red);border-radius:6px;cursor:pointer;font-size:11px;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Date *</label><input type="date" class="form-input vol-w-date" value="${data?.date || ''}" required style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Location *</label><input type="text" class="form-input vol-w-location" value="${escapeHtml(data?.location || '')}" required style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Set Up/Clean Up</label><input type="text" class="form-input vol-w-setup" value="${escapeHtml(data?.setupCleanup || '')}" style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Gospel</label><input type="text" class="form-input vol-w-gospel" value="${escapeHtml(data?.gospel || '')}" style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Kids</label><input type="text" class="form-input vol-w-kids" value="${escapeHtml(data?.kids || '')}" style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">IT</label><input type="text" class="form-input vol-w-it" value="${escapeHtml(data?.it || '')}" style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Songs</label><input type="text" class="form-input vol-w-songs" value="${escapeHtml(data?.songs || '')}" style="font-size:12px;padding:6px 8px;"></div>
+      <div class="form-group" style="margin:0;"><label class="form-label" style="font-size:11px;">Passage Theme</label><input type="text" class="form-input vol-w-passage" value="${escapeHtml(data?.passageTheme || '')}" style="font-size:12px;padding:6px 8px;"></div>
+    </div>
+    <input type="hidden" class="vol-w-id" value="${data?.id || ''}">
+  `;
+  container.appendChild(row);
+};
+
+// Save entire month (create or update all weeks)
+async function saveVolunteerMonth() {
+  const monthVal = document.getElementById('volMonth').value; // YYYY-MM
+  if (!monthVal) { alert('Please select a month.'); return; }
+
+  const rows = document.querySelectorAll('#volMonthWeeks .vol-week-row');
+  const weeks = [];
+  for (const row of rows) {
+    const date = row.querySelector('.vol-w-date').value;
+    const location = row.querySelector('.vol-w-location').value.trim();
+    if (!date || !location) { alert('Each week needs a date and location.'); return; }
+    weeks.push({
+      existingId: row.querySelector('.vol-w-id').value || null,
+      date,
+      location,
+      setupCleanup: row.querySelector('.vol-w-setup').value.trim(),
+      gospel: row.querySelector('.vol-w-gospel').value.trim(),
+      kids: row.querySelector('.vol-w-kids').value.trim(),
+      it: row.querySelector('.vol-w-it').value.trim(),
+      songs: row.querySelector('.vol-w-songs').value.trim(),
+      passageTheme: row.querySelector('.vol-w-passage').value.trim(),
+    });
+  }
 
   try {
+    // If editing, delete removed weeks
     if (scheduleState.editingId) {
-      // Update existing volunteer week in Firestore
-      await db.collection('schedule_volunteers').doc(scheduleState.editingId).update({
-        date,
-        location,
-        setupCleanup,
-        gospel,
-        kids,
-        it,
-        songs,
-        passageTheme
-      });
-
-      // Update local state
-      const week = scheduleState.volunteerSchedule.find(w => w.id === scheduleState.editingId);
-      if (week) {
-        week.date = date;
-        week.location = location;
-        week.setupCleanup = setupCleanup;
-        week.gospel = gospel;
-        week.kids = kids;
-        week.it = it;
-        week.songs = songs;
-        week.passageTheme = passageTheme;
+      const existingWeeks = scheduleState.volunteerSchedule.filter(w => w.date.startsWith(scheduleState.editingId));
+      const keptIds = new Set(weeks.map(w => w.existingId).filter(Boolean));
+      for (const ew of existingWeeks) {
+        if (!keptIds.has(ew.id)) {
+          await db.collection('schedule_volunteers').doc(ew.id).delete();
+          scheduleState.volunteerSchedule = scheduleState.volunteerSchedule.filter(w => w.id !== ew.id);
+        }
       }
-    } else {
-      // Add new volunteer week to Firestore
+    }
+
+    // Upsert each week
+    for (const week of weeks) {
       const weekData = {
-        date,
-        location,
-        setupCleanup,
-        gospel,
-        kids,
-        it,
-        songs,
-        passageTheme,
-        createdAt: firebase.firestore.Timestamp.now()
+        date: week.date,
+        location: week.location,
+        setupCleanup: week.setupCleanup,
+        gospel: week.gospel,
+        kids: week.kids,
+        it: week.it,
+        songs: week.songs,
+        passageTheme: week.passageTheme,
       };
 
-      const docRef = await db.collection('schedule_volunteers').add(weekData);
-
-      // Add to local state
-      scheduleState.volunteerSchedule.push({
-        id: docRef.id,
-        ...weekData,
-        createdAt: new Date().toISOString()
-      });
+      if (week.existingId) {
+        await db.collection('schedule_volunteers').doc(week.existingId).update(weekData);
+        const existing = scheduleState.volunteerSchedule.find(w => w.id === week.existingId);
+        if (existing) Object.assign(existing, weekData);
+      } else {
+        weekData.createdAt = firebase.firestore.Timestamp.now();
+        const docRef = await db.collection('schedule_volunteers').add(weekData);
+        scheduleState.volunteerSchedule.push({ id: docRef.id, ...weekData, createdAt: new Date().toISOString() });
+      }
     }
 
     scheduleState.showAddForm = false;
     scheduleState.editingId = null;
     renderScheduleContent();
   } catch (error) {
-    console.error('Error saving volunteer week:', error);
-    alert('Failed to save volunteer week. Please try again.');
+    console.error('Error saving volunteer month:', error);
+    alert('Failed to save. Please try again.');
   }
 }
 
+// Edit an entire month
+window.editVolunteerMonth = function(monthKey) {
+  scheduleState.editingId = monthKey;
+  const weeks = scheduleState.volunteerSchedule
+    .filter(w => w.date.startsWith(monthKey))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const monthDate = new Date(monthKey + '-01');
+  const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  document.getElementById('volMonthFormTitle').textContent = 'Edit ' + monthLabel;
+  document.getElementById('volMonthSubmitBtn').textContent = 'Save Changes';
+  document.getElementById('volMonth').value = monthKey;
+  document.getElementById('volMonth').disabled = true;
+  document.getElementById('volMonthWeeks').innerHTML = '';
+
+  weeks.forEach(w => addVolunteerWeekRow(w));
+  document.getElementById('volunteerMonthForm').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Delete entire month
+window.deleteVolunteerMonth = async function(monthKey) {
+  const weeks = scheduleState.volunteerSchedule.filter(w => w.date.startsWith(monthKey));
+  if (!confirm(`Delete all ${weeks.length} weeks in this month?`)) return;
+
+  try {
+    for (const week of weeks) {
+      await db.collection('schedule_volunteers').doc(week.id).delete();
+    }
+    scheduleState.volunteerSchedule = scheduleState.volunteerSchedule.filter(w => !w.date.startsWith(monthKey));
+    renderScheduleContent();
+  } catch (error) {
+    console.error('Error deleting volunteer month:', error);
+    alert('Failed to delete. Please try again.');
+  }
+};
+
+// Legacy single-week functions (kept for backward compat)
 function editVolunteerWeek(id) {
   const week = scheduleState.volunteerSchedule.find(w => w.id === id);
   if (!week) return;
-
-  scheduleState.editingId = id;
-  scheduleState.showAddForm = true;
-
-  document.getElementById('volDate').value = week.date;
-  document.getElementById('volLocation').value = week.location;
-  document.getElementById('volSetup').value = week.setupCleanup || '';
-  document.getElementById('volGospel').value = week.gospel || '';
-  document.getElementById('volKids').value = week.kids || '';
-  document.getElementById('volIT').value = week.it || '';
-  document.getElementById('volSongs').value = week.songs || '';
-  document.getElementById('volPassage').value = week.passageTheme || '';
-  document.getElementById('volunteerForm').style.display = 'block';
-  document.getElementById('volLocation').focus();
+  const monthKey = week.date.substring(0, 7);
+  editVolunteerMonth(monthKey);
 }
 
 async function deleteVolunteerWeek(id) {
   if (!confirm('Delete this week?')) return;
-
   try {
-    // Delete from Firestore
     await db.collection('schedule_volunteers').doc(id).delete();
-
-    // Remove from local state
     scheduleState.volunteerSchedule = scheduleState.volunteerSchedule.filter(w => w.id !== id);
     renderScheduleContent();
   } catch (error) {
     console.error('Error deleting volunteer week:', error);
-    alert('Failed to delete volunteer week. Please try again.');
+    alert('Failed to delete. Please try again.');
   }
 }
 
@@ -1057,6 +1131,32 @@ function copyVolunteerCard(id, btnEl) {
   if (week.it) text += `💻 IT: ${week.it}\n`;
   if (week.songs) text += `🎵 Songs: ${week.songs}\n`;
   if (week.passageTheme) text += `📜 Passage Theme: ${week.passageTheme}\n`;
+  copyCardText(text.trim(), btnEl);
+}
+
+function copyVolunteerMonth(monthKey, btnEl) {
+  const weeks = scheduleState.volunteerSchedule
+    .filter(w => w.date.startsWith(monthKey))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (!weeks.length) return;
+
+  const monthDate = new Date(monthKey + '-01');
+  const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  let text = `👥 *Volunteering Schedule — ${monthLabel}*\n\n`;
+
+  weeks.forEach(week => {
+    const d = new Date(week.date + 'T00:00:00');
+    const dayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    text += `*${dayLabel}* — 📍 ${week.location}\n`;
+    if (week.setupCleanup) text += `  🧹 ${week.setupCleanup}\n`;
+    if (week.gospel) text += `  📖 ${week.gospel}\n`;
+    if (week.kids) text += `  👶 ${week.kids}\n`;
+    if (week.it) text += `  💻 ${week.it}\n`;
+    if (week.songs) text += `  🎵 ${week.songs}\n`;
+    if (week.passageTheme) text += `  📜 ${week.passageTheme}\n`;
+    text += '\n';
+  });
+
   copyCardText(text.trim(), btnEl);
 }
 
