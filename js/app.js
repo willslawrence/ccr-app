@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.9.6';
+const APP_VERSION = '2.9.7';
 
 // Global state
 const AppState = {
@@ -502,9 +502,10 @@ if ('serviceWorker' in navigator) {
     if (document.querySelector('.pulldown-nav.active')) return;
     // Skip login page
     if (!AppState.currentUser) return;
-    // Skip if touch is inside a modal or form
+    // Skip if touch is inside a modal, form, or horizontally-scrollable container
     const el = e.target;
     if (el.closest('.charity-modal, .modal-overlay, .transaction-form, input, textarea, select')) return;
+    if (el.closest('.vol-grid-scroll, .bible-chapter-grid')) return;
 
     swipeStartX = e.touches[0].clientX;
     swipeStartY = e.touches[0].clientY;
