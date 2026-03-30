@@ -291,7 +291,7 @@ function renderTransactionList() {
             <div><span style="color:var(--muted);">Status:</span> <span style="color:${trans.status === 'Pending' ? '#d97706' : 'var(--green)'};font-weight:600;">${trans.status}</span></div>
             <div><span style="color:var(--muted);">Via:</span> ${escapeHtml(trans.via || '')}</div>
             <div><span style="color:var(--muted);">Allocation:</span> ${trans.allocation}</div>
-            ${trans.donor ? `<div><span style="color:var(--muted);">Donor:</span> ${escapeHtml(trans.donor)}</div>` : ''}
+            ${trans.donor && isAdmin() ? `<div><span style="color:var(--muted);">Donor:</span> ${escapeHtml(trans.donor)}</div>` : ''}
             ${trans.receiptId ? `<div><span style="color:var(--muted);">Receipt #:</span> ${escapeHtml(trans.receiptId)}</div>` : ''}
           </div>
           ${trans.receiptUrl ? `<div style="margin-top:8px;"><a href="${escapeHtml(trans.receiptUrl)}" target="_blank" style="color:var(--accent);font-size:12px;">📎 View Receipt</a></div>` : ''}
@@ -425,10 +425,10 @@ async function renderGivingPage() {
                   <option value="Transfer within CCR">Transfer within CCR</option>
                 </select>
               </div>
-              <div class="form-group">
+              ${isAdmin() ? `<div class="form-group">
                 <label class="form-label">Donor</label>
                 <input type="text" class="form-input" id="transDonor" placeholder="Optional">
-              </div>
+              </div>` : ''}
               <div class="form-group">
                 <label class="form-label">Receipt ID</label>
                 <input type="text" class="form-input" id="transReceiptId" placeholder="Optional">
