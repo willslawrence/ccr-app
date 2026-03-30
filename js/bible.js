@@ -653,7 +653,8 @@ function renderTestamentBooks(books, data, sections) {
     const sectionBooks = section.books.map(name => BIBLE_BOOKS.find(b => b.name === name)).filter(Boolean);
     const sp = getSectionProgress(section, data);
     const sectionId = section.name.replace(/[^a-zA-Z]/g, '');
-    const collapsed = localStorage.getItem(`bible_section_${sectionId}`) === 'collapsed';
+    const stored = localStorage.getItem(`bible_section_${sectionId}`);
+    const collapsed = stored !== 'expanded'; // default: collapsed
     return `
       <div class="bible-section-group">
         <div class="bible-section-header" onclick="toggleBibleSection('${sectionId}')" data-section="${sectionId}">

@@ -3,8 +3,8 @@
    Offline caching for PWA + Push Notifications
    ==================================== */
 
-const CACHE_NAME = 'ccr-app-v88';
-const APP_VERSION = '2.9.4';
+const CACHE_NAME = 'ccr-app-v89';
+const APP_VERSION = '2.9.5';
 
 // Firebase configuration for service worker
 const firebaseConfig = {
@@ -47,27 +47,36 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - network first, cache fallback
+// Fetch event - stale-while-revalidate (instant from cache, update in background)
+// API/Firestore calls bypass cache and go network-only
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
 
+  // Network-only for API calls (Firebase, external APIs)
+  const url = new URL(event.request.url);
+  if (url.hostname.includes('googleapis.com') ||
+      url.hostname.includes('firebaseio.com') ||
+      url.hostname.includes('firestore.googleapis.com') ||
+      url.hostname.includes('gstatic.com')) {
+    return; // let browser handle normally
+  }
+
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Cache successful responses
-        if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Offline fallback from cache
-        return caches.match(event.request);
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((cachedResponse) => {
+        // Always fetch in background to update cache
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => cachedResponse); // network fail = use cache
+
+        // Return cached version immediately if available, otherwise wait for network
+        return cachedResponse || fetchPromise;
+      });
+    })
   );
 });
 
