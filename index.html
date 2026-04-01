@@ -10,8 +10,9 @@
 <title>CCR</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/app.css?v=2.9.8">
+<link rel="stylesheet" href="css/app.css?v=2.9.10">
 </head>
 <body>
 
@@ -37,6 +38,7 @@
     <button class="pulldown-item" data-page="sermons">🎧<span>Sermons</span></button>
     <button class="pulldown-item" data-page="schedule">📅<span>Schedule</span></button>
     <button class="pulldown-item" data-page="bulletin">📋<span>Bulletin</span></button>
+    <button class="pulldown-item" data-page="documents">📄<span>Documents</span></button>
     <button class="pulldown-item" data-page="settings">⚙️<span>Settings</span></button>
   </div>
 </div>
@@ -92,6 +94,10 @@
     <button class="more-menu-item" data-page="home">
       <span class="more-menu-icon">🏠</span>
       <span>Home</span>
+    </button>
+    <button class="more-menu-item" data-page="documents">
+      <span class="more-menu-icon">📄</span>
+      <span>Documents</span>
     </button>
     <button class="more-menu-item" data-page="vote">
       <span class="more-menu-icon">🗳️</span>
@@ -207,30 +213,26 @@
 </div>
 
 <!-- Firebase SDKs (compat for vanilla JS) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<!-- JavaScript Modules -->
-<script src="js/firebase.js?v=2.9.8"></script>
-<script src="js/app.js?v=2.9.8"></script>
-<script src="js/home.js?v=2.9.8"></script>
-<script src="js/auth.js?v=2.9.8"></script>
-<script src="js/prayer.js?v=2.9.8"></script>
-<script src="js/schedule.js?v=2.9.8"></script>
-<script src="js/bulletin.js?v=2.9.8"></script>
-<script src="js/bible.js?v=2.9.8"></script>
-<script src="js/library.js?v=2.9.8"></script>
-<script src="js/charities-data.js?v=2.9.8"></script>
-<script src="js/giving.js?v=2.9.8"></script>
-<script src="js/vote.js?v=2.9.8"></script>
-<script src="js/sermons.js?v=2.9.8"></script>
-<script src="js/settings.js?v=2.9.8"></script>
-<script src="js/notifications.js?v=2.9.8"></script>
-<script src="js/seed-data.js?v=2.9.8"></script>
-<script src="js/qa-test.js?v=2.9.8"></script>
+<!-- Core scripts (eager load — needed on startup) -->
+<script defer src="js/firebase.js?v=2.9.10"></script>
+<script defer src="js/app.js?v=2.9.10"></script>
+<script defer src="js/home.js?v=2.9.10"></script>
+<script defer src="js/auth.js?v=2.9.10"></script>
+<script defer src="js/prayer.js?v=2.9.10"></script>
+<script defer src="js/bulletin.js?v=2.9.10"></script>
+<script defer src="js/documents.js?v=2.9.10"></script>
+<script defer src="js/notifications.js?v=2.9.10"></script>
+<script defer src="js/seed-data.js?v=2.9.10"></script>
+
+<!-- Lazy-loaded scripts (loaded on first navigation to page) -->
+<!-- schedule.js, library.js, giving.js, charities-data.js, bible.js,
+     sermons.js, vote.js, settings.js, seed-data.js, qa-test.js -->
 
 <!-- Service Worker Registration -->
 <script>

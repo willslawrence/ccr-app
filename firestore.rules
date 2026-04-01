@@ -108,6 +108,12 @@ service cloud.firestore {
       allow delete: if isAuth() && request.auth.uid == resource.data.uid;
     }
 
+    // Documents - any authenticated user can read, editors can write
+    match /documents/{documentId} {
+      allow read: if isAuth();
+      allow write: if isEditor();
+    }
+
     // Approved members whitelist - anyone can read (needed for signup check), only admin can write
     match /approvedMembers/{username} {
       allow get: if true; // Allow unauthenticated reads for signup whitelist check

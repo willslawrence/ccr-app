@@ -2,7 +2,41 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.9.8';
+const APP_VERSION = '2.9.10';
+
+// ====================================
+// LAZY SCRIPT LOADER
+// ====================================
+const loadedScripts = new Set();
+async function loadPageScript(src) {
+    if (loadedScripts.has(src)) return;
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => { loadedScripts.add(src); resolve(); };
+        script.onerror = () => reject(new Error('Failed to load: ' + src));
+        document.head.appendChild(script);
+    });
+}
+
+// Page-to-script mapping for lazy loading
+const PAGE_SCRIPTS = {
+    schedule: ['js/schedule.js?v=' + APP_VERSION],
+    library:  ['js/library.js?v=' + APP_VERSION],
+    giving:   ['js/charities-data.js?v=' + APP_VERSION, 'js/giving.js?v=' + APP_VERSION],
+    bible:    ['js/bible.js?v=' + APP_VERSION],
+    sermons:  ['js/sermons.js?v=' + APP_VERSION],
+    vote:     ['js/vote.js?v=' + APP_VERSION],
+    settings: ['js/settings.js?v=' + APP_VERSION]
+};
+
+async function ensurePageScripts(page) {
+    const scripts = PAGE_SCRIPTS[page];
+    if (!scripts) return;
+    for (const src of scripts) {
+        await loadPageScript(src);
+    }
+}
 
 // Global state
 const AppState = {
@@ -11,7 +45,7 @@ const AppState = {
 };
 
 // Page order for swipe navigation
-const PAGE_ORDER = ['home','prayer','giving','library','bible','sermons','schedule','bulletin','settings'];
+const PAGE_ORDER = ['home','prayer','giving','library','bible','sermons','schedule','bulletin','documents','settings'];
 
 // Router
 function navigateTo(page, slideDirection) {
@@ -107,6 +141,15 @@ async function render() {
     }
   }
 
+  // Lazy-load page scripts before rendering
+  try {
+    await ensurePageScripts(AppState.currentPage);
+  } catch (e) {
+    console.error('Failed to load page scripts:', e);
+    app.innerHTML = '<div class="page"><h1>Loading Error</h1><p>Could not load page. Please check your connection and try again.</p></div>';
+    return;
+  }
+
   // Route to page renderer
   switch (AppState.currentPage) {
     case 'login':
@@ -144,6 +187,10 @@ async function render() {
     case 'bulletin':
       app.innerHTML = renderBulletinPage();
       await initBulletinPage();
+      break;
+    case 'documents':
+      app.innerHTML = renderDocumentsPage();
+      await initDocumentsPage();
       break;
     case 'vote':
       app.innerHTML = renderVotePage();
@@ -257,6 +304,7 @@ async function init() {
             const usersCount = await db.collection('users').get();
             if (usersCount.size === 1) {
               console.log('First user detected - initializing seed data');
+              await loadPageScript('js/seed-data.js?v=' + APP_VERSION);
               await initializeSeedData();
             }
           }

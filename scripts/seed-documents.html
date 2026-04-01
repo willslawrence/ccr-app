@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Seed Documents</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #e0e0e0; }
+    .log { margin: 4px 0; }
+    .ok { color: #4ecdc4; }
+    .err { color: #ff6b6b; }
+    button { padding: 12px 24px; font-size: 16px; cursor: pointer; background: #b8860b; color: white; border: none; border-radius: 8px; margin: 8px; }
+    button:disabled { opacity: 0.5; }
+  </style>
+</head>
+<body>
+  <h1>📄 Seed Documents to Firebase</h1>
+  <p>Upload placeholder PDFs and create Firestore documents.</p>
+  <button id="seedBtn" onclick="seedDocuments()">🚀 Seed Documents</button>
+  <button id="clearBtn" onclick="clearDocuments()">🗑️ Clear All Documents</button>
+  <div id="output"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBObs_aGSXFl2Ph4KWz3ohwgvNSbQSmr9I",
+      authDomain: "ccr-church-app.firebaseapp.com",
+      projectId: "ccr-church-app",
+      storageBucket: "ccr-church-app.firebasestorage.app",
+      messagingSenderId: "139840828810",
+      appId: "1:139840828810:web:4f9f275a491eed430e8473"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const auth = firebase.auth();
+
+    const DOCS = [
+      { name: 'Church Covenant',       category: 'governance',  file: 'seed-pdfs/Church Covenant.pdf' },
+      { name: 'Articles of Faith',     category: 'governance',  file: 'seed-pdfs/Articles of Faith.pdf' },
+      { name: '2025 Giving Report',    category: 'financial',   file: 'seed-pdfs/2025 Giving Report.pdf' },
+      { name: 'Child Safety Policy',   category: 'safety',      file: 'seed-pdfs/Child Safety Policy.pdf' },
+      { name: 'Membership Application',category: 'membership',  file: 'seed-pdfs/Membership Application.pdf' },
+      { name: 'New Member Guide',      category: 'membership',  file: 'seed-pdfs/New Member Guide.pdf' },
+      { name: 'Annual Budget 2026',    category: 'financial',   file: 'seed-pdfs/Annual Budget 2026.pdf' },
+      { name: 'Code of Conduct',       category: 'safety',      file: 'seed-pdfs/Code of Conduct.pdf' },
+    ];
+
+    const output = document.getElementById('output');
+    function log(msg, cls = '') {
+      output.innerHTML += `<div class="log ${cls}">${msg}</div>`;
+    }
+
+    async function seedDocuments() {
+      const btn = document.getElementById('seedBtn');
+      btn.disabled = true;
+      output.innerHTML = '';
+
+      // Sign in first
+      log('Signing in...');
+      try {
+        await auth.signInWithEmailAndPassword('admin@ccr.app', 'admin123');
+        log('✅ Signed in as admin', 'ok');
+      } catch (e) {
+        log('❌ Auth failed: ' + e.message, 'err');
+        log('Please sign in to the app first, then re-run this script.', 'err');
+        btn.disabled = false;
+        return;
+      }
+
+      const user = auth.currentUser;
+
+      for (const doc of DOCS) {
+        try {
+          log(`Fetching ${doc.file}...`);
+          const resp = await fetch(doc.file);
+          const blob = await resp.blob();
+          const fileName = `seed_${doc.file.split('/').pop()}`;
+
+          log(`Uploading ${fileName} to Storage...`);
+          const storageRef = storage.ref(`documents/${fileName}`);
+          await storageRef.put(blob, { contentType: 'application/pdf' });
+          const downloadURL = await storageRef.getDownloadURL();
+
+          log(`Creating Firestore doc for "${doc.name}"...`);
+          await db.collection('documents').add({
+            name: doc.name,
+            category: doc.category,
+            fileName: doc.file.split('/').pop(),
+            storageFileName: fileName,
+            storageUrl: downloadURL,
+            uploadedBy: user.uid,
+            uploaderName: 'Admin',
+            uploadedAt: firebase.firestore.Timestamp.now(),
+            fileSize: blob.size
+          });
+
+          log(`✅ ${doc.name} — done`, 'ok');
+        } catch (e) {
+          log(`❌ ${doc.name} — ${e.message}`, 'err');
+        }
+      }
+
+      log('');
+      log('🎉 Seeding complete!', 'ok');
+      btn.disabled = false;
+    }
+
+    async function clearDocuments() {
+      if (!confirm('Delete ALL documents from Firestore and Storage?')) return;
+      const btn = document.getElementById('clearBtn');
+      btn.disabled = true;
+      output.innerHTML = '';
+
+      try {
+        await auth.signInWithEmailAndPassword('admin@ccr.app', 'admin123');
+      } catch(e) {
+        log('❌ Auth failed', 'err');
+        btn.disabled = false;
+        return;
+      }
+
+      const snap = await db.collection('documents').get();
+      for (const doc of snap.docs) {
+        const data = doc.data();
+        try {
+          if (data.storageFileName) {
+            await storage.ref(`documents/${data.storageFileName}`).delete();
+          }
+        } catch(e) { /* ignore */ }
+        await doc.ref.delete();
+        log(`Deleted: ${data.name}`, 'ok');
+      }
+      log('🗑️ All documents cleared', 'ok');
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
