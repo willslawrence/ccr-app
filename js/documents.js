@@ -209,9 +209,20 @@ function renderDocumentCategories() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const url = btn.dataset.url;
-      const name = btn.dataset.name;
       if (url) {
         window.open(url, '_blank');
+      }
+    });
+  });
+
+  // View-only buttons for members (embedded PDF viewer, no download)
+  container.querySelectorAll('.doc-view-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = btn.dataset.url;
+      const name = btn.dataset.name;
+      if (url) {
+        openDocViewer(url, name);
       }
     });
   });
@@ -235,6 +246,7 @@ function renderDocumentCategories() {
 
 function renderDocCard(doc) {
   const canEdit = isEditor();
+  const canDownload = isEditor();
   return `
     <div class="doc-card card">
       <div class="doc-card-main">
@@ -245,9 +257,15 @@ function renderDocCard(doc) {
             ${formatDate(doc.uploadedAt)} · ${formatFileSize(doc.fileSize)}
           </div>
         </div>
-        <button class="doc-download-btn btn btn-outline" data-url="${doc.storageUrl || ''}" data-name="${escapeHtml(doc.name)}" style="font-size:13px;padding:8px 14px;white-space:nowrap;">
-          ⬇️ Open
-        </button>
+        ${canDownload ? `
+          <button class="doc-download-btn btn btn-outline" data-url="${doc.storageUrl || ''}" data-name="${escapeHtml(doc.name)}" style="font-size:13px;padding:8px 14px;white-space:nowrap;">
+            ⬇️ Open
+          </button>
+        ` : `
+          <button class="doc-view-btn btn btn-outline" data-url="${doc.storageUrl || ''}" data-name="${escapeHtml(doc.name)}" style="font-size:13px;padding:8px 14px;white-space:nowrap;">
+            👁️ View
+          </button>
+        `}
       </div>
       ${canEdit ? `
         <div class="doc-card-actions">
@@ -392,6 +410,46 @@ async function handleDocumentEdit(e) {
     alert('Error updating document. Please try again.');
     submitBtn.disabled = false;
   }
+}
+
+function openDocViewer(url, name) {
+  // Create full-screen overlay with embedded PDF viewer
+  const overlay = document.createElement('div');
+  overlay.id = 'docViewerOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;display:flex;flex-direction:column;';
+  
+  const header = document.createElement('div');
+  header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--card-bg,#1e1e1e);border-bottom:1px solid var(--border,#333);';
+  header.innerHTML = `
+    <div style="font-size:16px;font-weight:600;color:var(--text,#fff);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">📄 ${name || 'Document'}</div>
+    <button id="closeDocViewer" style="background:none;border:none;color:var(--text,#fff);font-size:24px;cursor:pointer;padding:4px 8px;">✕</button>
+  `;
+  
+  const iframe = document.createElement('iframe');
+  // Use Google Docs viewer to prevent direct download
+  iframe.src = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+  iframe.style.cssText = 'flex:1;border:none;width:100%;background:#fff;';
+  iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+  
+  overlay.appendChild(header);
+  overlay.appendChild(iframe);
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  
+  document.getElementById('closeDocViewer').addEventListener('click', () => {
+    overlay.remove();
+    document.body.style.overflow = '';
+  });
+  
+  // Close on Escape key
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 }
 
 async function deleteDocument(docId) {
