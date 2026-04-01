@@ -13,9 +13,28 @@
 </head>
 <body>
   <h1>📄 Seed Documents to Firebase</h1>
-  <p>Upload placeholder PDFs and create Firestore documents.</p>
-  <button id="seedBtn" onclick="seedDocuments()">🚀 Seed Documents</button>
-  <button id="clearBtn" onclick="clearDocuments()">🗑️ Clear All Documents</button>
+  <p>Sign in first, then seed or clear documents.</p>
+
+  <!-- Auth Section -->
+  <div id="authSection">
+    <div style="margin:16px 0;">
+      <label style="display:block;margin-bottom:8px;">Email:</label>
+      <input type="email" id="loginEmail" style="padding:8px;font-size:14px;width:280px;border-radius:4px;border:1px solid #555;background:#2a2a3e;color:#e0e0e0;" placeholder="your@email.com">
+    </div>
+    <div style="margin:16px 0;">
+      <label style="display:block;margin-bottom:8px;">Password:</label>
+      <input type="password" id="loginPassword" style="padding:8px;font-size:14px;width:280px;border-radius:4px;border:1px solid #555;background:#2a2a3e;color:#e0e0e0;" placeholder="password">
+    </div>
+    <button id="loginBtn" onclick="doLogin()">🔑 Sign In</button>
+    <div id="authStatus" style="margin-top:12px;"></div>
+  </div>
+
+  <!-- Actions (hidden until signed in) -->
+  <div id="actionsSection" style="display:none;margin-top:20px;">
+    <p style="color:#4ecdc4;">✅ Signed in. Choose an action:</p>
+    <button id="seedBtn" onclick="seedDocuments()">🚀 Seed Documents</button>
+    <button id="clearBtn" onclick="clearDocuments()">🗑️ Clear All Documents</button>
+  </div>
   <div id="output"></div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -52,24 +71,29 @@
       output.innerHTML += `<div class="log ${cls}">${msg}</div>`;
     }
 
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const status = document.getElementById('authStatus');
+      if (!email || !password) { status.innerHTML = '<span class="err">Enter email & password</span>'; return; }
+      status.innerHTML = 'Signing in...';
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        status.innerHTML = '<span class="ok">✅ Signed in as ' + auth.currentUser.email + '</span>';
+        document.getElementById('authSection').querySelector('button').disabled = true;
+        document.getElementById('actionsSection').style.display = 'block';
+      } catch (e) {
+        status.innerHTML = '<span class="err">❌ ' + e.message + '</span>';
+      }
+    }
+
     async function seedDocuments() {
       const btn = document.getElementById('seedBtn');
       btn.disabled = true;
       output.innerHTML = '';
 
-      // Sign in first
-      log('Signing in...');
-      try {
-        await auth.signInWithEmailAndPassword('admin@ccr.app', 'admin123');
-        log('✅ Signed in as admin', 'ok');
-      } catch (e) {
-        log('❌ Auth failed: ' + e.message, 'err');
-        log('Please sign in to the app first, then re-run this script.', 'err');
-        btn.disabled = false;
-        return;
-      }
-
       const user = auth.currentUser;
+      if (!user) { log('❌ Not signed in. Sign in first.', 'err'); btn.disabled = false; return; }
 
       for (const doc of DOCS) {
         try {
@@ -113,10 +137,8 @@
       btn.disabled = true;
       output.innerHTML = '';
 
-      try {
-        await auth.signInWithEmailAndPassword('admin@ccr.app', 'admin123');
-      } catch(e) {
-        log('❌ Auth failed', 'err');
+      if (!auth.currentUser) {
+        log('❌ Not signed in. Sign in first.', 'err');
         btn.disabled = false;
         return;
       }
