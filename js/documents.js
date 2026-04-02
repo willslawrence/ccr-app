@@ -216,13 +216,15 @@ function renderDocumentCategories() {
   });
 
   // View-only buttons for members (embedded PDF viewer, no download)
+  // URL is resolved from state at click time — not stored in DOM
   container.querySelectorAll('.doc-view-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const url = btn.dataset.url;
+      const docId = btn.dataset.docId;
       const name = btn.dataset.name;
-      if (url) {
-        openDocViewer(url, name);
+      const doc = documentsState.documents.find(d => d.id === docId);
+      if (doc && doc.storageUrl) {
+        openDocViewer(doc.storageUrl, name);
       }
     });
   });
@@ -262,7 +264,7 @@ function renderDocCard(doc) {
             ⬇️ Open
           </button>
         ` : `
-          <button class="doc-view-btn btn btn-outline" data-url="${doc.storageUrl || ''}" data-name="${escapeHtml(doc.name)}" style="font-size:13px;padding:8px 14px;white-space:nowrap;">
+          <button class="doc-view-btn btn btn-outline" data-url="" data-name="${escapeHtml(doc.name)}" data-doc-id="${doc.id}" style="font-size:13px;padding:8px 14px;white-space:nowrap;">
             👁️ View
           </button>
         `}
