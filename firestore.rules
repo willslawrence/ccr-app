@@ -120,5 +120,21 @@ service cloud.firestore {
       allow list: if isAdmin(); // Only admin can list all members
       allow write: if isAdmin(); // Only admin can add/remove/update approved members
     }
+
+    // Polls - any authenticated user can read, editors can create/update/delete polls
+    match /polls/{pollId} {
+      allow read: if isAuth();
+      allow create: if isEditor();
+      allow update: if isEditor();
+      allow delete: if isEditor();
+
+      // Poll votes - any authenticated user can read/create/update their own vote
+      match /votes/{userId} {
+        allow read: if isAuth();
+        allow create: if isAuth() && request.auth.uid == userId;
+        allow update: if isAuth() && request.auth.uid == userId;
+        allow delete: if isAuth() && request.auth.uid == userId;
+      }
+    }
   }
 }
