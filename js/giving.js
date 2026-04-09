@@ -390,19 +390,11 @@ async function renderGivingPage() {
       <!-- Transactions Tab -->
       <div class="giving-tab-content ${currentGivingTab === 'transactions' ? 'active' : ''}" data-tab="transactions">
 
-        <!-- Summary Cards -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;text-align:center;">
-          <div class="card" style="padding:12px 8px;">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Incoming</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">SAR ${Math.round(totals.totalIn).toLocaleString()}</div>
-          </div>
-          <div class="card" style="padding:12px 8px;">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Outgoing</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);">SAR ${Math.round(totals.totalOut).toLocaleString()}</div>
-          </div>
-          <div class="card" style="padding:12px 8px;">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">SAR ${Math.round(totals.balance).toLocaleString()}</div>
+        <!-- Balance Only -->
+        <div style="display:flex;justify-content:center;margin-bottom:12px;text-align:center;">
+          <div class="card" style="padding:14px 32px;text-align:center;">
+            <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
+            <div class="mono" style="font-size:22px;font-weight:700;color:var(--accent);">SAR ${Math.round(totals.balance).toLocaleString()}</div>
           </div>
         </div>
 
@@ -439,8 +431,8 @@ async function renderGivingPage() {
           </div>
         </div>
 
-        <!-- Fund Balances Grid — smaller -->
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:16px;">
+        <!-- Fund Balances Grid — 3 columns -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">
           ${Object.entries(fundBalances).map(([fund, balance]) => `
             <div style="padding:6px 8px;background:var(--card-hover);border-radius:4px;">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
