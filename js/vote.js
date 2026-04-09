@@ -370,8 +370,7 @@ async function renderPollCard(poll, isActive) {
     optionsHtml += `
       <div class="vote-poll-option ${!canVote ? 'vote-readonly' : ''} ${isSelected ? 'selected' : ''}"
            data-poll-id="${poll.id}"
-           data-option-idx="${idx}"
-           ${canVote ? `onclick="togglePollOption('${poll.id}', ${idx}, ${poll.multiChoice})"` : ''}>
+           data-option-idx="${idx}">
         <div class="vote-opt-top">
           ${canVote ? '<div class="vote-checkmark"></div>' : ''}
           <div class="vote-opt-info">
@@ -395,9 +394,9 @@ async function renderPollCard(poll, isActive) {
 
   const editorControls = editor ? `
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-      <button class="btn btn-outline" style="font-size:11px;padding:6px 12px;" onclick="togglePollStatus('${poll.id}')">${poll.status === 'active' ? '🔒 Close' : '🔓 Reopen'}</button>
-      <button class="btn btn-outline" style="font-size:11px;padding:6px 12px;" onclick="editPoll('${poll.id}')">✏️ Edit</button>
-      <button class="btn btn-outline" style="font-size:11px;padding:6px 12px;color:var(--red);" onclick="deletePoll('${poll.id}')">🗑️ Delete</button>
+      <button class="btn btn-outline vote-toggle-status" data-poll-id="${poll.id}" style="font-size:11px;padding:6px 12px;">${poll.status === 'active' ? '🔒 Close' : '🔓 Reopen'}</button>
+      <button class="btn btn-outline vote-edit-poll" data-poll-id="${poll.id}" style="font-size:11px;padding:6px 12px;">✏️ Edit</button>
+      <button class="btn btn-outline vote-delete-poll" data-poll-id="${poll.id}" style="font-size:11px;padding:6px 12px;color:var(--red);">🗑️ Delete</button>
     </div>
   ` : '';
 
@@ -418,11 +417,11 @@ async function renderPollCard(poll, isActive) {
       ${optionsHtml}
 
       ${userVote && votable && isActive ? `
-        <button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="changeVote('${poll.id}')">Change Vote</button>
+        <button class="btn btn-primary vote-poll-change-btn" data-poll-id="${poll.id}" style="margin-top:12px;width:100%;">Change Vote</button>
       ` : ''}
 
       ${!userVote && votable && isActive ? `
-        <button class="btn btn-primary" style="margin-top:12px;width:100%;" onclick="submitVote('${poll.id}', ${poll.multiChoice})">Submit Vote</button>
+        <button class="btn btn-primary vote-poll-submit-btn" data-poll-id="${poll.id}" style="margin-top:12px;width:100%;">Submit Vote</button>
       ` : ''}
 
       ${editorControls}
@@ -805,7 +804,56 @@ async function initVotePage() {
     });
   }
 
+  // Event delegation for poll interactions (more reliable on mobile PWAs than onclick attributes)
+  document.addEventListener('click', handleVoteDelegatedClick);
+
   // Render initial content
   await renderActivePolls();
   await renderClosedPolls();
+}
+
+function handleVoteDelegatedClick(e) {
+  const option = e.target.closest('.vote-poll-option:not(.vote-readonly)');
+  if (option) {
+    const pollId = option.dataset.pollId;
+    const optionIdx = parseInt(option.dataset.optionIdx, 10);
+    // Find the poll to get multiChoice
+    const poll = [...voteState.activePolls, ...voteState.closedPolls].find(p => p.id === pollId);
+    if (poll) {
+      togglePollOption(pollId, optionIdx, poll.multiChoice);
+    }
+    return;
+  }
+
+  const submitBtn = e.target.closest('.vote-poll-submit-btn');
+  if (submitBtn) {
+    const pollId = submitBtn.dataset.pollId;
+    const poll = [...voteState.activePolls, ...voteState.closedPolls].find(p => p.id === pollId);
+    if (poll) submitVote(pollId, poll.multiChoice);
+    return;
+  }
+
+  const changeBtn = e.target.closest('.vote-poll-change-btn');
+  if (changeBtn) {
+    changeVote(changeBtn.dataset.pollId);
+    return;
+  }
+
+  const toggleStatusBtn = e.target.closest('.vote-toggle-status');
+  if (toggleStatusBtn) {
+    togglePollStatus(toggleStatusBtn.dataset.pollId);
+    return;
+  }
+
+  const editPollBtn = e.target.closest('.vote-edit-poll');
+  if (editPollBtn) {
+    editPoll(editPollBtn.dataset.pollId);
+    return;
+  }
+
+  const deletePollBtn = e.target.closest('.vote-delete-poll');
+  if (deletePollBtn) {
+    deletePoll(deletePollBtn.dataset.pollId);
+    return;
+  }
 }
