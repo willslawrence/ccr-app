@@ -89,16 +89,12 @@ function calculateIncomingAllocations() {
 }
 
 function calculateFundBalances() {
-  const { cutoff } = getLast120Days();
   const balances = {
     'LC1': 0, 'LC2': 0, 'PC1': 0, 'PC2': 0, 'HH1': 0, 'HH2': 0, 'SP': 0
   };
 
   givingState.transactions.forEach(trans => {
     if (trans.allocation === 'Transfer within CCR') return;
-    if (!trans.date) return;
-    const d = typeof trans.date.toDate === 'function' ? trans.date.toDate() : new Date(trans.date);
-    if (d < cutoff) return;
 
     if (trans.allocation === 'All') {
       if (trans.type === 'Incoming') {
@@ -119,8 +115,27 @@ function calculateFundBalances() {
   return balances;
 }
 
-// Calculate totals (exclude transfers, last 120 days)
+// Calculate totals — ALL TIME (no date filter, used for Balance card)
 function calculateTotals() {
+  const nonTransfers = givingState.transactions.filter(t =>
+    t.allocation !== 'Transfer within CCR'
+  );
+
+  const totalIn = nonTransfers
+    .filter(t => t.type === 'Incoming')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalOut = Math.abs(nonTransfers
+    .filter(t => t.type === 'Outgoing')
+    .reduce((sum, t) => sum + t.amount, 0));
+
+  const balance = totalIn - totalOut;
+
+  return { totalIn, totalOut, balance, programRatioActual: 0, programRatioExpected: 0 };
+}
+
+// Calculate PER metrics — last 120 days (for PER cards)
+function calculatePERStats() {
   const { cutoff } = getLast120Days();
   const nonTransfers = givingState.transactions.filter(t => {
     if (t.allocation === 'Transfer within CCR') return false;
@@ -137,9 +152,7 @@ function calculateTotals() {
     .filter(t => t.type === 'Outgoing')
     .reduce((sum, t) => sum + t.amount, 0));
 
-  const balance = totalIn - totalOut;
-
-  // PER ACTUAL — external spending ÷ total spending
+  // PER ACTUAL
   const outgoing = nonTransfers.filter(t => t.type === 'Outgoing');
   const lc1Spending = Math.abs(outgoing
     .filter(t => t.allocation && t.allocation.startsWith('LC1'))
@@ -148,7 +161,7 @@ function calculateTotals() {
   const externalSpending = totalSpending - lc1Spending;
   const programRatioActual = totalSpending > 0 ? (externalSpending / totalSpending) * 100 : 0;
 
-  // PER EXPECTED — based on incoming allocations
+  // PER EXPECTED
   const alloc = { LC1: 0, LC2: 0, PC1: 0, PC2: 0, HH1: 0, HH2: 0, SP: 0 };
   nonTransfers.filter(t => t.type === 'Incoming').forEach(t => {
     if (t.allocation === 'All') {
@@ -163,21 +176,13 @@ function calculateTotals() {
   const externalAllocated = totalAllocated - (alloc['LC1'] || 0);
   const programRatioExpected = totalAllocated > 0 ? (externalAllocated / totalAllocated) * 100 : 0;
 
-  return { totalIn, totalOut, balance, programRatioActual, programRatioExpected };
+  return { totalIn, totalOut, balance: totalIn - totalOut, programRatioActual, programRatioExpected };
 }
 
 // Calculate total given from transactions (outgoing, excluding transfers, LC1 and LC2)
 function getTotalGiven() {
-  const { cutoff } = getLast120Days();
   return Math.abs(givingState.transactions
-    .filter(t => {
-      if (t.type !== 'Outgoing') return false;
-      if (t.allocation === 'Transfer within CCR') return false;
-      if (t.allocation.startsWith('LC1') || t.allocation.startsWith('LC2')) return false;
-      if (!t.date) return false;
-      const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
-      return d >= cutoff;
-    })
+    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR' && !t.allocation.startsWith('LC1') && !t.allocation.startsWith('LC2'))
     .reduce((sum, t) => sum + t.amount, 0));
 }
 
@@ -416,6 +421,7 @@ function renderTransactionList() {
 async function renderGivingPage() {
   await loadTransactions();
   const totals = calculateTotals();
+  const perStats = calculatePERStats();
   const fundBalances = calculateFundBalances();
   const totalGiven = getTotalGiven();
   const charityTotals = getCharityTransactionTotals();
@@ -470,12 +476,12 @@ async function renderGivingPage() {
         <div style="display:flex;gap:8px;margin-bottom:12px;">
           <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
             <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Actual</div>
-            <div style="font-size:15px;font-weight:700;color:var(--green);">${totals.programRatioActual.toFixed(1)}%</div>
+            <div style="font-size:15px;font-weight:700;color:var(--green);">${perStats.programRatioActual.toFixed(1)}%</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total spending (120d)</div>
           </div>
           <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
             <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Expected</div>
-            <div style="font-size:15px;font-weight:700;color:var(--accent);">${totals.programRatioExpected.toFixed(1)}%</div>
+            <div style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total allocation (120d)</div>
           </div>
         </div>
