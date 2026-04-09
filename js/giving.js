@@ -162,6 +162,62 @@ function getTotalGiven() {
     .reduce((sum, t) => sum + t.amount, 0));
 }
 
+// Get the last 4 months with transaction data (for running averages)
+function getLast4Months() {
+  const months = [];
+  const seen = new Set();
+  // Walk transactions newest-first
+  for (const t of givingState.transactions) {
+    if (!t.date) continue;
+    const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (!seen.has(key) && months.length < 4) {
+      seen.add(key);
+      months.push(key);
+    }
+  }
+  return months.reverse(); // oldest first for averaging
+}
+
+// Monthly tithe average — "All" donations with "Tithe" in description, last 4 months
+function getMonthlyTitheAverage() {
+  const last4 = getLast4Months();
+  const byMonth = {};
+  givingState.transactions.forEach(t => {
+    if (!t.date || t.type !== 'Incoming' || t.allocation !== 'All') return;
+    if (!/Tithe|tithe/i.test(t.description)) return;
+    const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (last4.includes(key)) byMonth[key] = (byMonth[key] || 0) + t.amount;
+  });
+  const values = last4.map(m => byMonth[m] || 0);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  return { months: last4, values, average: avg };
+}
+
+// Monthly LC1 expense average — LC1 outgoing expenses, last 4 months
+function getMonthlyLC1ExpenseAverage() {
+  const last4 = getLast4Months();
+  const byMonth = {};
+  givingState.transactions.forEach(t => {
+    if (!t.date || t.type !== 'Outgoing' || !t.allocation?.startsWith('LC1')) return;
+    if (t.allocation === 'Transfer within CCR') return;
+    const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    if (last4.includes(key)) byMonth[key] = (byMonth[key] || 0) + Math.abs(t.amount);
+  });
+  const values = last4.map(m => byMonth[m] || 0);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  return { months: last4, values, average: avg };
+}
+
+// Ready-to-give = non-LC1 fund balances (LC2 + PC1 + PC2 + HH1 + HH2 + SP)
+function getReadyToGiveFunds() {
+  const balances = calculateFundBalances();
+  return (balances.LC2 || 0) + (balances.PC1 || 0) + (balances.PC2 || 0) +
+         (balances.HH1 || 0) + (balances.HH2 || 0) + (balances.SP || 0);
+}
+
 // Calculate amount given per charity from transactions (maps transaction descriptions to charity names)
 // Compute live Local Church stats from Firestore transactions
 function getLocalChurchLiveStats() {
@@ -314,6 +370,9 @@ async function renderGivingPage() {
   const fundBalances = calculateFundBalances();
   const totalGiven = getTotalGiven();
   const charityTotals = getCharityTransactionTotals();
+  const titheStats = getMonthlyTitheAverage();
+  const lc1Stats = getMonthlyLC1ExpenseAverage();
+  const readyToGive = getReadyToGiveFunds();
   updateLocalChurchCharityData();
 
   return `
@@ -331,49 +390,65 @@ async function renderGivingPage() {
       <!-- Transactions Tab -->
       <div class="giving-tab-content ${currentGivingTab === 'transactions' ? 'active' : ''}" data-tab="transactions">
 
-        <!-- Summary Card -->
-        <div class="card" style="margin-bottom:20px;">
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;margin-bottom:16px;">
-            <div>
-              <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Incoming</div>
-              <div class="mono" style="font-size:16px;font-weight:700;color:var(--green);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.totalIn).toLocaleString()}</div>
-            </div>
-            <div>
-              <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Outgoing</div>
-              <div class="mono" style="font-size:16px;font-weight:700;color:var(--red);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.totalOut).toLocaleString()}</div>
-            </div>
-            <div>
-              <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Balance</div>
-              <div class="mono" style="font-size:16px;font-weight:700;color:var(--accent);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.balance).toLocaleString()}</div>
-            </div>
+        <!-- Summary Cards -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;text-align:center;">
+          <div class="card" style="padding:12px 8px;">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Incoming</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">SAR ${Math.round(totals.totalIn).toLocaleString()}</div>
           </div>
-          
-          <!-- Program Expense Ratio -->
-          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Program Expense Ratio</div>
-          <div style="display:flex;gap:8px;margin-bottom:16px;">
-            <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Actual</div>
-              <div style="font-size:16px;font-weight:700;color:var(--green);">${totals.programRatioActual.toFixed(1)}%</div>
-              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on spending</div>
-            </div>
-            <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
-              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">Expected</div>
-              <div style="font-size:16px;font-weight:700;color:var(--accent);">${totals.programRatioExpected.toFixed(1)}%</div>
-              <div style="font-size:9px;color:var(--muted);margin-top:2px;">Based on incoming allocations</div>
-            </div>
+          <div class="card" style="padding:12px 8px;">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Outgoing</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);">SAR ${Math.round(totals.totalOut).toLocaleString()}</div>
           </div>
+          <div class="card" style="padding:12px 8px;">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">SAR ${Math.round(totals.balance).toLocaleString()}</div>
+          </div>
+        </div>
 
-          <!-- Fund Balances Grid -->
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-            ${Object.entries(fundBalances).map(([fund, balance]) => `
-              <div style="padding:8px;background:var(--card-hover);border-radius:4px;">
-                <div style="font-size:10px;color:var(--muted);margin-bottom:2px;">${FUND_NAMES[fund]}</div>
-                <div style="font-size:14px;font-weight:600;color:${balance >= 0 ? 'var(--green)' : 'var(--red)'};">
-                  ${balance >= 0 ? '' : '-'}${formatAmount(balance, true)}
-                </div>
-              </div>
-            `).join('')}
+        <!-- Running Averages + Ready to Give -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;text-align:center;">
+          <div class="card" style="padding:10px 8px;">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly Tithe Avg</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">SAR ${Math.round(titheStats.average).toLocaleString()}</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Last ${titheStats.months.length} months</div>
           </div>
+          <div class="card" style="padding:10px 8px;">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly LC1 Expense</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);">SAR ${Math.round(lc1Stats.average).toLocaleString()}</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Last ${lc1Stats.months.length} months</div>
+          </div>
+          <div class="card" style="padding:10px 8px;">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Ready to Give</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">SAR ${Math.round(readyToGive).toLocaleString()}</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Non-LC1 funds</div>
+          </div>
+        </div>
+
+        <!-- Program Expense Ratio -->
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Actual</div>
+            <div style="font-size:15px;font-weight:700;color:var(--green);">${totals.programRatioActual.toFixed(1)}%</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total spending</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
+            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Expected</div>
+            <div style="font-size:15px;font-weight:700;color:var(--accent);">${totals.programRatioExpected.toFixed(1)}%</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total allocation</div>
+          </div>
+        </div>
+
+        <!-- Fund Balances Grid — smaller -->
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:16px;">
+          ${Object.entries(fundBalances).map(([fund, balance]) => `
+            <div style="padding:6px 8px;background:var(--card-hover);border-radius:4px;">
+              <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
+              <div style="font-size:12px;font-weight:600;color:${balance >= 0 ? 'var(--green)' : 'var(--red)'};">
+                ${balance >= 0 ? '' : '-'}${formatAmount(balance, true)}
+              </div>
+            </div>
+          `).join('')}
         </div>
 
         ${isAdmin() || isEditor() ? `
