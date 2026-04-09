@@ -370,7 +370,7 @@ function renderBulletinDisplay() {
 
     return `
       <div class="card" style="margin-bottom:14px;${isLatest ? 'border:2px solid var(--accent);' : ''}${!bulletin.published ? 'border:1px dashed var(--muted);opacity:0.8;' : ''}position:relative;">
-        <button class="copy-card-btn" onclick="event.stopPropagation(); copyBulletinCard('${bulletin.id}', this)" title="Copy for sharing">📋</button>
+        <button class="copy-card-btn" onclick="event.stopPropagation(); copyBulletinCard('${bulletin.id}', this)" title="Copy for sharing">📋 Copy</button>
         <div class="card-header">
           <div style="flex:1;">
             <div class="card-title" style="font-size:15px;">${formatDate(bulletin.date)}</div>

@@ -176,7 +176,7 @@ function renderEventsTab() {
 
         return `
           <div class="card" style="margin-bottom:12px;${isPast ? 'opacity:0.5;' : ''}position:relative;">
-            <button class="copy-card-btn" onclick="event.stopPropagation(); copyEventCard('${event.id}', this)" title="Copy for sharing">📋</button>
+            <button class="copy-card-btn" onclick="event.stopPropagation(); copyEventCard('${event.id}', this)" title="Copy for sharing">📋 Copy</button>
             <div class="card-header">
               <div style="flex:1;">
                 <div class="card-meta">${formatDate(event.date)}${event.time ? ' • ' + event.time : ''}</div>
@@ -410,7 +410,7 @@ function renderVolunteeringTab() {
                 <strong style="font-size:15px;">${monthLabel}</strong>
                 ${isCurrent ? '<span class="badge" style="background:var(--accent);color:white;font-size:10px;padding:3px 8px;">CURRENT</span>' : ''}
               </div>
-              <button class="copy-card-btn" onclick="event.stopPropagation(); copyVolunteerMonth('${monthKey}', this)" title="Copy month for sharing" style="position:static;">📋</button>
+              <button class="copy-card-btn" onclick="event.stopPropagation(); copyVolunteerMonth('${monthKey}', this)" title="Copy month for sharing" style="position:static;">📋 Copy</button>
             </div>
             <div class="vol-grid-scroll">
               <table class="vol-grid-table">
@@ -788,7 +788,7 @@ function renderOoSTab() {
         </div>
       ` : `
         <div class="card" style="margin-bottom:16px;padding:10px 12px;position:relative;">
-          <button class="copy-card-btn" onclick="event.stopPropagation(); copyOoSCard('${currentOoS.id}', this)" title="Copy for sharing">📋</button>
+          <button class="copy-card-btn" onclick="event.stopPropagation(); copyOoSCard('${currentOoS.id}', this)" title="Copy for sharing">📋 Copy</button>
           <div class="card-header" style="margin-bottom:8px;">
             <div style="flex:1;">
               <div class="card-title" style="font-size:14px;">Order of Service</div>
