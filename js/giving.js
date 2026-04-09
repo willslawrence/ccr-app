@@ -162,11 +162,23 @@ function getTotalGiven() {
     .reduce((sum, t) => sum + t.amount, 0));
 }
 
-// Get the last 4 months with transaction data (for running averages)
+// Get the last N days of transaction data (rolling window)
+function getLast120Days() {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000);
+  const days = [];
+  for (let i = 0; i < 120; i++) {
+    const d = new Date(cutoff.getTime() + i * 24 * 60 * 60 * 1000);
+    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    days.push({ date: d, key });
+  }
+  return { cutoff, days, now };
+}
+
+// Get month labels for display (past 4 calendar months)
 function getLast4Months() {
   const months = [];
   const seen = new Set();
-  // Walk transactions newest-first
   for (const t of givingState.transactions) {
     if (!t.date) continue;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
@@ -176,39 +188,35 @@ function getLast4Months() {
       months.push(key);
     }
   }
-  return months.reverse(); // oldest first for averaging
+  return months.reverse();
 }
 
-// Monthly tithe average — "All" donations with "Tithe" in description, last 4 months
+// Monthly tithe average — "All" donations with "Tithe" in description, past 120 days
 function getMonthlyTitheAverage() {
-  const last4 = getLast4Months();
-  const byMonth = {};
+  const { cutoff } = getLast120Days();
+  let total = 0;
   givingState.transactions.forEach(t => {
     if (!t.date || t.type !== 'Incoming' || t.allocation !== 'All') return;
     if (!/Tithe|tithe/i.test(t.description)) return;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
-    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    if (last4.includes(key)) byMonth[key] = (byMonth[key] || 0) + t.amount;
+    if (d >= cutoff) total += t.amount;
   });
-  const values = last4.map(m => byMonth[m] || 0);
-  const avg = values.reduce((a, b) => a + b, 0) / values.length;
-  return { months: last4, values, average: avg };
+  const avg = total / 4; // 120 days = 4 x 30-day months
+  return { total, average: avg };
 }
 
-// Monthly LC1 expense average — LC1 outgoing expenses, last 4 months
+// Monthly LC1 expense average — LC1 outgoing expenses, past 120 days
 function getMonthlyLC1ExpenseAverage() {
-  const last4 = getLast4Months();
-  const byMonth = {};
+  const { cutoff } = getLast120Days();
+  let total = 0;
   givingState.transactions.forEach(t => {
     if (!t.date || t.type !== 'Outgoing' || !t.allocation?.startsWith('LC1')) return;
     if (t.allocation === 'Transfer within CCR') return;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
-    const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    if (last4.includes(key)) byMonth[key] = (byMonth[key] || 0) + Math.abs(t.amount);
+    if (d >= cutoff) total += Math.abs(t.amount);
   });
-  const values = last4.map(m => byMonth[m] || 0);
-  const avg = values.reduce((a, b) => a + b, 0) / values.length;
-  return { months: last4, values, average: avg };
+  const avg = total / 4; // 120 days = 4 x 30-day months
+  return { total, average: avg };
 }
 
 // Ready-to-give = non-LC1 fund balances (LC2 + PC1 + PC2 + HH1 + HH2 + SP)
@@ -403,12 +411,12 @@ async function renderGivingPage() {
           <div class="card" style="padding:10px 8px;">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly Tithe Avg</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">SAR ${Math.round(titheStats.average).toLocaleString()}</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Last ${titheStats.months.length} months</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 120 days ÷ 4</div>
           </div>
           <div class="card" style="padding:10px 8px;">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly LC1 Expense</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);">SAR ${Math.round(lc1Stats.average).toLocaleString()}</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Last ${lc1Stats.months.length} months</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 120 days ÷ 4</div>
           </div>
           <div class="card" style="padding:10px 8px;">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Ready to Give</div>
