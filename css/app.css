@@ -2501,6 +2501,17 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   background: var(--accent-glow);
 }
 
+.vote-poll-option.selected .vote-checkmark {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.vote-poll-option.selected .vote-checkmark::after {
+  content: "✓";
+  color: white;
+  font-weight: 700;
+}
+
 .vote-poll-option:not(.vote-readonly):active .vote-opt-top {
   background: rgba(0,0,0,0.03);
 }
