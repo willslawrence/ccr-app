@@ -411,12 +411,12 @@ async function renderGivingPage() {
           <div class="card" style="padding:10px 8px;">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly Tithe Avg</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">SAR ${Math.round(titheStats.average).toLocaleString()}</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 120 days ÷ 4</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 4 months</div>
           </div>
           <div class="card" style="padding:10px 8px;">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly LC1 Expense</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);">SAR ${Math.round(lc1Stats.average).toLocaleString()}</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 120 days ÷ 4</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 4 months</div>
           </div>
           <div class="card" style="padding:10px 8px;">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Ready to Give</div>
