@@ -179,9 +179,12 @@ function renderVotePage() {
   return `
     <div class="page vote-page">
       <div class="page-sticky-banner">
-        <div class="page-header">
-          <h1 class="page-title">🗳️ Voting</h1>
-          <p class="page-subtitle">Vote on church matters · Finances, nominations, elections & more</p>
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <h1 class="page-title">🗳️ Voting</h1>
+            <p class="page-subtitle">Vote on church matters · Finances, nominations, elections & more</p>
+          </div>
+          <button class="btn btn-outline" id="voteRefreshBtn" style="padding:6px 10px;font-size:12px;" title="Refresh polls">🔄</button>
         </div>
 
         <div class="btn-group">
@@ -808,9 +811,28 @@ async function initVotePage() {
   // Event delegation for poll interactions (more reliable on mobile PWAs than onclick attributes)
   document.addEventListener('click', handleVoteDelegatedClick);
 
-  // Render initial content
+  // Refresh button — only fetches on demand, not on every tab switch
+  document.addEventListener('click', handleVoteRefresh);
+
+  // Only fetch on first load (not on every tab switch)
+  if (!voteState.pollsLoaded) {
+    voteState.pollsLoaded = true;
+    await loadPolls();
+    await renderActivePolls();
+    await renderClosedPolls();
+  }
+}
+
+async function handleVoteRefresh(e) {
+  const btn = e.target.closest('#voteRefreshBtn');
+  if (!btn) return;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  await loadPolls(true); // force refresh from Firestore
   await renderActivePolls();
   await renderClosedPolls();
+  btn.textContent = '🔄';
+  btn.disabled = false;
 }
 
 function handleVoteDelegatedClick(e) {
