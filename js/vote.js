@@ -370,7 +370,8 @@ async function renderPollCard(poll, isActive) {
     optionsHtml += `
       <div class="vote-poll-option ${!canVote ? 'vote-readonly' : ''} ${isSelected ? 'selected' : ''}"
            data-poll-id="${poll.id}"
-           data-option-idx="${idx}">
+           data-option-idx="${idx}"
+           onclick="togglePollOption('${poll.id}', ${idx}, ${poll.multiChoice})">
         <div class="vote-opt-top">
           ${canVote ? '<div class="vote-checkmark"></div>' : ''}
           <div class="vote-opt-info">

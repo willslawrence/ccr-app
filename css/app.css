@@ -2487,6 +2487,9 @@ body.dark-theme .vote-opt-row:active .vote-opt-top {
   margin-bottom: 10px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .vote-poll-option.vote-readonly {
