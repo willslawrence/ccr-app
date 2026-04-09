@@ -374,6 +374,10 @@ async function renderPollCard(poll, isActive) {
       <div class="vote-poll-option ${!canVote ? 'vote-readonly' : ''} ${isSelected ? 'selected' : ''}"
            data-poll-id="${poll.id}"
            data-option-idx="${idx}"
+           data-stored-votes="${voteCount}"
+           data-stored-total="${totalVotes}"
+           data-max-votes="${maxVotes}"
+           data-pass-threshold="${poll.passThreshold || 0}"
            onclick="togglePollOption('${poll.id}', ${idx}, ${poll.multiChoice})">
         <div class="vote-opt-top">
           ${canVote ? '<div class="vote-checkmark"></div>' : ''}
@@ -559,11 +563,86 @@ function togglePollOption(pollId, optionIdx, multiChoice) {
   const clicked = document.querySelector(`.vote-poll-option[data-poll-id="${pollId}"][data-option-idx="${optionIdx}"]`);
 
   if (!multiChoice) {
-    // Single choice: unselect all others
-    options.forEach(opt => opt.classList.remove('selected'));
+    // Single choice: unselect all others, reset their projected counts
+    options.forEach(opt => {
+      opt.classList.remove('selected');
+      resetOptionProjection(opt);
+    });
   }
 
-  clicked.classList.toggle('selected');
+  const isSelected = clicked.classList.toggle('selected');
+
+  if (isSelected) {
+    // Show projected vote — add +1 to this option's count
+    applyProjection(clicked, 1);
+  } else {
+    // Remove projection
+    resetOptionProjection(clicked);
+  }
+
+  // If single choice, also reset projections on non-selected options
+  if (!multiChoice) {
+    options.forEach(opt => {
+      if (!opt.classList.contains('selected')) {
+        resetOptionProjection(opt);
+      }
+    });
+  }
+}
+
+function applyProjection(optionEl, delta) {
+  const votesEl = optionEl.querySelector('.vote-opt-votes');
+  const pctEl = optionEl.querySelector('.vote-opt-percentage');
+  const barEl = optionEl.querySelector('.vote-bar-fill');
+
+  const currentVotes = parseInt(optionEl.dataset.storedVotes || '0', 10);
+  const totalVoters = parseInt(optionEl.dataset.storedTotal || '0', 10);
+  const passThreshold = parseFloat(optionEl.dataset.passThreshold || '0');
+
+  const newVotes = currentVotes + delta;
+  const newTotal = totalVoters + (delta > 0 ? 1 : 0);
+  const newPct = newTotal > 0 ? ((newVotes / newTotal) * 100).toFixed(1) : '0.0';
+  const maxVotes = parseFloat(optionEl.dataset.maxVotes || '1');
+  const newBarWidth = maxVotes > 0 ? (newVotes / maxVotes) * 100 : 0;
+
+  if (votesEl) {
+    votesEl.textContent = newVotes + (delta > 0 ? ' → ' + (newVotes) : '');
+    votesEl.style.color = delta > 0 ? 'var(--gold)' : '';
+    votesEl.style.fontWeight = delta > 0 ? '700' : '';
+  }
+  if (pctEl) {
+    pctEl.textContent = newPct + '%';
+    pctEl.style.color = delta > 0 ? 'var(--gold)' : '';
+  }
+  if (barEl) {
+    barEl.style.width = Math.min(newBarWidth, 100) + '%';
+    barEl.style.opacity = delta > 0 ? '1' : '';
+  }
+}
+
+function resetOptionProjection(optionEl) {
+  const votesEl = optionEl.querySelector('.vote-opt-votes');
+  const pctEl = optionEl.querySelector('.vote-opt-percentage');
+  const barEl = optionEl.querySelector('.vote-bar-fill');
+  const storedVotes = parseInt(optionEl.dataset.storedVotes || '0', 10);
+  const storedTotal = parseInt(optionEl.dataset.storedTotal || '0', 10);
+  const maxVotes = parseFloat(optionEl.dataset.maxVotes || '1');
+  const passThreshold = parseFloat(optionEl.dataset.passThreshold || '0');
+
+  const pct = storedTotal > 0 ? ((storedVotes / storedTotal) * 100).toFixed(1) : '0.0';
+  const barWidth = maxVotes > 0 ? (storedVotes / maxVotes) * 100 : 0;
+  const meetsThreshold = parseFloat(pct) >= passThreshold;
+
+  if (votesEl) {
+    votesEl.textContent = storedVotes;
+    votesEl.style.color = '';
+    votesEl.style.fontWeight = '';
+  }
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (barEl) {
+    barEl.style.width = Math.min(barWidth, 100) + '%';
+    barEl.style.opacity = meetsThreshold ? '' : '0.6';
+  }
 }
 
 async function submitVote(pollId, multiChoice) {
