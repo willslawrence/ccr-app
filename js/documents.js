@@ -163,10 +163,10 @@ function renderDocumentCategories() {
     grouped[cat].push(doc);
   });
 
-  // Default expand all categories that have documents
+  // Default collapse all categories
   DOC_CATEGORIES.forEach(c => {
-    if (documentsState.expandedCategories[c.key] === undefined && grouped[c.key].length > 0) {
-      documentsState.expandedCategories[c.key] = true;
+    if (documentsState.expandedCategories[c.key] === undefined) {
+      documentsState.expandedCategories[c.key] = false;
     }
   });
 
