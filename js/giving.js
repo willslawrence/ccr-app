@@ -31,17 +31,19 @@ const FUND_NAMES = {
   'PC2': 'PC2 Church Planting',
   'HH1': 'HH1 Orphans/Widows/Sojourners',
   'HH2': 'HH2 Persecuted Church',
-  'SP': 'Special Projects'
+  'SP': 'Special Projects',
+  'MC': 'Member Care'
 };
 
 const FUND_TOOLTIPS = {
-  'LC1': '1/4 of tithes. Local church overhead — esterahas, rent, food, supplies. E.g. Estaraha rent.',
+  'LC1': '1/4 of tithes. Church overhead — istarahas, food, supplies.',
   'LC2': '1/12 of tithes. Ministry of the Word — preaching and teaching resources. E.g. Joyful Joseph.',
-  'PC1': '1/6 of tithes. Global church needs. E.g. Daniels Gift.',
-  'PC2': '1/6 of tithes. Church planting — starting new congregations. E.g. Stan and Tasha, Radical.',
-  'HH1': '1/12 of tithes. Orphans, widows, and sojourners. E.g. Lifesong for Orphans, Send Relief, Crisis Aid.',
-  'HH2': '1/12 of tithes. Persecuted church — Christians facing persecution. E.g. Open Doors International.',
-  'SP': 'Special project fund — designated giving for specific needs. E.g. Kenyan Mother support, projector.'
+  'PC1': '1/6 of tithes. Other churches or their church members local or global. E.g. Daniels Gift.',
+  'PC2': '1/6 of tithes. Evangelism, Bible studies, missionaries. E.g. Stan and Tasha, Radical.',
+  'HH1': '1/12 of tithes. Those in need, aid, crisis. E.g. Crisis Aid, Lifesong for Orphans, Send Relief.',
+  'HH2': '1/12 of tithes. Christians facing persecution. E.g. Open Doors International.',
+  'SP': 'You decide — designated giving for specific ad hoc needs. E.g. Kenyan Mother support, projector, illnesses.',
+  'MC': 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.'
 };
 
 // Load transactions from Firestore (cached — only fetches once per session)
@@ -459,42 +461,45 @@ async function renderGivingPage() {
 
         <!-- Balance Only -->
         <div style="display:flex;justify-content:center;margin-bottom:12px;text-align:center;">
-          <div class="card info-card" style="padding:14px 32px;text-align:center;cursor:pointer;" onclick="showCardTooltip(this, 'Total incoming minus total outgoing since tracking began. All transactions, no date filter.')">
+          <div class="card info-card" style="padding:14px 32px;text-align:center;cursor:pointer;" onclick="showCardTooltip(this, 'Total Church Funds')">
             <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
             <div class="mono" style="font-size:22px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.balance).toLocaleString()}</div>
           </div>
         </div>
 
-        <!-- Running Averages + Ready to Give -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;text-align:center;">
-          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Average monthly tithe income over the past 120 days. Based on any incoming transaction with \'Tithe\' in the description.')">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly Tithe Avg</div>
+        <!-- Stats Row 1: Tithe + Expenses + Ready to Give -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;text-align:center;">
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Average monthly tithe income over the past 120 days.')">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Tithe Avg/Mon</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(titheStats.average).toLocaleString()}</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 4 months</div>
           </div>
-          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Average monthly Local Church overhead over the past 120 days. Includes esterahas, food, supplies, and rent.')">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly LC1 Expense</div>
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Average monthly Local Church overhead over the past 120 days. Includes istarahas, food, and supplies.')">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Expenses Avg/Mon</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(lc1Stats.average).toLocaleString()}</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 4 months</div>
           </div>
-          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Total balance minus LC1 funds. This is what we give to our chosen charities.')">
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Funds earmarked for the chosen charities we give to. LC2, PC1&2, and HH1&2 (excludes LC1)')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Ready to Give</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(readyToGive).toLocaleString()}</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">Non-LC1 funds</div>
           </div>
         </div>
 
-        <!-- Program Expense Ratio -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <div class="card info-card" style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;cursor:pointer;" onclick="showCardTooltip(this, 'Shows what % of money has gone to charities compared to all spending.')">
-            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Actual</div>
-            <div style="font-size:15px;font-weight:700;color:var(--green);">${perStats.programRatioActual.toFixed(1)}%</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total spending</div>
+        <!-- Stats Row 2: PER Actual + PER Expected + Member Care -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of money that has gone to charities compared to all spending.')">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PER Actual</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">${perStats.programRatioActual.toFixed(1)}%</div>
           </div>
-          <div class="card info-card" style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;cursor:pointer;" onclick="showCardTooltip(this, 'Shows what % of tithe was earmarked for missions and charities.')">
-            <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Expected</div>
-            <div style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total allocation</div>
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of tithe thats earmarked for missions and charities but not yet given.')">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PER Expected</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
+          </div>
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.')">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Member Care</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> 400</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Monthly budget</div>
           </div>
         </div>
 
