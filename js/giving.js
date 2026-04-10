@@ -1134,10 +1134,11 @@ async function deleteTransaction(id) {
 // Tooltip system for info cards
 let tooltipTimer = null;
 function showCardTooltip(el, text) {
+  console.log('Tooltip clicked:', text);
   if (tooltipTimer) { clearTimeout(tooltipTimer); tooltipTimer = null; }
   const tip = document.getElementById('cardTooltip');
   const tipText = document.getElementById('cardTooltipText');
-  if (!tip || !tipText) return;
+  if (!tip || !tipText) { console.warn('Tooltip element not found'); return; }
   tipText.textContent = text;
   tip.style.display = 'block';
   tooltipTimer = setTimeout(() => { tip.style.display = 'none'; tooltipTimer = null; }, 4000);
