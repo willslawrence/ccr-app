@@ -487,8 +487,8 @@ async function renderGivingPage() {
           </div>
         </div>
 
-        <!-- Stats Row 2: PER Actual + PER Expected + Member Care -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+        <!-- PER Cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of money that has gone to charities compared to all spending.')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PER Actual</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">${perStats.programRatioActual.toFixed(1)}%</div>
@@ -496,11 +496,6 @@ async function renderGivingPage() {
           <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of tithe thats earmarked for missions and charities but not yet given.')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PER Expected</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
-          </div>
-          <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.')">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Member Care</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> 400</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">Monthly budget</div>
           </div>
         </div>
 
@@ -511,11 +506,11 @@ async function renderGivingPage() {
 
         <!-- Fund Balances Grid — 3 columns -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">
-          ${Object.entries(fundBalances).map(([fund, balance]) => `
+          ${Object.entries({...fundBalances, MC: 0}).map(([fund, balance]) => `
             <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this, '${(FUND_TOOLTIPS[fund]||'').replace(/'/g, "\\'")}')">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
-              <div style="font-size:12px;font-weight:600;color:${balance >= 0 ? 'var(--green)' : 'var(--red)'};">
-                ${balance >= 0 ? '' : '-'}${formatAmount(balance, true)}
+              <div style="font-size:12px;font-weight:600;color:var(--green);">
+                ${fund === 'MC' ? '<span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> 400' : (balance >= 0 ? '' : '-') + formatAmount(balance, true)}
               </div>
             </div>
           `).join('')}
