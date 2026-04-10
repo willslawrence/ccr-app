@@ -215,12 +215,12 @@ function getLast4Months() {
   return months.reverse();
 }
 
-// Monthly tithe average — "All" donations with "Tithe" in description, past 120 days
+// Monthly tithe average — any incoming with "Tithe" in description, past 120 days
 function getMonthlyTitheAverage() {
   const { cutoff } = getLast120Days();
   let total = 0;
   givingState.transactions.forEach(t => {
-    if (!t.date || t.type !== 'Incoming' || t.allocation !== 'All') return;
+    if (!t.date || t.type !== 'Incoming') return;
     if (!/Tithe|tithe/i.test(t.description)) return;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     if (d >= cutoff) total += t.amount;
@@ -447,43 +447,48 @@ async function renderGivingPage() {
 
         <!-- Balance Only -->
         <div style="display:flex;justify-content:center;margin-bottom:12px;text-align:center;">
-          <div class="card" style="padding:14px 32px;text-align:center;">
+          <div class="card info-card" style="padding:14px 32px;text-align:center;cursor:pointer;" onclick="showCardTooltip(this, 'Total incoming minus total outgoing since tracking began. All transactions, no date filter.')">
             <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
-            <div class="mono" style="font-size:22px;font-weight:700;color:var(--accent);">SAR ${Math.round(totals.balance).toLocaleString()}</div>
+            <div class="mono" style="font-size:22px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.balance).toLocaleString()}</div>
           </div>
         </div>
 
         <!-- Running Averages + Ready to Give -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;text-align:center;">
-          <div class="card" style="padding:10px 8px;">
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Average monthly tithe income over the past 120 days. Based on any incoming transaction with \'Tithe\' in the description.')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly Tithe Avg</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">SAR ${Math.round(titheStats.average).toLocaleString()}</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(titheStats.average).toLocaleString()}</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 4 months</div>
           </div>
-          <div class="card" style="padding:10px 8px;">
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Average monthly Local Church overhead over the past 120 days. Includes esterahas, food, supplies, and rent.')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Monthly LC1 Expense</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);">SAR ${Math.round(lc1Stats.average).toLocaleString()}</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--red);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(lc1Stats.average).toLocaleString()}</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">Past 4 months</div>
           </div>
-          <div class="card" style="padding:10px 8px;">
+          <div class="card info-card" style="padding:10px 8px;cursor:pointer;" onclick="showCardTooltip(this, 'Total balance minus LC1 funds. This is what we give to our chosen charities.')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Ready to Give</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">SAR ${Math.round(readyToGive).toLocaleString()}</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(readyToGive).toLocaleString()}</div>
             <div style="font-size:8px;color:var(--muted);margin-top:2px;">Non-LC1 funds</div>
           </div>
         </div>
 
         <!-- Program Expense Ratio -->
         <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
+          <div class="card info-card" style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;cursor:pointer;" onclick="showCardTooltip(this, 'Shows what % of money has gone to charities compared to all spending.')">
             <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Actual</div>
             <div style="font-size:15px;font-weight:700;color:var(--green);">${perStats.programRatioActual.toFixed(1)}%</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total spending (120d)</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total spending</div>
           </div>
-          <div style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;">
+          <div class="card info-card" style="flex:1;text-align:center;padding:8px;background:var(--card-hover);border-radius:6px;cursor:pointer;" onclick="showCardTooltip(this, 'Shows what % of tithe was earmarked for missions and charities.')">
             <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;">PER Expected</div>
             <div style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
-            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total allocation (120d)</div>
+            <div style="font-size:8px;color:var(--muted);margin-top:2px;">External ÷ Total allocation</div>
           </div>
+        </div>
+
+        <!-- Tooltip -->
+        <div id="cardTooltip" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;padding:10px 16px;border-radius:10px;font-size:12px;line-height:1.5;max-width:280px;text-align:center;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+          <span id="cardTooltipText"></span>
         </div>
 
         <!-- Fund Balances Grid — 3 columns -->
@@ -1113,4 +1118,15 @@ async function deleteTransaction(id) {
     console.error('Error deleting transaction:', error);
     alert('Error deleting transaction. Please try again.');
   }
+}
+// Tooltip system for info cards
+let tooltipTimer = null;
+function showCardTooltip(el, text) {
+  if (tooltipTimer) { clearTimeout(tooltipTimer); tooltipTimer = null; }
+  const tip = document.getElementById('cardTooltip');
+  const tipText = document.getElementById('cardTooltipText');
+  if (!tip || !tipText) return;
+  tipText.textContent = text;
+  tip.style.display = 'block';
+  tooltipTimer = setTimeout(() => { tip.style.display = 'none'; tooltipTimer = null; }, 4000);
 }
