@@ -2634,7 +2634,7 @@ body.dark-theme .vote-poll-option:not(.vote-readonly):active .vote-opt-top {
 }
 
 .home-tile:active {
-  transform: scale(0.95);
+  opacity: 0.85;
 }
 
 .home-tile-icon {
