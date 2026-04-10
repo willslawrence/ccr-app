@@ -15,12 +15,13 @@ let givingState = {
 
 // Fund fractions for "All" allocations
 const FUND_FRACTIONS = {
-  'LC1': 1/4,      // Church Needs
-  'LC2': 1/12,     // Ministry of the Word  
-  'PC1': 1/6,      // Global Church Needs
-  'PC2': 1/6,      // Church Planting
-  'HH1': 1/6,      // Orphans, Widows, Sojourners
-  'HH2': 1/6       // Persecuted Church
+  'LC1': 1/4,      // Church Needs — 25%
+  'LC2': 1/12,    // Ministry of the Word — ~8.3%
+  'PC1': 1/6,     // Global Church Needs — ~16.7%
+  'PC2': 1/6,     // Church Planting — ~16.7%
+  'HH1': 1/12,    // Orphans, Widows, Sojourners — ~8.3%
+  'HH2': 1/12     // Persecuted Church — ~8.3%
+  // SP gets the remainder: 1 - (1/4 + 1/12 + 1/6 + 1/6 + 1/12 + 1/12) = 1/4
 };
 
 // Fund names for display
