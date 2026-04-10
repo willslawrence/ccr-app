@@ -19,9 +19,9 @@ const FUND_FRACTIONS = {
   'LC2': 1/12,    // Ministry of the Word — ~8.3%
   'PC1': 1/6,     // Global Church Needs — ~16.7%
   'PC2': 1/6,     // Church Planting — ~16.7%
-  'HH1': 1/12,    // Orphans, Widows, Sojourners — ~8.3%
-  'HH2': 1/12     // Persecuted Church — ~8.3%
-  // SP gets the remainder: 1 - (1/4 + 1/12 + 1/6 + 1/6 + 1/12 + 1/12) = 1/4
+  'HH1': 1/6,     // Orphans, Widows, Sojourners — ~16.7%
+  'HH2': 1/6      // Persecuted Church — ~16.7%
+  // SP (Special Projects) gets nothing from "All" — only receives direct allocations when specifically chosen
 };
 
 // Fund names for display
@@ -41,8 +41,8 @@ const FUND_TOOLTIPS = {
   'LC2': '1/12 of tithes. Ministry of the Word — preaching and teaching resources. E.g. Joyful Joseph.',
   'PC1': '1/6 of tithes. Other churches or their church members local or global. E.g. Daniels Gift.',
   'PC2': '1/6 of tithes. Evangelism, Bible studies, missionaries. E.g. Stan and Tasha, Radical.',
-  'HH1': '1/12 of tithes. Those in need, aid, crisis. E.g. Crisis Aid, Lifesong for Orphans, Send Relief.',
-  'HH2': '1/12 of tithes. Christians facing persecution. E.g. Open Doors International.',
+  'HH1': '1/6 of tithes. Those in need, aid, crisis. E.g. Crisis Aid, Lifesong for Orphans, Send Relief.',
+  'HH2': '1/6 of tithes. Christians facing persecution. E.g. Open Doors International.',
   'SP': 'You decide — designated giving for specific ad hoc needs. E.g. Kenyan Mother support, projector, illnesses.',
   'MC': 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.'
 };
