@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.10.10';
+const APP_VERSION = '2.10.11';
 
 // ====================================
 // LAZY SCRIPT LOADER

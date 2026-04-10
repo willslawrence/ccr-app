@@ -34,6 +34,16 @@ const FUND_NAMES = {
   'SP': 'Special Projects'
 };
 
+const FUND_TOOLTIPS = {
+  'LC1': 'Funds for local church operations — esterahas, food, rent, supplies, and overhead.',
+  'LC2': 'Funds for ministry of the Word — resources for teaching, preaching, and discipleship. E.g. Joyful Joseph.',
+  'PC1': 'Funds for global church needs — supporting churches and believers worldwide. E.g. Open Doors International.',
+  'PC2': 'Funds for church planting — planting new churches and spreading the gospel. E.g. Stan and Tasha, Radical.',
+  'HH1': 'Funds for orphans, widows, and sojourners — compassionate relief. E.g. Lifesong for Orphans, Send Relief.',
+  'HH2': 'Funds for the persecuted church — supporting Christians facing persecution. E.g. Crisis Aid International.',
+  'SP': 'Special project fund — designated giving for specific needs decided by the church.'
+};
+
 // Load transactions from Firestore (cached — only fetches once per session)
 async function loadTransactions(forceRefresh = false) {
   if (givingState.transactionsLoaded && !forceRefresh) return;
@@ -494,7 +504,7 @@ async function renderGivingPage() {
         <!-- Fund Balances Grid — 3 columns -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">
           ${Object.entries(fundBalances).map(([fund, balance]) => `
-            <div style="padding:6px 8px;background:var(--card-hover);border-radius:4px;">
+            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this, '${(FUND_TOOLTIPS[fund]||'').replace(/'/g, "\\'")}')">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
               <div style="font-size:12px;font-weight:600;color:${balance >= 0 ? 'var(--green)' : 'var(--red)'};">
                 ${balance >= 0 ? '' : '-'}${formatAmount(balance, true)}
