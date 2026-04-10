@@ -51,19 +51,21 @@ async function loadTransactions(forceRefresh = false) {
     const snapshot = await db.collection('transactions').orderBy('date', 'desc').get();
     givingState.transactions = snapshot.docs.map(doc => {
       const data = doc.data();
+      const ts = data.date instanceof firebase.firestore.Timestamp
+        ? data.date.toDate()
+        : new Date(data.date);
       return {
         id: doc.id,
         ...data,
-        // Convert Firestore Timestamp to ISO string
         date: data.date instanceof firebase.firestore.Timestamp
           ? data.date.toDate().toISOString().split('T')[0]
           : data.date,
+        _sortTime: ts.getTime(),
         createdAt: data.createdAt instanceof firebase.firestore.Timestamp
           ? data.createdAt.toDate().toISOString()
           : data.createdAt
       };
-    });
-    givingState.transactionsLoaded = true;
+    }).sort((a, b) => b._sortTime - a._sortTime); // Force newest-first client-side
   } catch (error) {
     console.error('Error loading transactions:', error);
     givingState.transactions = [];
@@ -225,13 +227,15 @@ function getLast4Months() {
   return months.reverse();
 }
 
-// Monthly tithe average — any incoming with "Tithe" in description, past 120 days
+// Monthly tithe average — incoming "Tithe" descriptions, past 120 days
+// Excludes opening balance transfers (previous cash, held by elders, old system)
 function getMonthlyTitheAverage() {
   const { cutoff } = getLast120Days();
   let total = 0;
   givingState.transactions.forEach(t => {
     if (!t.date || t.type !== 'Incoming') return;
     if (!/Tithe|tithe/i.test(t.description)) return;
+    if (/previous cash|held by elders|old system/i.test(t.description)) return;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     if (d >= cutoff) total += t.amount;
   });
