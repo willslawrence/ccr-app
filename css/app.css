@@ -3524,7 +3524,7 @@ body.dark-theme .vote-poll-option:not(.vote-readonly):active .vote-opt-top {
   cursor: pointer;
   opacity: 0.6;
   transition: opacity 0.2s;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;

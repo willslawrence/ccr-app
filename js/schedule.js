@@ -172,10 +172,12 @@ function renderEventsTab() {
         </div>
       ` : sortedEvents.map(event => {
         const eventDate = new Date(event.date);
-        const isPast = eventDate < now;
+        const today = new Date(); today.setHours(0,0,0,0); // start of today
+        const isPast = eventDate < today;
 
         return `
           <div class="card" style="margin-bottom:12px;${isPast ? 'opacity:0.5;' : ''}position:relative;">
+            ${isPast ? '<span class="badge" style="position:absolute;top:8px;right:60px;background:var(--muted);z-index:2;">Past</span>' : ''}
             <button class="copy-card-btn" onclick="event.stopPropagation(); copyEventCard('${event.id}', this)" title="Copy for sharing">📋 Copy</button>
             <div class="card-header">
               <div style="flex:1;">
@@ -183,7 +185,6 @@ function renderEventsTab() {
                 <div class="card-title">${escapeHtml(event.title)}</div>
                 ${event.location ? `<div class="text-muted" style="font-size:13px;margin-top:4px;">📍 ${escapeHtml(event.location)}</div>` : ''}
               </div>
-              ${isPast ? '<span class="badge" style="background:var(--muted);">Past</span>' : ''}
             </div>
             ${event.description ? `
               <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
