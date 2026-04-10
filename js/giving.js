@@ -35,12 +35,12 @@ const FUND_NAMES = {
 };
 
 const FUND_TOOLTIPS = {
-  'LC1': 'Funds for local church operations — esterahas, food, rent, supplies, and overhead.',
-  'LC2': 'Funds for ministry of the Word — resources for teaching, preaching, and discipleship. E.g. Joyful Joseph.',
-  'PC1': 'Funds for global church needs — supporting churches and believers worldwide. E.g. Open Doors International.',
-  'PC2': 'Funds for church planting — planting new churches and spreading the gospel. E.g. Stan and Tasha, Radical.',
-  'HH1': 'Funds for orphans, widows, and sojourners — compassionate relief. E.g. Lifesong for Orphans, Send Relief.',
-  'HH2': 'Funds for the persecuted church — supporting Christians facing persecution. E.g. Crisis Aid International.',
+  'LC1': 'Receives 1/4 of all tithes. Funds for local church operations — esterahas, food, rent, supplies, and overhead.',
+  'LC2': 'Receives 1/12 of all tithes. Funds for ministry of the Word — resources for teaching, preaching, and discipleship. E.g. Joyful Joseph.',
+  'PC1': 'Receives 1/6 of all tithes. Funds for global church needs — supporting churches and believers worldwide. E.g. Open Doors International.',
+  'PC2': 'Receives 1/6 of all tithes. Funds for church planting — planting new churches and spreading the gospel. E.g. Stan and Tasha, Radical.',
+  'HH1': 'Receives 1/12 of all tithes. Funds for orphans, widows, and sojourners — compassionate relief. E.g. Lifesong for Orphans, Send Relief.',
+  'HH2': 'Receives 1/12 of all tithes. Funds for the persecuted church — supporting Christians facing persecution. E.g. Crisis Aid International.',
   'SP': 'Special project fund — designated giving for specific needs decided by the church.'
 };
 
