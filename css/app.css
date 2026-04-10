@@ -2634,7 +2634,7 @@ body.dark-theme .vote-poll-option:not(.vote-readonly):active .vote-opt-top {
 }
 
 .home-tile:active {
-  opacity: 0.85;
+  /* no scale on tap — avoids page wiggle */
 }
 
 .home-tile-icon {

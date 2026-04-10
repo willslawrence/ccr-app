@@ -227,12 +227,12 @@ function getLast4Months() {
   return months.reverse();
 }
 
-// Monthly tithe average — incoming with "Tithe" in description, past 120 days
+// Monthly tithe average — allocation="All" with "Tithe" in description, past 120 days
 function getMonthlyTitheAverage() {
   const { cutoff } = getLast120Days();
   let total = 0;
   givingState.transactions.forEach(t => {
-    if (!t.date || t.type !== 'Incoming') return;
+    if (!t.date || t.type !== 'Incoming' || t.allocation !== 'All') return;
     if (!/Tithe|tithe/i.test(t.description)) return;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     if (d >= cutoff) total += t.amount;
