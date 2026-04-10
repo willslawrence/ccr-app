@@ -35,13 +35,13 @@ const FUND_NAMES = {
 };
 
 const FUND_TOOLTIPS = {
-  'LC1': 'Receives 1/4 of all tithes. Funds for local church operations — esterahas, food, rent, supplies, and overhead.',
-  'LC2': 'Receives 1/12 of all tithes. Funds for ministry of the Word — resources for teaching, preaching, and discipleship. E.g. Joyful Joseph.',
-  'PC1': 'Receives 1/6 of all tithes. Funds for global church needs — supporting churches and believers worldwide. E.g. Open Doors International.',
-  'PC2': 'Receives 1/6 of all tithes. Funds for church planting — planting new churches and spreading the gospel. E.g. Stan and Tasha, Radical.',
-  'HH1': 'Receives 1/12 of all tithes. Funds for orphans, widows, and sojourners — compassionate relief. E.g. Lifesong for Orphans, Send Relief.',
-  'HH2': 'Receives 1/12 of all tithes. Funds for the persecuted church — supporting Christians facing persecution. E.g. Crisis Aid International.',
-  'SP': 'Special project fund — designated giving for specific needs decided by the church.'
+  'LC1': '1/4 of tithes. Local church overhead — esterahas, rent, food, supplies. E.g. Estaraha rent.',
+  'LC2': '1/12 of tithes. Ministry of the Word — preaching and teaching resources. E.g. Joyful Joseph.',
+  'PC1': '1/6 of tithes. Global church needs. E.g. Daniels Gift.',
+  'PC2': '1/6 of tithes. Church planting — starting new congregations. E.g. Stan and Tasha, Radical.',
+  'HH1': '1/12 of tithes. Orphans, widows, and sojourners. E.g. Lifesong for Orphans, Send Relief, Crisis Aid.',
+  'HH2': '1/12 of tithes. Persecuted church — Christians facing persecution. E.g. Open Doors International.',
+  'SP': 'Special project fund — designated giving for specific needs. E.g. Kenyan Mother support, projector.'
 };
 
 // Load transactions from Firestore (cached — only fetches once per session)
