@@ -177,7 +177,7 @@ function renderEventsTab() {
 
         return `
           <div class="card" style="margin-bottom:12px;${isPast ? 'opacity:0.5;' : ''}position:relative;">
-            ${isPast ? '<span class="badge" style="position:absolute;top:8px;right:60px;background:var(--muted);z-index:2;">Past</span>' : ''}
+            ${isPast ? '<span class="badge" style="position:absolute;top:50%;right:60px;transform:translateY(-50%);background:var(--muted);z-index:2;">Past</span>' : ''}
             <button class="copy-card-btn" onclick="event.stopPropagation(); copyEventCard('${event.id}', this)" title="Copy for sharing">📋 Copy</button>
             <div class="card-header">
               <div style="flex:1;">
