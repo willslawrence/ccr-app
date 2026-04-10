@@ -227,15 +227,13 @@ function getLast4Months() {
   return months.reverse();
 }
 
-// Monthly tithe average — incoming "Tithe" descriptions, past 120 days
-// Excludes opening balance transfers (previous cash, held by elders, old system)
+// Monthly tithe average — incoming with "Tithe" in description, past 120 days
 function getMonthlyTitheAverage() {
   const { cutoff } = getLast120Days();
   let total = 0;
   givingState.transactions.forEach(t => {
     if (!t.date || t.type !== 'Incoming') return;
     if (!/Tithe|tithe/i.test(t.description)) return;
-    if (/previous cash|held by elders|old system/i.test(t.description)) return;
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     if (d >= cutoff) total += t.amount;
   });
