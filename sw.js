@@ -3,8 +3,8 @@
    Offline caching for PWA + Push Notifications
    ==================================== */
 
-const CACHE_NAME = 'ccr-app-v21022';
-const APP_VERSION = '2.10.22';
+const CACHE_NAME = 'ccr-app-v21023';
+const APP_VERSION = '2.10.23';
 
 // Firebase configuration for service worker
 const firebaseConfig = {

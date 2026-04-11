@@ -512,6 +512,9 @@ function calculateGenreStats(data) {
 }
 
 // Toggle stats panel (global function for onclick handlers)
+let _readingPlanBefore = 1;
+let _readingPlanAfter = 3;
+
 window.toggleReadingPlan = function() {
   const panel = document.getElementById('readingPlanCard');
   if (!panel) return;
@@ -523,21 +526,29 @@ window.toggleReadingPlan = function() {
     if (guide) guide.style.display = 'none';
     const stats = document.getElementById('bibleStatsAll');
     if (stats) stats.style.display = 'none';
-    // Render readings
-    renderReadingPlan(3); // show 3 days: yesterday, today, tomorrow
+    // Reset and render
+    _readingPlanBefore = 1;
+    _readingPlanAfter = 3;
+    renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
   }
 };
 
 window.showMoreReadings = function() {
-  renderReadingPlan(7); // show full week
-  const btn = event.target;
+  _readingPlanAfter = 7;
+  renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
+  const btn = document.getElementById('readingPlanNextBtn');
   if (btn) btn.style.display = 'none';
 };
 
-function renderReadingPlan(daysAhead) {
+window.showPreviousWeek = function() {
+  _readingPlanBefore += 7;
+  renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
+};
+
+function renderReadingPlan(daysBefore, daysAfter) {
   const container = document.getElementById('readingPlanList');
   if (!container) return;
-  const readings = getReadingsAround(new Date(), 1, daysAhead);
+  const readings = getReadingsAround(new Date(), daysBefore, daysAfter);
   const completedKey = 'bible_reading_plan_' + new Date().getFullYear();
   const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
   
@@ -573,10 +584,7 @@ window.toggleReadingDone = function(day) {
   }
   localStorage.setItem(completedKey, JSON.stringify(completed));
   // Re-render
-  const container = document.getElementById('readingPlanList');
-  const showBtn = document.querySelector('#readingPlanCard .btn-outline');
-  const showingFull = showBtn && showBtn.style.display === 'none';
-  renderReadingPlan(showingFull ? 7 : 3);
+  renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
 
 window.toggleReadingGuide = function() {
@@ -824,8 +832,9 @@ async function renderBiblePage() {
             <div style="background:var(--accent);height:100%;width:${(getDayOfYear(new Date())/365*100).toFixed(1)}%;border-radius:8px;"></div>
           </div>
           <div id="readingPlanList"></div>
-          <div style="text-align:center;margin-top:12px;">
-            <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="showMoreReadings()">📃 Show Full Week</button>
+          <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">
+            <button class="btn btn-outline" id="readingPlanPrevBtn" style="font-size:11px;padding:4px 12px;" onclick="showPreviousWeek()">◀ Previous Week</button>
+            <button class="btn btn-outline" id="readingPlanNextBtn" style="font-size:11px;padding:4px 12px;" onclick="showMoreReadings()">📃 Full Week ▶</button>
           </div>
         </div>
       </div>
