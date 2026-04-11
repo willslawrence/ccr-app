@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.10.27';
+const APP_VERSION = '2.10.28';
 
 // ====================================
 // LAZY SCRIPT LOADER
@@ -267,10 +267,22 @@ function initFAB() {
   });
 }
 
+// Dismiss splash screen with fade
+function dismissSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  splash.style.transition = 'opacity 0.3s';
+  splash.style.opacity = '0';
+  setTimeout(() => splash.remove(), 300);
+}
+
 // Initialize app
 async function init() {
   // Initialize Firebase
   initFirebase();
+
+  // Safety: dismiss splash after 5s max if auth is slow
+  setTimeout(dismissSplash, 5000);
 
   // Apply saved theme
   const theme = localStorage.getItem('ccr_theme') || 'light';
@@ -318,6 +330,7 @@ async function init() {
           } else {
             render();
           }
+          dismissSplash();
         } else {
           console.error('User document not found in Firestore');
           AppState.currentUser = null;
@@ -337,6 +350,7 @@ async function init() {
       } else {
         render();
       }
+      dismissSplash();
     }
   });
 }

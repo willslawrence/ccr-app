@@ -310,6 +310,7 @@ async function handleDocumentUpload(e) {
   try {
     const timestamp = Date.now();
     const fileName = `${timestamp}_${file.name}`;
+    await ensureStorage();
     const storageRef = storage.ref(`documents/${fileName}`);
 
     const uploadTask = storageRef.put(file);
@@ -466,6 +467,7 @@ async function deleteDocument(docId) {
 
     if (doc && doc.storageFileName) {
       try {
+        await ensureStorage();
         const storageRef = storage.ref(`documents/${doc.storageFileName}`);
         await storageRef.delete();
       } catch (storageError) {

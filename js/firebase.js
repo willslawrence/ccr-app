@@ -16,6 +16,9 @@ const firebaseConfig = {
 // Initialize Firebase
 let app, auth, db, messaging, storage;
 
+let _storageLoaded = false;
+let _messagingLoaded = false;
+
 function initFirebase() {
   if (typeof firebase !== 'undefined') {
     app = firebase.initializeApp(firebaseConfig);
@@ -30,24 +33,55 @@ function initFirebase() {
           console.warn('Persistence not supported in this browser');
         }
       });
-    storage = firebase.storage();
-
-    // Initialize Firebase Messaging (VAPID key passed at getToken time, not here)
-    try {
-      if (firebase.messaging.isSupported()) {
-        messaging = firebase.messaging();
-        console.log('Firebase Messaging initialized');
-      } else {
-        console.warn('Firebase Messaging not supported in this browser');
-      }
-    } catch(e) {
-      console.warn('Firebase Messaging init failed:', e.message);
-    }
-    
+    // Storage + Messaging loaded on demand (not needed at startup)
     console.log('Firebase initialized successfully');
     return true;
   } else {
     console.warn('Firebase SDK not loaded - using localStorage fallback');
     return false;
   }
+}
+
+// Lazy-load Firebase Storage SDK when first needed
+async function ensureStorage() {
+  if (_storageLoaded && storage) return storage;
+  if (typeof firebase !== 'undefined' && firebase.storage) {
+    storage = firebase.storage();
+    _storageLoaded = true;
+    return storage;
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js';
+    s.onload = () => { storage = firebase.storage(); _storageLoaded = true; resolve(storage); };
+    s.onerror = () => reject(new Error('Failed to load Firebase Storage'));
+    document.head.appendChild(s);
+  });
+}
+
+// Lazy-load Firebase Messaging SDK when first needed
+async function ensureMessaging() {
+  if (_messagingLoaded && messaging) return messaging;
+  if (typeof firebase !== 'undefined' && firebase.messaging && firebase.messaging.isSupported()) {
+    messaging = firebase.messaging();
+    _messagingLoaded = true;
+    return messaging;
+  }
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js';
+    s.onload = () => {
+      try {
+        if (firebase.messaging.isSupported()) {
+          messaging = firebase.messaging();
+          _messagingLoaded = true;
+          resolve(messaging);
+        } else {
+          reject(new Error('Messaging not supported'));
+        }
+      } catch(e) { reject(e); }
+    };
+    s.onerror = () => reject(new Error('Failed to load Firebase Messaging'));
+    document.head.appendChild(s);
+  });
 }

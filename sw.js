@@ -3,8 +3,8 @@
    Offline caching for PWA + Push Notifications
    ==================================== */
 
-const CACHE_NAME = 'ccr-app-v21027';
-const APP_VERSION = '2.10.27';
+const CACHE_NAME = 'ccr-app-v21028';
+const APP_VERSION = '2.10.28';
 
 // Firebase configuration for service worker
 const firebaseConfig = {
@@ -24,10 +24,43 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-com
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
-// Install event - skip waiting immediately
+// Pre-cache all app assets on install for instant subsequent loads
+const PRECACHE_URLS = [
+  './',
+  'index.html',
+  'css/app.css?v=2.10.0',
+  'js/firebase.js?v=' + APP_VERSION,
+  'js/app.js?v=' + APP_VERSION,
+  'js/home.js?v=' + APP_VERSION,
+  'js/auth.js?v=' + APP_VERSION,
+  'js/prayer.js?v=' + APP_VERSION,
+  'js/bulletin.js?v=' + APP_VERSION,
+  'js/documents.js?v=' + APP_VERSION,
+  'js/notifications.js?v=' + APP_VERSION,
+  // Lazy scripts — pre-cached so first navigation is instant
+  'js/schedule.js?v=' + APP_VERSION,
+  'js/library.js?v=' + APP_VERSION,
+  'js/giving.js?v=' + APP_VERSION,
+  'js/charities-data.js?v=' + APP_VERSION,
+  'js/bible.js?v=' + APP_VERSION,
+  'js/bible-reading-plan.js?v=' + APP_VERSION,
+  'js/luke2444-plan.js?v=' + APP_VERSION,
+  'js/sermons.js?v=' + APP_VERSION,
+  'js/vote.js?v=' + APP_VERSION,
+  'js/settings.js?v=' + APP_VERSION
+];
+
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing v3 (app ' + APP_VERSION + ')...');
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
+      .catch(err => {
+        console.warn('[SW] Pre-cache partial failure:', err);
+        self.skipWaiting();
+      })
+  );
 });
 
 // Activate event - clean ALL old caches and take control

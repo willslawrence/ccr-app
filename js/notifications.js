@@ -70,6 +70,7 @@ async function requestNotificationPermission() {
  * Get FCM token and store in Firestore
  */
 async function getFCMToken() {
+  try { await ensureMessaging(); } catch(e) { console.warn('Messaging not available:', e.message); return null; }
   if (!messaging) return null;
 
   try {
@@ -166,7 +167,8 @@ async function sendPushNotification(type, title, body, topic = 'all') {
 /**
  * Handle messages when app is in foreground
  */
-function setupForegroundMessaging() {
+async function setupForegroundMessaging() {
+  try { await ensureMessaging(); } catch(e) { return; }
   if (!messaging) return;
 
   messaging.onMessage((payload) => {

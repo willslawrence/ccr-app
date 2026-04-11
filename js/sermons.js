@@ -193,6 +193,7 @@ async function handleSermonUpload(e) {
     // Create unique filename with timestamp
     const timestamp = Date.now();
     const fileName = `${timestamp}_${audioFile.name}`;
+    await ensureStorage();
     const storageRef = storage.ref(`sermons/${fileName}`);
 
     // Upload file with progress tracking
@@ -519,6 +520,7 @@ async function deleteSermon(id) {
     // Delete audio file from Storage (if it exists)
     if (sermon && sermon.storageFileName) {
       try {
+        await ensureStorage();
         const storageRef = storage.ref(`sermons/${sermon.storageFileName}`);
         await storageRef.delete();
         console.log('Audio file deleted from Storage');

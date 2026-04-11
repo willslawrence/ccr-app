@@ -244,6 +244,7 @@ async function qaCleanup() {
             const data = doc.data();
             if (data.storageFileName) {
               try {
+                await ensureStorage();
                 const storageRef = storage.ref(`sermons/${data.storageFileName}`);
                 await storageRef.delete();
                 console.log(`🗑️ Deleted audio file: ${data.storageFileName}`);
