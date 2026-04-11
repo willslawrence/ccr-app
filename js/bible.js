@@ -512,15 +512,83 @@ function calculateGenreStats(data) {
 }
 
 // Toggle stats panel (global function for onclick handlers)
+window.toggleReadingPlan = function() {
+  const panel = document.getElementById('readingPlanCard');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? '' : 'none';
+  if (isHidden) {
+    // Close other panels
+    const guide = document.getElementById('readingGuideCard');
+    if (guide) guide.style.display = 'none';
+    const stats = document.getElementById('bibleStatsAll');
+    if (stats) stats.style.display = 'none';
+    // Render readings
+    renderReadingPlan(3); // show 3 days: yesterday, today, tomorrow
+  }
+};
+
+window.showMoreReadings = function() {
+  renderReadingPlan(7); // show full week
+  const btn = event.target;
+  if (btn) btn.style.display = 'none';
+};
+
+function renderReadingPlan(daysAhead) {
+  const container = document.getElementById('readingPlanList');
+  if (!container) return;
+  const readings = getReadingsAround(new Date(), 1, daysAhead);
+  const completedKey = 'bible_reading_plan_' + new Date().getFullYear();
+  const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
+  
+  container.innerHTML = readings.map(r => {
+    const dateStr = r.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const isDone = completed[r.day];
+    const todayStyle = r.isToday ? 'border:2px solid var(--red,#e74c3c);' : '';
+    const pastStyle = r.isPast && !isDone ? 'opacity:0.5;' : '';
+    const doneStyle = isDone ? 'text-decoration:line-through;opacity:0.6;' : '';
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--card-hover);border-radius:8px;${todayStyle}${pastStyle}cursor:pointer;touch-action:manipulation;"
+           onclick="toggleReadingDone(${r.day})">
+        <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${isDone ? 'var(--green)' : 'transparent'};">
+          ${isDone ? '<span style="color:#fff;font-size:14px;">✓</span>' : ''}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--red,#e74c3c);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
+          <div style="font-size:14px;font-weight:600;${doneStyle}">${r.reading}</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);flex-shrink:0;">Day ${r.day}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.toggleReadingDone = function(day) {
+  const completedKey = 'bible_reading_plan_' + new Date().getFullYear();
+  const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
+  if (completed[day]) {
+    delete completed[day];
+  } else {
+    completed[day] = true;
+  }
+  localStorage.setItem(completedKey, JSON.stringify(completed));
+  // Re-render
+  const container = document.getElementById('readingPlanList');
+  const showBtn = document.querySelector('#readingPlanCard .btn-outline');
+  const showingFull = showBtn && showBtn.style.display === 'none';
+  renderReadingPlan(showingFull ? 7 : 3);
+};
+
 window.toggleReadingGuide = function() {
   const guide = document.getElementById('readingGuideCard');
   if (!guide) return;
   const isHidden = guide.style.display === 'none';
   guide.style.display = isHidden ? '' : 'none';
-  // Close stats if opening guide
   if (isHidden) {
     const stats = document.getElementById('bibleStatsAll');
     if (stats) stats.style.display = 'none';
+    const plan = document.getElementById('readingPlanCard');
+    if (plan) plan.style.display = 'none';
   }
 };
 
@@ -532,6 +600,11 @@ window.toggleBibleStats = function() {
   allStats.style.display = isHidden ? '' : 'none';
   
   if (isHidden) {
+    // Close other panels
+    const guide = document.getElementById('readingGuideCard');
+    if (guide) guide.style.display = 'none';
+    const planCard = document.getElementById('readingPlanCard');
+    if (planCard) planCard.style.display = 'none';
     // Also show genre breakdown
     const panel = document.getElementById('bibleStatsPanel');
     if (panel) panel.style.display = 'block';
@@ -708,7 +781,8 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
         <div class="btn-group">
-          <button class="btn btn-outline" onclick="toggleReadingGuide()">📖 Reading Guide</button>
+          <button class="btn btn-outline" onclick="toggleReadingPlan()">📅 Today's Reading</button>
+          <button class="btn btn-outline" onclick="toggleReadingGuide()">📖 Guide</button>
           <button class="btn btn-primary" onclick="toggleBibleStats()">📊 Stats</button>
         </div>
       </div>
@@ -735,6 +809,23 @@ async function renderBiblePage() {
           <div>
             <h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red,#e74c3c);margin-bottom:4px;">Rest</h3>
             <p style="font-size:13px;line-height:1.6;">Rest in God's presence. Don't say anything. Just enjoy his company. Rejoice in knowing that God is with you.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reading Plan (toggled by Today's Reading button) -->
+      <div id="readingPlanCard" style="display:none;margin:16px 0;">
+        <div class="card" style="padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h2 style="font-size:16px;font-weight:700;margin:0;">📅 Daily Reading Plan</h2>
+            <span style="font-size:12px;color:var(--muted);">Day ${getDayOfYear(new Date())} of 365</span>
+          </div>
+          <div style="background:var(--card-hover);border-radius:8px;height:6px;margin-bottom:16px;overflow:hidden;">
+            <div style="background:var(--red,#e74c3c);height:100%;width:${(getDayOfYear(new Date())/365*100).toFixed(1)}%;border-radius:8px;"></div>
+          </div>
+          <div id="readingPlanList"></div>
+          <div style="text-align:center;margin-top:12px;">
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 12px;" onclick="showMoreReadings()">📃 Show Full Week</button>
           </div>
         </div>
       </div>
