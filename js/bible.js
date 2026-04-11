@@ -6,73 +6,83 @@
 // Bible data structure (66 books, no deuterocanonical)
 const BIBLE_BOOKS = [
   // Old Testament
-  { name: "Genesis", abbr: "Gen", chapters: 50, genre: "Law", testament: "OT" },
-  { name: "Exodus", abbr: "Exo", chapters: 40, genre: "Law", testament: "OT" },
-  { name: "Leviticus", abbr: "Lev", chapters: 27, genre: "Law", testament: "OT" },
-  { name: "Numbers", abbr: "Num", chapters: 36, genre: "Law", testament: "OT" },
-  { name: "Deuteronomy", abbr: "Deu", chapters: 34, genre: "Law", testament: "OT" },
-  { name: "Joshua", abbr: "Jos", chapters: 24, genre: "History", testament: "OT" },
-  { name: "Judges", abbr: "Jdg", chapters: 21, genre: "History", testament: "OT" },
-  { name: "Ruth", abbr: "Rut", chapters: 4, genre: "History", testament: "OT" },
-  { name: "1 Samuel", abbr: "1Sa", chapters: 31, genre: "History", testament: "OT" },
-  { name: "2 Samuel", abbr: "2Sa", chapters: 24, genre: "History", testament: "OT" },
-  { name: "1 Kings", abbr: "1Ki", chapters: 22, genre: "History", testament: "OT" },
-  { name: "2 Kings", abbr: "2Ki", chapters: 25, genre: "History", testament: "OT" },
-  { name: "1 Chronicles", abbr: "1Ch", chapters: 29, genre: "History", testament: "OT" },
-  { name: "2 Chronicles", abbr: "2Ch", chapters: 36, genre: "History", testament: "OT" },
-  { name: "Ezra", abbr: "Ezr", chapters: 10, genre: "History", testament: "OT" },
-  { name: "Nehemiah", abbr: "Neh", chapters: 13, genre: "History", testament: "OT" },
-  { name: "Esther", abbr: "Est", chapters: 10, genre: "History", testament: "OT" },
-  { name: "Job", abbr: "Job", chapters: 42, genre: "Wisdom", testament: "OT" },
-  { name: "Psalms", abbr: "Psa", chapters: 150, genre: "Wisdom", testament: "OT" },
-  { name: "Proverbs", abbr: "Pro", chapters: 31, genre: "Wisdom", testament: "OT" },
-  { name: "Ecclesiastes", abbr: "Ecc", chapters: 12, genre: "Wisdom", testament: "OT" },
-  { name: "Song of Solomon", abbr: "Sol", chapters: 8, genre: "Wisdom", testament: "OT" },
-  { name: "Isaiah", abbr: "Isa", chapters: 66, genre: "Major Prophets", testament: "OT" },
-  { name: "Jeremiah", abbr: "Jer", chapters: 52, genre: "Major Prophets", testament: "OT" },
-  { name: "Lamentations", abbr: "Lam", chapters: 5, genre: "Major Prophets", testament: "OT" },
-  { name: "Ezekiel", abbr: "Eze", chapters: 48, genre: "Major Prophets", testament: "OT" },
-  { name: "Daniel", abbr: "Dan", chapters: 12, genre: "Major Prophets", testament: "OT" },
-  { name: "Hosea", abbr: "Hos", chapters: 14, genre: "Minor Prophets", testament: "OT" },
-  { name: "Joel", abbr: "Joe", chapters: 3, genre: "Minor Prophets", testament: "OT" },
-  { name: "Amos", abbr: "Amo", chapters: 9, genre: "Minor Prophets", testament: "OT" },
-  { name: "Obadiah", abbr: "Oba", chapters: 1, genre: "Minor Prophets", testament: "OT" },
-  { name: "Jonah", abbr: "Jon", chapters: 4, genre: "Minor Prophets", testament: "OT" },
-  { name: "Micah", abbr: "Mic", chapters: 7, genre: "Minor Prophets", testament: "OT" },
-  { name: "Nahum", abbr: "Nah", chapters: 3, genre: "Minor Prophets", testament: "OT" },
-  { name: "Habakkuk", abbr: "Hab", chapters: 3, genre: "Minor Prophets", testament: "OT" },
-  { name: "Zephaniah", abbr: "Zep", chapters: 3, genre: "Minor Prophets", testament: "OT" },
-  { name: "Haggai", abbr: "Hag", chapters: 2, genre: "Minor Prophets", testament: "OT" },
-  { name: "Zechariah", abbr: "Zec", chapters: 14, genre: "Minor Prophets", testament: "OT" },
-  { name: "Malachi", abbr: "Mal", chapters: 4, genre: "Minor Prophets", testament: "OT" },
+  // Law of Moses (Torah)
+  { name: "Genesis", abbr: "Gen", chapters: 50, genre: "Torah", testament: "OT" },
+  { name: "Exodus", abbr: "Exo", chapters: 40, genre: "Torah", testament: "OT" },
+  { name: "Leviticus", abbr: "Lev", chapters: 27, genre: "Torah", testament: "OT" },
+  { name: "Numbers", abbr: "Num", chapters: 36, genre: "Torah", testament: "OT" },
+  { name: "Deuteronomy", abbr: "Deu", chapters: 34, genre: "Torah", testament: "OT" },
+  // Prophets (Nevi'im) — Former Prophets
+  { name: "Joshua", abbr: "Jos", chapters: 24, genre: "Nevi'im", testament: "OT" },
+  { name: "Judges", abbr: "Jdg", chapters: 21, genre: "Nevi'im", testament: "OT" },
+  { name: "1 Samuel", abbr: "1Sa", chapters: 31, genre: "Nevi'im", testament: "OT" },
+  { name: "2 Samuel", abbr: "2Sa", chapters: 24, genre: "Nevi'im", testament: "OT" },
+  { name: "1 Kings", abbr: "1Ki", chapters: 22, genre: "Nevi'im", testament: "OT" },
+  { name: "2 Kings", abbr: "2Ki", chapters: 25, genre: "Nevi'im", testament: "OT" },
+  // Prophets (Nevi'im) — Latter Prophets
+  { name: "Isaiah", abbr: "Isa", chapters: 66, genre: "Nevi'im", testament: "OT" },
+  { name: "Jeremiah", abbr: "Jer", chapters: 52, genre: "Nevi'im", testament: "OT" },
+  { name: "Ezekiel", abbr: "Eze", chapters: 48, genre: "Nevi'im", testament: "OT" },
+  { name: "Hosea", abbr: "Hos", chapters: 14, genre: "Nevi'im", testament: "OT" },
+  { name: "Joel", abbr: "Joe", chapters: 3, genre: "Nevi'im", testament: "OT" },
+  { name: "Amos", abbr: "Amo", chapters: 9, genre: "Nevi'im", testament: "OT" },
+  { name: "Obadiah", abbr: "Oba", chapters: 1, genre: "Nevi'im", testament: "OT" },
+  { name: "Jonah", abbr: "Jon", chapters: 4, genre: "Nevi'im", testament: "OT" },
+  { name: "Micah", abbr: "Mic", chapters: 7, genre: "Nevi'im", testament: "OT" },
+  { name: "Nahum", abbr: "Nah", chapters: 3, genre: "Nevi'im", testament: "OT" },
+  { name: "Habakkuk", abbr: "Hab", chapters: 3, genre: "Nevi'im", testament: "OT" },
+  { name: "Zephaniah", abbr: "Zep", chapters: 3, genre: "Nevi'im", testament: "OT" },
+  { name: "Haggai", abbr: "Hag", chapters: 2, genre: "Nevi'im", testament: "OT" },
+  { name: "Zechariah", abbr: "Zec", chapters: 14, genre: "Nevi'im", testament: "OT" },
+  { name: "Malachi", abbr: "Mal", chapters: 4, genre: "Nevi'im", testament: "OT" },
+  // Psalms/Writings (Ketuvim) — Emet
+  { name: "Psalms", abbr: "Psa", chapters: 150, genre: "Ketuvim", testament: "OT" },
+  { name: "Proverbs", abbr: "Pro", chapters: 31, genre: "Ketuvim", testament: "OT" },
+  { name: "Job", abbr: "Job", chapters: 42, genre: "Ketuvim", testament: "OT" },
+  // Psalms/Writings (Ketuvim) — Megillot
+  { name: "Ruth", abbr: "Rut", chapters: 4, genre: "Ketuvim", testament: "OT" },
+  { name: "Song of Solomon", abbr: "Sol", chapters: 8, genre: "Ketuvim", testament: "OT" },
+  { name: "Ecclesiastes", abbr: "Ecc", chapters: 12, genre: "Ketuvim", testament: "OT" },
+  { name: "Lamentations", abbr: "Lam", chapters: 5, genre: "Ketuvim", testament: "OT" },
+  { name: "Esther", abbr: "Est", chapters: 10, genre: "Ketuvim", testament: "OT" },
+  // Psalms/Writings (Ketuvim) — Other
+  { name: "Daniel", abbr: "Dan", chapters: 12, genre: "Ketuvim", testament: "OT" },
+  { name: "Ezra", abbr: "Ezr", chapters: 10, genre: "Ketuvim", testament: "OT" },
+  { name: "Nehemiah", abbr: "Neh", chapters: 13, genre: "Ketuvim", testament: "OT" },
+  { name: "1 Chronicles", abbr: "1Ch", chapters: 29, genre: "Ketuvim", testament: "OT" },
+  { name: "2 Chronicles", abbr: "2Ch", chapters: 36, genre: "Ketuvim", testament: "OT" },
   // New Testament
+  // Gospel Accounts and Acts
   { name: "Matthew", abbr: "Mat", chapters: 28, genre: "Gospels", testament: "NT" },
   { name: "Mark", abbr: "Mar", chapters: 16, genre: "Gospels", testament: "NT" },
   { name: "Luke", abbr: "Luk", chapters: 24, genre: "Gospels", testament: "NT" },
   { name: "John", abbr: "Joh", chapters: 21, genre: "Gospels", testament: "NT" },
-  { name: "Acts", abbr: "Act", chapters: 28, genre: "History", testament: "NT" },
-  { name: "Romans", abbr: "Rom", chapters: 16, genre: "Paul's Letters", testament: "NT" },
-  { name: "1 Corinthians", abbr: "1Co", chapters: 16, genre: "Paul's Letters", testament: "NT" },
-  { name: "2 Corinthians", abbr: "2Co", chapters: 13, genre: "Paul's Letters", testament: "NT" },
-  { name: "Galatians", abbr: "Gal", chapters: 6, genre: "Paul's Letters", testament: "NT" },
-  { name: "Ephesians", abbr: "Eph", chapters: 6, genre: "Paul's Letters", testament: "NT" },
-  { name: "Philippians", abbr: "Phi", chapters: 4, genre: "Paul's Letters", testament: "NT" },
-  { name: "Colossians", abbr: "Col", chapters: 4, genre: "Paul's Letters", testament: "NT" },
-  { name: "1 Thessalonians", abbr: "1Th", chapters: 5, genre: "Paul's Letters", testament: "NT" },
-  { name: "2 Thessalonians", abbr: "2Th", chapters: 3, genre: "Paul's Letters", testament: "NT" },
-  { name: "1 Timothy", abbr: "1Ti", chapters: 6, genre: "Paul's Letters", testament: "NT" },
-  { name: "2 Timothy", abbr: "2Ti", chapters: 4, genre: "Paul's Letters", testament: "NT" },
-  { name: "Titus", abbr: "Tit", chapters: 3, genre: "Paul's Letters", testament: "NT" },
-  { name: "Philemon", abbr: "Phm", chapters: 1, genre: "Paul's Letters", testament: "NT" },
-  { name: "Hebrews", abbr: "Heb", chapters: 13, genre: "General Letters", testament: "NT" },
-  { name: "James", abbr: "Jam", chapters: 5, genre: "General Letters", testament: "NT" },
-  { name: "1 Peter", abbr: "1Pe", chapters: 5, genre: "General Letters", testament: "NT" },
-  { name: "2 Peter", abbr: "2Pe", chapters: 3, genre: "General Letters", testament: "NT" },
-  { name: "1 John", abbr: "1Jo", chapters: 5, genre: "General Letters", testament: "NT" },
-  { name: "2 John", abbr: "2Jo", chapters: 1, genre: "General Letters", testament: "NT" },
-  { name: "3 John", abbr: "3Jo", chapters: 1, genre: "General Letters", testament: "NT" },
-  { name: "Jude", abbr: "Jud", chapters: 1, genre: "General Letters", testament: "NT" },
-  { name: "Revelation", abbr: "Rev", chapters: 22, genre: "Prophecy", testament: "NT" }
+  { name: "Acts", abbr: "Act", chapters: 28, genre: "Gospels", testament: "NT" },
+  // Letters from the Apostles — Paul's Letters
+  { name: "Romans", abbr: "Rom", chapters: 16, genre: "Letters", testament: "NT" },
+  { name: "1 Corinthians", abbr: "1Co", chapters: 16, genre: "Letters", testament: "NT" },
+  { name: "2 Corinthians", abbr: "2Co", chapters: 13, genre: "Letters", testament: "NT" },
+  { name: "Galatians", abbr: "Gal", chapters: 6, genre: "Letters", testament: "NT" },
+  { name: "Ephesians", abbr: "Eph", chapters: 6, genre: "Letters", testament: "NT" },
+  { name: "Philippians", abbr: "Phi", chapters: 4, genre: "Letters", testament: "NT" },
+  { name: "Colossians", abbr: "Col", chapters: 4, genre: "Letters", testament: "NT" },
+  { name: "1 Thessalonians", abbr: "1Th", chapters: 5, genre: "Letters", testament: "NT" },
+  { name: "2 Thessalonians", abbr: "2Th", chapters: 3, genre: "Letters", testament: "NT" },
+  { name: "1 Timothy", abbr: "1Ti", chapters: 6, genre: "Letters", testament: "NT" },
+  { name: "2 Timothy", abbr: "2Ti", chapters: 4, genre: "Letters", testament: "NT" },
+  { name: "Titus", abbr: "Tit", chapters: 3, genre: "Letters", testament: "NT" },
+  { name: "Philemon", abbr: "Phm", chapters: 1, genre: "Letters", testament: "NT" },
+  // Letters from the Apostles — General Letters
+  { name: "Hebrews", abbr: "Heb", chapters: 13, genre: "Letters", testament: "NT" },
+  { name: "James", abbr: "Jam", chapters: 5, genre: "Letters", testament: "NT" },
+  { name: "1 Peter", abbr: "1Pe", chapters: 5, genre: "Letters", testament: "NT" },
+  { name: "2 Peter", abbr: "2Pe", chapters: 3, genre: "Letters", testament: "NT" },
+  { name: "1 John", abbr: "1Jo", chapters: 5, genre: "Letters", testament: "NT" },
+  { name: "2 John", abbr: "2Jo", chapters: 1, genre: "Letters", testament: "NT" },
+  { name: "3 John", abbr: "3Jo", chapters: 1, genre: "Letters", testament: "NT" },
+  { name: "Jude", abbr: "Jud", chapters: 1, genre: "Letters", testament: "NT" },
+  // The Revelation
+  { name: "Revelation", abbr: "Rev", chapters: 22, genre: "Revelation", testament: "NT" }
 ];
 
 const OT_BOOKS = BIBLE_BOOKS.filter(b => b.testament === 'OT');
@@ -83,15 +93,12 @@ const TOTAL_CHAPTERS = OT_CHAPTERS + NT_CHAPTERS;
 
 // Genre definitions for stats panel
 const BIBLE_GENRES = [
-  { name: 'Pentateuch', color: '#C05535', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
-  { name: 'History', color: '#6B62A8', books: ['Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther'] },
-  { name: 'Poetry & Wisdom', color: '#A83878', books: ['Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon'] },
-  { name: 'Major Prophets', color: '#28827A', books: ['Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel'] },
-  { name: 'Minor Prophets', color: '#9A6228', books: ['Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
-  { name: 'Gospels & Acts', color: '#38885A', books: ['Matthew','Mark','Luke','John','Acts'] },
-  { name: "Paul's Letters", color: '#3E68B8', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon'] },
-  { name: 'General Epistles', color: '#AA3A3A', books: ['Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
-  { name: 'Revelation', color: '#6A42A8', books: ['Revelation'] },
+  { name: 'Law of Moses (Torah)', color: '#C05535', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
+  { name: 'Prophets (Nevi\'im)', color: '#28827A', books: ['Joshua','Judges','1 Samuel','2 Samuel','1 Kings','2 Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
+  { name: 'Psalms/Writings (Ketuvim)', color: '#A83878', books: ['Psalms','Proverbs','Job','Ruth','Song of Solomon','Ecclesiastes','Lamentations','Esther','Daniel','Ezra','Nehemiah','1 Chronicles','2 Chronicles'] },
+  { name: 'Gospel Accounts and Acts', color: '#38885A', books: ['Matthew','Mark','Luke','John','Acts'] },
+  { name: 'Letters from the Apostles', color: '#3E68B8', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
+  { name: 'The Revelation', color: '#6A42A8', books: ['Revelation'] },
 ];
 
 // ====================================
@@ -465,33 +472,13 @@ function updateBibleStats(data) {
 // Calculate genre stats
 function calculateGenreStats(data) {
   // Create mapping from BIBLE_GENRES names to BIBLE_BOOKS genre field
-  const genreMapping = {
-    'Pentateuch': ['Law'],
-    'History': ['History'],
-    'Poetry & Wisdom': ['Wisdom'],
-    'Major Prophets': ['Major Prophets'],
-    'Minor Prophets': ['Minor Prophets'],
-    'Gospels & Acts': ['Gospels', 'History'], // Acts is in History genre
-    "Paul's Letters": ["Paul's Letters"],
-    'General Epistles': ['General Letters'],
-    'Revelation': ['Prophecy']
-  };
-  
+  // Use the books array directly from BIBLE_GENRES (matches section structure)
   return BIBLE_GENRES.map(genre => {
     let totalChapters = 0;
     let readChapters = 0;
     
-    // Find books by genre mapping or by explicit book name
-    const relevantGenres = genreMapping[genre.name] || [];
-    
-    // Filter books by genre or by name
-    const booksInGenre = BIBLE_BOOKS.filter(book => {
-      // For Gospels & Acts, we need special handling since Acts is in History but should count as Gospels & Acts
-      if (genre.name === 'Gospels & Acts') {
-        return book.genre === 'Gospels' || book.name === 'Acts';
-      }
-      return relevantGenres.includes(book.genre);
-    });
+    const bookNames = new Set(genre.books);
+    const booksInGenre = BIBLE_BOOKS.filter(book => bookNames.has(book.name));
     
     booksInGenre.forEach(book => {
       totalChapters += book.chapters;
@@ -936,19 +923,15 @@ function getTargetYearLabel(data) {
 
 // Bible section definitions
 const OT_SECTIONS = [
-  { name: 'Pentateuch (Torah)', icon: '📜', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
-  { name: 'Historical Books', icon: '⚔️', books: ['Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther'] },
-  { name: 'Poetry & Wisdom', icon: '🎵', books: ['Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon'] },
-  { name: 'Major Prophets', icon: '🔥', books: ['Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel'] },
-  { name: 'Minor Prophets', icon: '📣', books: ['Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
+  { name: 'Law of Moses (Torah)', icon: '📜', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
+  { name: 'Prophets (Nevi\'im)', icon: '🔥', books: ['Joshua','Judges','1 Samuel','2 Samuel','1 Kings','2 Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
+  { name: 'Psalms/Writings (Ketuvim)', icon: '🎵', books: ['Psalms','Proverbs','Job','Ruth','Song of Solomon','Ecclesiastes','Lamentations','Esther','Daniel','Ezra','Nehemiah','1 Chronicles','2 Chronicles'] },
 ];
 
 const NT_SECTIONS = [
-  { name: 'Gospels', icon: '✝️', books: ['Matthew','Mark','Luke','John'] },
-  { name: 'History', icon: '🌍', books: ['Acts'] },
-  { name: 'Pauline Epistles', icon: '✉️', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon'] },
-  { name: 'General Epistles', icon: '📨', books: ['Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
-  { name: 'Prophecy', icon: '🔮', books: ['Revelation'] },
+  { name: 'Gospel Accounts and Acts', icon: '✝️', books: ['Matthew','Mark','Luke','John','Acts'] },
+  { name: 'Letters from the Apostles', icon: '✉️', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
+  { name: 'The Revelation', icon: '🔮', books: ['Revelation'] },
 ];
 
 // Render a single book within a section
@@ -1182,7 +1165,7 @@ async function renderBiblePage() {
 
       <!-- Old Testament Card -->
       <div id="bible-ot-section">
-        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">📜 Old Testament <span id="bible-ot-header-count" style="font-size:13px;color:var(--muted);font-weight:500;">${otRead}/${OT_CHAPTERS}</span></h2>
+        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">📜 TaNaKH / Old Testament <span id="bible-ot-header-count" style="font-size:13px;color:var(--muted);font-weight:500;">${otRead}/${OT_CHAPTERS}</span></h2>
         <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
           ${renderTestamentBooks(OT_BOOKS, data, OT_SECTIONS)}
         </div>
