@@ -209,7 +209,7 @@ async function addPrayer() {
 
   try {
     await db.collection('prayers').add(prayer);
-    await loadPrayers();
+    await loadPrayers(true);
 
     // Send push notification
     try { if (typeof sendPushNotification === 'function') { await sendPushNotification('prayer', '🙏 New Prayer Request', shortDesc, 'all'); } } catch(e) { console.warn('Push failed:', e.message); }
@@ -300,12 +300,17 @@ async function deletePrayer(id) {
   if (!confirm('Delete this prayer request?')) return;
 
   try {
-    await db.collection('prayers').doc(id).delete();
-    await loadPrayers();
+    // Optimistic update: remove from local state immediately
+    prayerState.prayers = prayerState.prayers.filter(p => p.id !== id);
     renderPrayers();
+    // Then delete from Firestore
+    await db.collection('prayers').doc(id).delete();
   } catch (error) {
     console.error('Error deleting prayer:', error);
     alert('Failed to delete prayer. Please try again.');
+    // Reload from Firestore on error to restore state
+    await loadPrayers(true);
+    renderPrayers();
   }
 }
 
@@ -347,7 +352,7 @@ async function saveEditPrayer(id) {
   try {
     await db.collection('prayers').doc(id).update(updates);
     prayerState.editingId = null;
-    await loadPrayers();
+    await loadPrayers(true);
     renderPrayers();
   } catch (error) {
     console.error('Error editing prayer:', error);

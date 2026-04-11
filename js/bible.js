@@ -1048,7 +1048,6 @@ async function renderBiblePage() {
         <div class="card" style="padding:20px;">
           <h2 style="font-size:18px;font-weight:700;color:var(--red,#e74c3c);margin-bottom:8px;">Listening to God Through Scripture</h2>
           <p style="font-style:italic;color:var(--muted);margin-bottom:12px;font-size:13px;">So faith comes from hearing, and hearing through the word of Christ. — Romans 10:17</p>
-          <p style="font-size:13px;line-height:1.6;margin-bottom:16px;">Our hope when spending time in Scripture during Lent is not just to read the Bible, but to actually hear what God is saying to us.</p>
           <p style="font-size:13px;line-height:1.6;margin-bottom:16px;">One way to listen to God through Scripture is to engage a passage in four movements:</p>
           <div style="margin-bottom:14px;">
             <h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red,#e74c3c);margin-bottom:4px;">Read</h3>
