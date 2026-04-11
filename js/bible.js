@@ -655,6 +655,19 @@ function getPlanReadingsAround(daysBefore, daysAfter) {
   return results;
 }
 
+// Update Bible tab button styles based on which panel is open
+function updateBibleTabButtons() {
+  const planOpen = document.getElementById('readingPlanCard')?.style.display !== 'none';
+  const guideOpen = document.getElementById('readingGuideCard')?.style.display !== 'none';
+  const statsOpen = document.getElementById('bibleStatsAll')?.style.display !== 'none';
+  const btnPlan = document.getElementById('btnReadingPlan');
+  const btnGuide = document.getElementById('btnReadingGuide');
+  const btnStats = document.getElementById('btnBibleStats');
+  if (btnPlan) { btnPlan.className = 'btn ' + (planOpen ? 'btn-primary' : 'btn-outline'); }
+  if (btnGuide) { btnGuide.className = 'btn ' + (guideOpen ? 'btn-primary' : 'btn-outline'); }
+  if (btnStats) { btnStats.className = 'btn ' + (statsOpen ? 'btn-primary' : 'btn-outline'); }
+}
+
 window.toggleReadingPlan = async function() {
   const panel = document.getElementById('readingPlanCard');
   if (!panel) return;
@@ -676,6 +689,7 @@ window.toggleReadingPlan = async function() {
     }
     renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
   }
+  updateBibleTabButtons();
 };
 
 window.showMoreReadings = function() {
@@ -834,6 +848,7 @@ window.toggleReadingGuide = function() {
     const plan = document.getElementById('readingPlanCard');
     if (plan) plan.style.display = 'none';
   }
+  updateBibleTabButtons();
 };
 
 window.toggleBibleStats = function() {
@@ -872,6 +887,7 @@ window.toggleBibleStats = function() {
       genreContainer.innerHTML = statsHtml;
     }
   }
+  updateBibleTabButtons();
 };
 
 function getBookProgressSync(bookAbbr, data) {
@@ -1021,9 +1037,9 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
         <div class="btn-group">
-          <button class="btn btn-outline" onclick="toggleReadingPlan()">📅 Church Reading Plan</button>
-          <button class="btn btn-outline" onclick="toggleReadingGuide()">📖 Guide</button>
-          <button class="btn btn-primary" onclick="toggleBibleStats()">📊 Stats</button>
+          <button class="btn btn-outline" id="btnReadingPlan" onclick="toggleReadingPlan()">📅 Reading Plan</button>
+          <button class="btn btn-outline" id="btnReadingGuide" onclick="toggleReadingGuide()">📖 Guide</button>
+          <button class="btn btn-outline" id="btnBibleStats" onclick="toggleBibleStats()">📊 Stats</button>
         </div>
       </div>
 
