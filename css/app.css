@@ -277,6 +277,23 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: auto;
 }
 
+/* FAB backdrop overlay — dims and blurs background when menu is open */
+.fab-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.fab-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 #fab-nav {
   position: fixed;
   right: 0;

@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '3.2';
+const APP_VERSION = '3.3';
 
 // ====================================
 // LAZY SCRIPT LOADER
@@ -84,10 +84,12 @@ function navigateTo(page, slideDirection) {
   // Close FAB menu after navigation
   const fabMenu = document.getElementById('fabMenu');
   const fabTrigger = document.getElementById('fabTrigger');
+  const fabOverlay = document.getElementById('fabOverlay');
   if (fabMenu && fabTrigger) {
     fabMenu.classList.remove('active');
     fabTrigger.classList.remove('active');
   }
+  if (fabOverlay) fabOverlay.classList.remove('active');
 }
 
 // Page indicator dots
@@ -219,17 +221,28 @@ function initFAB() {
   const moreMenuClose = document.getElementById('moreMenuClose');
   const moreMenuItems = document.querySelectorAll('.more-menu-item');
 
+  const fabOverlay = document.getElementById('fabOverlay');
+
   // Toggle FAB menu
   fabTrigger.addEventListener('click', () => {
     const isActive = fabMenu.classList.toggle('active');
     fabTrigger.classList.toggle('active');
+    if (fabOverlay) fabOverlay.classList.toggle('active', isActive);
   });
 
-  // Close FAB on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#fab-nav')) {
+  // Close FAB on overlay or outside click
+  if (fabOverlay) {
+    fabOverlay.addEventListener('click', () => {
       fabMenu.classList.remove('active');
       fabTrigger.classList.remove('active');
+      fabOverlay.classList.remove('active');
+    });
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#fab-nav') && !e.target.closest('#fabOverlay')) {
+      fabMenu.classList.remove('active');
+      fabTrigger.classList.remove('active');
+      if (fabOverlay) fabOverlay.classList.remove('active');
     }
   });
 
