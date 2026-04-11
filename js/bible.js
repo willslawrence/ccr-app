@@ -512,6 +512,18 @@ function calculateGenreStats(data) {
 }
 
 // Toggle stats panel (global function for onclick handlers)
+window.toggleReadingGuide = function() {
+  const guide = document.getElementById('readingGuideCard');
+  if (!guide) return;
+  const isHidden = guide.style.display === 'none';
+  guide.style.display = isHidden ? '' : 'none';
+  // Close stats if opening guide
+  if (isHidden) {
+    const stats = document.getElementById('bibleStatsAll');
+    if (stats) stats.style.display = 'none';
+  }
+};
+
 window.toggleBibleStats = function() {
   const allStats = document.getElementById('bibleStatsAll');
   if (!allStats) return;
@@ -696,9 +708,34 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
         <div class="btn-group">
-          <button class="btn btn-outline" onclick="scrollToTestament('OT')">Old Testament</button>
-          <button class="btn btn-outline" onclick="scrollToTestament('NT')">New Testament</button>
+          <button class="btn btn-outline" onclick="toggleReadingGuide()">📖 Reading Guide</button>
           <button class="btn btn-primary" onclick="toggleBibleStats()">📊 Stats</button>
+        </div>
+      </div>
+
+      <!-- Reading Guide (toggled by Reading Guide button) -->
+      <div id="readingGuideCard" style="display:none;margin:16px 0;">
+        <div class="card" style="padding:20px;">
+          <h2 style="font-size:18px;font-weight:700;color:var(--red,#e74c3c);margin-bottom:8px;">Listening to God Through Scripture</h2>
+          <p style="font-style:italic;color:var(--muted);margin-bottom:12px;font-size:13px;">So faith comes from hearing, and hearing through the word of Christ. — Romans 10:17</p>
+          <p style="font-size:13px;line-height:1.6;margin-bottom:16px;">Our hope when spending time in Scripture during Lent is not just to read the Bible, but to actually hear what God is saying to us.</p>
+          <p style="font-size:13px;line-height:1.6;margin-bottom:16px;">One way to listen to God through Scripture is to engage a passage in four movements:</p>
+          <div style="margin-bottom:14px;">
+            <h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red,#e74c3c);margin-bottom:4px;">Read</h3>
+            <p style="font-size:13px;line-height:1.6;">Invite the Holy Spirit to tune your heart to his voice then slowly read the passage two or three times. Pay close attention for a specific word or phrase that jumps out at you.</p>
+          </div>
+          <div style="margin-bottom:14px;">
+            <h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red,#e74c3c);margin-bottom:4px;">Meditate</h3>
+            <p style="font-size:13px;line-height:1.6;">Ponder the word or phrase that jumped out to you. Underline it or write it down, memorize it and slowly repeat it to yourself, allowing it to interact with your inner world of thoughts, memories and struggles.</p>
+          </div>
+          <div style="margin-bottom:14px;">
+            <h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red,#e74c3c);margin-bottom:4px;">Pray</h3>
+            <p style="font-size:13px;line-height:1.6;">Trusting that the word or phrase contains something God is saying to you, answer him in prayer. Talk with him as you would with someone who knows you and loves you and accepts you.</p>
+          </div>
+          <div>
+            <h3 style="font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red,#e74c3c);margin-bottom:4px;">Rest</h3>
+            <p style="font-size:13px;line-height:1.6;">Rest in God's presence. Don't say anything. Just enjoy his company. Rejoice in knowing that God is with you.</p>
+          </div>
         </div>
       </div>
 
