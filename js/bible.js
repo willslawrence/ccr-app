@@ -740,7 +740,7 @@ async function renderBiblePage() {
       </div>
 
       <!-- All stats (toggled by Stats button) -->
-      <div id="bibleStatsAll">
+      <div id="bibleStatsAll" style="display:none;">
 
       <!-- Progress Circles (top row, compact) -->
       <div class="bible-rings-row">
