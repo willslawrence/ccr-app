@@ -7,7 +7,8 @@ let sermonsState = {
   searchQuery: '',
   showUploadForm: false,
   playingId: null,
-  dataLoaded: false  // Cache flag
+  dataLoaded: false,
+  submitting: false  // Guard against double-submit
 };
 
 function renderSermonsPage() {
@@ -177,6 +178,8 @@ async function handleSermonUpload(e) {
       alert('Please select an audio file');
       return;
     }
+    if (sermonsState.submitting) return;
+    sermonsState.submitting = true;
 
     // Show upload progress
     const progressDiv = document.getElementById('uploadProgress');
@@ -212,6 +215,7 @@ async function handleSermonUpload(e) {
         alert('Error uploading file: ' + error.message);
         progressDiv.style.display = 'none';
         submitBtn.disabled = false;
+        sermonsState.submitting = false;
       },
       async () => {
         // Upload complete - get download URL
@@ -241,6 +245,7 @@ async function handleSermonUpload(e) {
           document.getElementById('sermonForm').reset();
           progressDiv.style.display = 'none';
           submitBtn.disabled = false;
+          sermonsState.submitting = false;
 
           // Reload sermons list
           await loadSermons(true);
@@ -250,6 +255,7 @@ async function handleSermonUpload(e) {
           alert('Error saving sermon. Please try again.');
           progressDiv.style.display = 'none';
           submitBtn.disabled = false;
+          sermonsState.submitting = false;
         }
       }
     );
@@ -488,6 +494,10 @@ function editSermon(id) {
 
   document.getElementById('editSermonForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (sermonsState.submitting) return;
+    sermonsState.submitting = true;
+    const editSubmitBtn = document.querySelector('#editSermonForm button[type="submit"]');
+    if (editSubmitBtn) editSubmitBtn.disabled = true;
     try {
       await db.collection('sermons').doc(id).update({
         title: document.getElementById('editSermonTitle').value.trim(),
@@ -503,6 +513,9 @@ function editSermon(id) {
     } catch (error) {
       console.error('Error editing sermon:', error);
       alert('Error saving. Please try again.');
+    } finally {
+      sermonsState.submitting = false;
+      if (editSubmitBtn) editSubmitBtn.disabled = false;
     }
   });
 }

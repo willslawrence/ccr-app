@@ -10,7 +10,8 @@ let prayerState = {
   showSearch: false,
   editingId: null,
   prayedThisSession: new Set(),
-  dataLoaded: false
+  dataLoaded: false,
+  submitting: false
 };
 
 function renderPrayerPage() {
@@ -183,6 +184,11 @@ async function loadPrayers(forceRefresh = false) {
 }
 
 async function addPrayer() {
+  if (prayerState.submitting) return;
+  prayerState.submitting = true;
+  const submitBtn = document.querySelector('#prayerFormElement button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
   const user = getCurrentUser();
   const shortDesc = document.getElementById('prayerShortDesc').value.trim();
   const longDesc = document.getElementById('prayerLongDesc').value.trim();
@@ -213,7 +219,7 @@ async function addPrayer() {
 
     // Send push notification
     try { if (typeof sendPushNotification === 'function') { await sendPushNotification('prayer', '🙏 New Prayer Request', shortDesc, 'all'); } } catch(e) { console.warn('Push failed:', e.message); }
-    
+
     // Suggest enabling notifications for first-time users
     suggestNotifications();
 
@@ -224,6 +230,9 @@ async function addPrayer() {
   } catch (error) {
     console.error('Error adding prayer:', error);
     alert('Failed to add prayer request. Please try again.');
+  } finally {
+    prayerState.submitting = false;
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
@@ -326,6 +335,11 @@ function cancelEditPrayer() {
 }
 
 async function saveEditPrayer(id) {
+  if (prayerState.submitting) return;
+  prayerState.submitting = true;
+  const editSubmitBtn = document.querySelector('#editPrayerForm button[type="submit"]');
+  if (editSubmitBtn) editSubmitBtn.disabled = true;
+
   const shortDesc = document.getElementById('editPrayerShortDesc').value.trim();
   const longDesc = document.getElementById('editPrayerLongDesc').value.trim();
   const author = document.getElementById('editPrayerAuthor').value.trim();
@@ -333,6 +347,8 @@ async function saveEditPrayer(id) {
 
   if (!shortDesc) {
     alert('Short description is required.');
+    prayerState.submitting = false;
+    if (editSubmitBtn) editSubmitBtn.disabled = false;
     return;
   }
 
@@ -357,6 +373,9 @@ async function saveEditPrayer(id) {
   } catch (error) {
     console.error('Error editing prayer:', error);
     alert('Failed to edit prayer. Please try again.');
+  } finally {
+    prayerState.submitting = false;
+    if (editSubmitBtn) editSubmitBtn.disabled = false;
   }
 }
 

@@ -10,7 +10,8 @@ let givingState = {
   showAddForm: false,
   editingId: null,
   expandedTransId: null,
-  transactionsLoaded: false  // Cache flag — only fetch once per session
+  transactionsLoaded: false,
+  submitting: false  // Guard against double-submit
 };
 
 // Fund fractions for "All" allocations
@@ -987,6 +988,11 @@ function clearReceiptUpload() {
 
 // Save transaction
 async function saveTransaction() {
+  if (givingState.submitting) return;
+  givingState.submitting = true;
+  const submitBtn = document.querySelector('#transactionFormElement button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+
   try {
     const date = document.getElementById('transDate').value;
     const description = document.getElementById('transDesc').value.trim();
@@ -1071,6 +1077,9 @@ async function saveTransaction() {
   } catch (error) {
     console.error('Error saving transaction:', error);
     alert('Error saving transaction. Please try again.');
+  } finally {
+    givingState.submitting = false;
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 

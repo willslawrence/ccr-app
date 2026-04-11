@@ -8,7 +8,8 @@ let bulletinState = {
   showEditor: false,
   editingId: null,
   searchQuery: '',
-  dataLoaded: false
+  dataLoaded: false,
+  submitting: false
 };
 
 function renderBulletinPage() {
@@ -219,6 +220,10 @@ function removeSection(idx) {
 
 async function handleBulletinSubmit(e) {
   e.preventDefault();
+  if (bulletinState.submitting) return;
+  bulletinState.submitting = true;
+  const submitBtn = document.querySelector('#bulletinForm button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
 
   const date = document.getElementById('bulletinDate').value;
   const published = document.getElementById('bulletinPublished').checked;
@@ -279,6 +284,9 @@ async function handleBulletinSubmit(e) {
   } catch (error) {
     console.error('Error saving bulletin:', error);
     alert('Failed to save bulletin: ' + error.message);
+  } finally {
+    bulletinState.submitting = false;
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 

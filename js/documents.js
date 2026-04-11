@@ -7,7 +7,8 @@ let documentsState = {
   documents: [],
   expandedCategories: {},
   dataLoaded: false,
-  editingDoc: null
+  editingDoc: null,
+  submitting: false  // Guard against double-submit
 };
 
 const DOC_CATEGORIES = [
@@ -296,6 +297,8 @@ async function handleDocumentUpload(e) {
     alert('Please upload a PDF file');
     return;
   }
+  if (documentsState.submitting) return;
+  documentsState.submitting = true;
 
   const progressDiv = document.getElementById('docUploadProgress');
   const progressBar = document.getElementById('docUploadProgressBar');
@@ -326,6 +329,7 @@ async function handleDocumentUpload(e) {
         alert('Error uploading file: ' + error.message);
         progressDiv.style.display = 'none';
         submitBtn.disabled = false;
+        documentsState.submitting = false;
       },
       async () => {
         try {
@@ -349,6 +353,7 @@ async function handleDocumentUpload(e) {
           document.getElementById('documentForm').reset();
           progressDiv.style.display = 'none';
           submitBtn.disabled = false;
+          documentsState.submitting = false;
 
           // Reload
           documentsState.dataLoaded = false;
@@ -356,9 +361,10 @@ async function handleDocumentUpload(e) {
           renderDocumentCategories();
         } catch (error) {
           console.error('Error saving document:', error);
-          alert('Error saving document. Please try again.');
+          alert('Error saving document: Please try again.');
           progressDiv.style.display = 'none';
           submitBtn.disabled = false;
+          documentsState.submitting = false;
         }
       }
     );
@@ -389,6 +395,8 @@ function startEditDocument(docId) {
 async function handleDocumentEdit(e) {
   const doc = documentsState.editingDoc;
   if (!doc) return;
+  if (documentsState.submitting) return;
+  documentsState.submitting = true;
 
   const name = document.getElementById('docName').value.trim();
   const category = document.getElementById('docCategory').value;
@@ -414,6 +422,8 @@ async function handleDocumentEdit(e) {
     console.error('Error updating document:', error);
     alert('Error updating document. Please try again.');
     submitBtn.disabled = false;
+  } finally {
+    documentsState.submitting = false;
   }
 }
 
