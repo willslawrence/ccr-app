@@ -616,13 +616,13 @@ async function saveHamiltonProgress(data) {
 }
 
 // Get the current day number for Luke 24:44 (relative to user's start date)
-function getLuke2444CurrentDay(startDate) {
-  if (!startDate) return 0;
-  const start = new Date(startDate);
-  start.setHours(0,0,0,0);
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  return Math.floor((today - start) / 86400000) + 1; // Day 1 = start date
+// Get the "current day" for Luke 24:44 = highest completed day + 1 (progress-driven)
+function getLuke2444CurrentDay() {
+  const data = _readingPlanCache || { completed: {} };
+  const completed = data.completed || {};
+  const keys = Object.keys(completed).map(Number).filter(n => !isNaN(n));
+  if (keys.length === 0) return 1;
+  return Math.max(...keys) + 1; // Next day after highest completed
 }
 
 function getPlanReadingsAround(daysBefore, daysAfter) {
@@ -630,9 +630,8 @@ function getPlanReadingsAround(daysBefore, daysAfter) {
   const results = [];
 
   if (plan.key === 'luke2444') {
-    // Luke 24:44: relative to user's start date
-    const data = _readingPlanCache || { startDate: null, completed: {} };
-    const currentDay = data.startDate ? getLuke2444CurrentDay(data.startDate) : 1;
+    // Luke 24:44: progress-driven, "today" = next unchecked day
+    const currentDay = Math.min(getLuke2444CurrentDay(), plan.total);
     for (let offset = -daysBefore; offset <= daysAfter; offset++) {
       const dayNum = currentDay + offset;
       const idx = dayNum - 1;
@@ -681,16 +680,10 @@ window.toggleReadingPlan = async function() {
     if (stats) stats.style.display = 'none';
     _readingPlanBefore = 1;
     _readingPlanAfter = 3;
-    // Load Firestore data for both plans
+    // Load Firestore data for the active plan
     const plan = getPlanData();
     if (plan.key === 'luke2444') {
       await loadLuke2444Progress();
-      if (_readingPlanCache && !_readingPlanCache.startDate) {
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        _readingPlanCache.startDate = today.toISOString().split('T')[0];
-        await saveLuke2444Progress(_readingPlanCache);
-      }
     } else {
       await loadHamiltonProgress();
     }
@@ -718,12 +711,6 @@ window.switchReadingPlan = async function(planKey) {
   if (btn) btn.style.display = '';
   if (planKey === 'luke2444') {
     await loadLuke2444Progress();
-    if (_readingPlanCache && !_readingPlanCache.startDate) {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      _readingPlanCache.startDate = today.toISOString().split('T')[0];
-      await saveLuke2444Progress(_readingPlanCache);
-    }
   } else {
     await loadHamiltonProgress();
   }
@@ -754,9 +741,7 @@ function renderReadingPlan(daysBefore, daysAfter) {
   const dayEl = document.getElementById('readingPlanDayCount');
   if (dayEl) {
     if (plan.key === 'luke2444') {
-      const currentDay = _readingPlanCache && _readingPlanCache.startDate
-        ? Math.min(getLuke2444CurrentDay(_readingPlanCache.startDate), plan.total)
-        : 1;
+      const currentDay = Math.min(getLuke2444CurrentDay(), plan.total);
       const doneCount = Object.keys(completed).length;
       dayEl.textContent = 'Day ' + currentDay + '+ of ' + plan.total + ' (✓' + doneCount + ')';
     } else {
