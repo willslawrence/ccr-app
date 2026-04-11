@@ -253,7 +253,7 @@ async function handleBulletinSubmit(e) {
       });
     }
 
-    await loadBulletins();
+    await loadBulletins(true);
     cancelBulletinEdit();
     renderBulletinDisplay();
 
@@ -411,12 +411,15 @@ async function deleteBulletin(id) {
   if (!confirm('Delete this bulletin?')) return;
 
   try {
-    await db.collection('bulletins').doc(id).delete();
-    await loadBulletins();
+    // Optimistic update: remove from local state immediately
+    bulletinState.bulletins = bulletinState.bulletins.filter(b => b.id !== id);
     renderBulletinDisplay();
+    await db.collection('bulletins').doc(id).delete();
   } catch (error) {
     console.error('Error deleting bulletin:', error);
     alert('Failed to delete bulletin: ' + error.message);
+    await loadBulletins(true);
+    renderBulletinDisplay();
   }
 }
 

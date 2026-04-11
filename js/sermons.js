@@ -243,7 +243,7 @@ async function handleSermonUpload(e) {
           submitBtn.disabled = false;
 
           // Reload sermons list
-          await loadSermons();
+          await loadSermons(true);
           renderSermons();
         } catch (error) {
           console.error('Error saving sermon:', error);
@@ -497,7 +497,7 @@ function editSermon(id) {
         description: document.getElementById('editSermonDescription').value.trim(),
         updatedAt: firebase.firestore.Timestamp.now()
       });
-      await loadSermons();
+      await loadSermons(true);
       renderSermons();
       modal.classList.remove('active');
     } catch (error) {
@@ -529,10 +529,19 @@ async function deleteSermon(id) {
       }
     }
 
-    await loadSermons();
+    // Optimistic update: remove from local state immediately
+    sermonsState.sermons = sermonsState.sermons.filter(s => s.id !== id);
     renderSermons();
+    await db.collection('sermons').doc(id).delete().catch(async (error) => {
+      console.error('Error deleting sermon:', error);
+      alert('Error deleting sermon. Please try again.');
+      await loadSermons(true);
+      renderSermons();
+    });
   } catch (error) {
     console.error('Error deleting sermon:', error);
     alert('Error deleting sermon. Please try again.');
+    await loadSermons(true);
+    renderSermons();
   }
 }
