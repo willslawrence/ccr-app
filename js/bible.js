@@ -544,7 +544,7 @@ function renderReadingPlan(daysAhead) {
   container.innerHTML = readings.map(r => {
     const dateStr = r.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const isDone = completed[r.day];
-    const todayStyle = r.isToday ? 'border:2px solid var(--red,#e74c3c);' : '';
+    const todayStyle = r.isToday ? 'border:2px solid var(--accent);' : '';
     const pastStyle = r.isPast && !isDone ? 'opacity:0.5;' : '';
     const doneStyle = isDone ? 'text-decoration:line-through;opacity:0.6;' : '';
     return `
@@ -554,7 +554,7 @@ function renderReadingPlan(daysAhead) {
           ${isDone ? '<span style="color:#fff;font-size:14px;">✓</span>' : ''}
         </div>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--red,#e74c3c);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
+          <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--accent);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
           <div style="font-size:14px;font-weight:600;${doneStyle}">${r.reading}</div>
         </div>
         <div style="font-size:10px;color:var(--muted);flex-shrink:0;">Day ${r.day}</div>
@@ -781,7 +781,7 @@ async function renderBiblePage() {
       <div class="page-sticky-banner">
         <h1 class="page-title">📖 Bible Reading</h1>
         <div class="btn-group">
-          <button class="btn btn-outline" onclick="toggleReadingPlan()">📅 Today's Reading</button>
+          <button class="btn btn-outline" onclick="toggleReadingPlan()">📅 Church Reading Plan</button>
           <button class="btn btn-outline" onclick="toggleReadingGuide()">📖 Guide</button>
           <button class="btn btn-primary" onclick="toggleBibleStats()">📊 Stats</button>
         </div>
@@ -817,11 +817,11 @@ async function renderBiblePage() {
       <div id="readingPlanCard" style="display:none;margin:16px 0;">
         <div class="card" style="padding:16px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h2 style="font-size:16px;font-weight:700;margin:0;">📅 Daily Reading Plan</h2>
+            <h2 style="font-size:15px;font-weight:700;margin:0;color:var(--text);">God's Glory in Salvation through Judgment Bible Reading Plan</h2>
             <span style="font-size:12px;color:var(--muted);">Day ${getDayOfYear(new Date())} of 365</span>
           </div>
-          <div style="background:var(--card-hover);border-radius:8px;height:6px;margin-bottom:16px;overflow:hidden;">
-            <div style="background:var(--red,#e74c3c);height:100%;width:${(getDayOfYear(new Date())/365*100).toFixed(1)}%;border-radius:8px;"></div>
+          <div style="background:var(--border);border-radius:8px;height:6px;margin-bottom:16px;overflow:hidden;">
+            <div style="background:var(--accent);height:100%;width:${(getDayOfYear(new Date())/365*100).toFixed(1)}%;border-radius:8px;"></div>
           </div>
           <div id="readingPlanList"></div>
           <div style="text-align:center;margin-top:12px;">
