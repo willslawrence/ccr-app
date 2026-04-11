@@ -293,6 +293,60 @@ const GIVING_CHARITIES = [
       sources: "Sources: IRS Form 990 (FY2023 filed Aug 2025), Charity Navigator, ProPublica, ECFA, MinistryWatch · Prepared by Po — Mar 2026"
     }
   },
+  {
+    name: "Align Life Ministries",
+    image: 'img/alignlife.svg',
+    status: "new",
+    type: "org",
+    category: "orphan",
+    categoryLabel: "Orphans, Widows & Sojourners",
+    location: "Lebanon County, PA (HQ) · Lancaster County, PA · National partnerships",
+    amount: "—",
+    amountNum: 0,
+    potentialAmount: "",
+    frequency: "Potential",
+    description: "Pro-life pregnancy ministry serving women facing unplanned pregnancy with options counseling, practical support, and spiritual care. 40 years of operation. Explicitly Gospel-centered mission. National church-equipping and partnership programs.",
+    link: "https://alignlifeministries.org",
+    lastUpdate: "Apr 2026",
+    score: 100,
+    scoreLabel: "100",
+    stats: { programs: "85¢ per $1 to programs", ceoPay: "$0.06 to raise $1", revenue: "$3.68M" },
+    audit: {
+      ein: "25-1506510", location: "Lebanon, PA · Founded 1985 · ECFA Accredited since 2020", score: 100, scoreSource: "Charity Navigator FY2023",
+      programs: ["Pregnancy Services — client care, ultrasound, options counseling","Post-Abortion Support — recovery and restoration programs","Sexual Integrity Education — curriculum for youth and adults","Ministry Partnerships — equipping life-affirming orgs nationally","Equipping Resources — materials for Christian leaders and churches"],
+      mission: "We align with God to proclaim the gospel of Jesus Christ and champion the sacredness of human life.",
+      financials: [
+        {metric:"Program Expense Ratio",value:"85.3%",rating:"Excellent",ratingColor:"green"},
+        {metric:"Fundraising Efficiency",value:"$0.057 per $1 raised",rating:"Excellent",ratingColor:"green"},
+        {metric:"Revenue / Expenses",value:"$3.68M / $2.63M",rating:"Surplus"},
+        {metric:"Liabilities to Assets",value:"1.4%",rating:"Very Low",ratingColor:"green"},
+        {metric:"Net Assets",value:"$7.12M",rating:"Strong",ratingColor:"green"}
+      ],
+      leaders: [{name:"Lisa Hosler",role:"President/CEO",comp:"$110,413"},{name:"Brian Asper",role:"Board Chair",comp:"$0 (unpaid)"},{name:"Janae Hostetter",role:"Vice Chair",comp:"$0 (unpaid)"},{name:"Ben Risser",role:"Treasurer",comp:"$0 (unpaid)"},{name:"Rodney Hostetter",role:"Secretary",comp:"$0 (unpaid)"}],
+      leaderNote: "CEO comp: $110K / $3.68M = 3.0%. Board: 4 members. Comp data: FY2024.",
+      governance: ["ECFA accredited (since 2020)","990 filed annually, current","No debt","Charity Navigator 100 score"],
+      redflags: "Board has only 4 members (married couple = 50% of board). ECFA only since 2020. Significant surplus accumulation ($1–1.6M/yr for 4+ years). Transparency grade C from MinistryWatch. No earned income.",
+      redflagLevel: "amber",
+      critics: [
+        "Board has only 4 members — well below the 7+ recommended for governance strength. MinistryWatch flags this.",
+        "Janae and Rodney Hostetter are married and both serve on the 4-person board — 50% of the board is one household.",
+        "MinistryWatch gives a transparency grade of C — below-average disclosure by their standards.",
+        "ECFA accredited only since 2020; no accreditation for the 35 preceding years of operation.",
+        "Significant surplus accumulation ($1–1.6M/yr for 4+ years). Net assets grew from $1.7M (2019) to $7.1M (2023) — donors may question reserve-building pace.",
+        "Program service revenue is $0 — org is entirely donation-dependent with no earned income diversification."
+      ],
+      ambassadors: [
+        "Charity Navigator rates all 4 financial metrics at 100% — program ratio, liabilities, working capital, and fundraising efficiency all top-scored.",
+        "85% of expenses go directly to programs — well above the 80% threshold for 'excellent' efficiency.",
+        "Only $0.057 spent to raise each dollar — half the 'caution' threshold of $0.10.",
+        "Debt-free with $7.1M net assets and a 1.4% liabilities-to-assets ratio — exceptional financial health.",
+        "40 years of continuous operation (founded 1985). Consistent, growing revenue through multiple economic cycles.",
+        "CEO compensation ($110K) is modest for a $3.7M revenue organization with 40-year track record."
+      ],
+      verdict: "Clean financials, Gospel-aligned mission, but governance red flags (tiny board, married-couple majority) and the substantial reserves warrant scrutiny. 40 years of service is a positive. ECFA accreditation is recent — worth watching.",
+      sources: "Sources: ProPublica / MinistryWatch · IRS Form 990 FY2023 · Charity Navigator · Prepared by Po — Apr 2026"
+    }
+  },
   // ── PERSECUTED CHURCH ──
   {
     name: "Open Doors International",
