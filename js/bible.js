@@ -515,6 +515,7 @@ function calculateGenreStats(data) {
 let _readingPlanBefore = 1;
 let _readingPlanAfter = 3;
 let _readingPlanCache = null; // Firestore cache for luke2444
+let _hamiltonCache = null; // Firestore cache for hamilton completed days
 
 function getSelectedPlan() {
   return localStorage.getItem('bible_reading_plan_choice') || 'hamilton';
@@ -528,14 +529,14 @@ function getPlanData() {
   return { key: 'hamilton', name: 'Hamilton Plan', total: BIBLE_READING_PLAN.length, hasColumns: false };
 }
 
-// Load Luke 24:44 progress from Firestore (stored under users/{uid}/readingPlan/data)
+// Load Luke 24:44 progress from Firestore (stored under users/{uid}/readingPlan/luke2444)
 async function loadLuke2444Progress() {
   if (_readingPlanCache) return _readingPlanCache;
   const user = firebase.auth().currentUser;
   if (!user) return { startDate: null, completed: {} };
   try {
     const doc = await firebase.firestore().collection('users').doc(user.uid)
-      .collection('readingPlan').doc('data').get();
+      .collection('readingPlan').doc('luke2444').get();
     if (doc.exists) {
       _readingPlanCache = doc.data();
     } else {
@@ -555,9 +556,62 @@ async function saveLuke2444Progress(data) {
   _readingPlanCache = data;
   try {
     await firebase.firestore().collection('users').doc(user.uid)
-      .collection('readingPlan').doc('data').set(data, { merge: true });
+      .collection('readingPlan').doc('luke2444').set(data, { merge: true });
   } catch (e) {
     console.error('Error saving reading plan:', e);
+  }
+}
+
+// Load Hamilton progress from Firestore (stored under users/{uid}/readingPlan/hamilton)
+// On first load, migrates any existing localStorage data to Firestore
+async function loadHamiltonProgress() {
+  if (_hamiltonCache) return _hamiltonCache;
+  const user = firebase.auth().currentUser;
+  if (!user) return { completed: {} };
+  try {
+    const doc = await firebase.firestore().collection('users').doc(user.uid)
+      .collection('readingPlan').doc('hamilton').get();
+    if (doc.exists) {
+      _hamiltonCache = doc.data();
+    } else {
+      _hamiltonCache = { completed: {} };
+      // Migrate from localStorage if any
+      const year = new Date().getFullYear();
+      const oldKeys = ['bible_reading_plan_' + year, 'bible_plan_done_hamilton_' + year];
+      for (const key of oldKeys) {
+        const old = localStorage.getItem(key);
+        if (old) {
+          try {
+            const parsed = JSON.parse(old);
+            if (parsed && typeof parsed === 'object') {
+              Object.assign(_hamiltonCache.completed, parsed);
+            }
+          } catch(e) {}
+          localStorage.removeItem(key); // Clean up after migration
+        }
+      }
+      if (Object.keys(_hamiltonCache.completed).length > 0) {
+        await saveHamiltonProgress(_hamiltonCache);
+        console.log('Migrated Hamilton reading plan to Firestore');
+      }
+    }
+  } catch (e) {
+    console.error('Error loading Hamilton plan:', e);
+    _hamiltonCache = { completed: {} };
+  }
+  return _hamiltonCache;
+}
+
+// Save Hamilton progress to Firestore
+async function saveHamiltonProgress(data) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  _hamiltonCache = data;
+  try {
+    await firebase.firestore().collection('users').doc(user.uid)
+      .collection('readingPlan').doc('hamilton').set(data, { merge: true });
+  } catch (e) {
+    console.error('Error saving Hamilton plan:', e);
   }
 }
 
@@ -627,15 +681,18 @@ window.toggleReadingPlan = async function() {
     if (stats) stats.style.display = 'none';
     _readingPlanBefore = 1;
     _readingPlanAfter = 3;
-    // Load Firestore data for luke2444
-    await loadLuke2444Progress();
-    // Auto-start if no start date yet
+    // Load Firestore data for both plans
     const plan = getPlanData();
-    if (plan.key === 'luke2444' && _readingPlanCache && !_readingPlanCache.startDate) {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      _readingPlanCache.startDate = today.toISOString().split('T')[0];
-      await saveLuke2444Progress(_readingPlanCache);
+    if (plan.key === 'luke2444') {
+      await loadLuke2444Progress();
+      if (_readingPlanCache && !_readingPlanCache.startDate) {
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        _readingPlanCache.startDate = today.toISOString().split('T')[0];
+        await saveLuke2444Progress(_readingPlanCache);
+      }
+    } else {
+      await loadHamiltonProgress();
     }
     renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
   }
@@ -659,7 +716,6 @@ window.switchReadingPlan = async function(planKey) {
   _readingPlanAfter = 3;
   const btn = document.getElementById('readingPlanNextBtn');
   if (btn) btn.style.display = '';
-  // Load Firestore data if switching to luke2444
   if (planKey === 'luke2444') {
     await loadLuke2444Progress();
     if (_readingPlanCache && !_readingPlanCache.startDate) {
@@ -668,6 +724,8 @@ window.switchReadingPlan = async function(planKey) {
       _readingPlanCache.startDate = today.toISOString().split('T')[0];
       await saveLuke2444Progress(_readingPlanCache);
     }
+  } else {
+    await loadHamiltonProgress();
   }
   renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
@@ -678,13 +736,12 @@ function renderReadingPlan(daysBefore, daysAfter) {
   const plan = getPlanData();
   const readings = getPlanReadingsAround(daysBefore, daysAfter);
 
-  // Get completed data
+  // Get completed data (both plans use Firestore)
   let completed = {};
   if (plan.key === 'luke2444') {
     completed = (_readingPlanCache && _readingPlanCache.completed) || {};
   } else {
-    const completedKey = 'bible_plan_done_hamilton_' + new Date().getFullYear();
-    completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
+    completed = (_hamiltonCache && _hamiltonCache.completed) || {};
   }
 
   // Update header
@@ -771,7 +828,6 @@ function renderReadingPlan(daysBefore, daysAfter) {
 window.toggleReadingDone = async function(day) {
   const plan = getPlanData();
   if (plan.key === 'luke2444') {
-    // Firestore sync
     if (!_readingPlanCache) _readingPlanCache = { startDate: null, completed: {} };
     if (!_readingPlanCache.completed) _readingPlanCache.completed = {};
     if (_readingPlanCache.completed[day]) {
@@ -782,16 +838,16 @@ window.toggleReadingDone = async function(day) {
     renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
     await saveLuke2444Progress(_readingPlanCache);
   } else {
-    // Hamilton: localStorage
-    const completedKey = 'bible_plan_done_hamilton_' + new Date().getFullYear();
-    const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
-    if (completed[day]) {
-      delete completed[day];
+    // Hamilton: Firestore sync
+    if (!_hamiltonCache) _hamiltonCache = { completed: {} };
+    if (!_hamiltonCache.completed) _hamiltonCache.completed = {};
+    if (_hamiltonCache.completed[day]) {
+      delete _hamiltonCache.completed[day];
     } else {
-      completed[day] = true;
+      _hamiltonCache.completed[day] = true;
     }
-    localStorage.setItem(completedKey, JSON.stringify(completed));
     renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
+    await saveHamiltonProgress(_hamiltonCache);
   }
 };
 
