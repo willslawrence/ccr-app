@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '2.10.23';
+const APP_VERSION = '2.10.24';
 
 // ====================================
 // LAZY SCRIPT LOADER
@@ -24,7 +24,7 @@ const PAGE_SCRIPTS = {
     schedule: ['js/schedule.js?v=' + APP_VERSION],
     library:  ['js/library.js?v=' + APP_VERSION],
     giving:   ['js/charities-data.js?v=' + APP_VERSION, 'js/giving.js?v=' + APP_VERSION],
-    bible:    ['js/bible-reading-plan.js?v=' + APP_VERSION, 'js/bible.js?v=' + APP_VERSION],
+    bible:    ['js/bible-reading-plan.js?v=' + APP_VERSION, 'js/luke2444-plan.js?v=' + APP_VERSION, 'js/bible.js?v=' + APP_VERSION],
     sermons:  ['js/sermons.js?v=' + APP_VERSION],
     vote:     ['js/vote.js?v=' + APP_VERSION],
     settings: ['js/settings.js?v=' + APP_VERSION]

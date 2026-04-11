@@ -515,18 +515,52 @@ function calculateGenreStats(data) {
 let _readingPlanBefore = 1;
 let _readingPlanAfter = 3;
 
+function getSelectedPlan() {
+  return localStorage.getItem('bible_reading_plan_choice') || 'hamilton';
+}
+
+function getPlanData() {
+  const plan = getSelectedPlan();
+  if (plan === 'luke2444') {
+    return { key: 'luke2444', name: 'Luke 24:44 Plan', total: LUKE2444_PLAN.length, hasColumns: true };
+  }
+  return { key: 'hamilton', name: 'Hamilton Plan', total: BIBLE_READING_PLAN.length, hasColumns: false };
+}
+
+function getPlanReadingsAround(daysBefore, daysAfter) {
+  const plan = getPlanData();
+  const d = new Date();
+  const dayOfYear = getDayOfYear(d);
+  const results = [];
+  for (let offset = -daysBefore; offset <= daysAfter; offset++) {
+    const idx = dayOfYear - 1 + offset;
+    if (idx >= 0 && idx < plan.total) {
+      const refDate = new Date(d);
+      refDate.setDate(refDate.getDate() + offset);
+      let reading, ot, nt, prayer;
+      if (plan.key === 'luke2444') {
+        const entry = LUKE2444_PLAN[idx];
+        ot = entry[0]; nt = entry[1]; prayer = entry[2];
+        reading = ot; // fallback
+      } else {
+        reading = BIBLE_READING_PLAN[idx];
+      }
+      results.push({ day: idx + 1, reading, ot, nt, prayer, date: refDate, isToday: offset === 0, isPast: offset < 0 });
+    }
+  }
+  return results;
+}
+
 window.toggleReadingPlan = function() {
   const panel = document.getElementById('readingPlanCard');
   if (!panel) return;
   const isHidden = panel.style.display === 'none';
   panel.style.display = isHidden ? '' : 'none';
   if (isHidden) {
-    // Close other panels
     const guide = document.getElementById('readingGuideCard');
     if (guide) guide.style.display = 'none';
     const stats = document.getElementById('bibleStatsAll');
     if (stats) stats.style.display = 'none';
-    // Reset and render
     _readingPlanBefore = 1;
     _readingPlanAfter = 3;
     renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
@@ -545,37 +579,97 @@ window.showPreviousWeek = function() {
   renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
 
+window.switchReadingPlan = function(planKey) {
+  localStorage.setItem('bible_reading_plan_choice', planKey);
+  _readingPlanBefore = 1;
+  _readingPlanAfter = 3;
+  // Reset show-more button
+  const btn = document.getElementById('readingPlanNextBtn');
+  if (btn) btn.style.display = '';
+  renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
+};
+
 function renderReadingPlan(daysBefore, daysAfter) {
   const container = document.getElementById('readingPlanList');
   if (!container) return;
-  const readings = getReadingsAround(new Date(), daysBefore, daysAfter);
-  const completedKey = 'bible_reading_plan_' + new Date().getFullYear();
+  const plan = getPlanData();
+  const readings = getPlanReadingsAround(daysBefore, daysAfter);
+  const completedKey = 'bible_plan_done_' + plan.key + '_' + new Date().getFullYear();
   const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
-  
+
+  // Update header
+  const titleEl = document.getElementById('readingPlanTitle');
+  if (titleEl) {
+    titleEl.textContent = plan.key === 'luke2444'
+      ? 'Luke 24:44 Reading/Listening Plan'
+      : "God's Glory in Salvation through Judgment Bible Reading Plan";
+  }
+  const dayEl = document.getElementById('readingPlanDayCount');
+  if (dayEl) {
+    const dayOfYear = getDayOfYear(new Date());
+    const currentDay = Math.min(dayOfYear, plan.total);
+    dayEl.textContent = 'Day ' + currentDay + ' of ' + plan.total;
+  }
+  const barEl = document.getElementById('readingPlanBar');
+  if (barEl) {
+    barEl.style.width = (getDayOfYear(new Date()) / plan.total * 100).toFixed(1) + '%';
+  }
+
+  // Update plan selector
+  const selBtns = document.querySelectorAll('.plan-select-btn');
+  selBtns.forEach(b => {
+    b.style.background = b.dataset.plan === plan.key ? 'var(--accent)' : 'var(--card-hover)';
+    b.style.color = b.dataset.plan === plan.key ? '#fff' : 'var(--text)';
+  });
+
   container.innerHTML = readings.map(r => {
     const dateStr = r.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const isDone = completed[r.day];
     const todayStyle = r.isToday ? 'border:2px solid var(--accent);' : '';
     const pastStyle = r.isPast && !isDone ? 'opacity:0.5;' : '';
     const doneStyle = isDone ? 'text-decoration:line-through;opacity:0.6;' : '';
-    return `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--card-hover);border-radius:8px;${todayStyle}${pastStyle}cursor:pointer;touch-action:manipulation;"
-           onclick="toggleReadingDone(${r.day})">
-        <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${isDone ? 'var(--green)' : 'transparent'};">
-          ${isDone ? '<span style="color:#fff;font-size:14px;">✓</span>' : ''}
+
+    if (plan.hasColumns) {
+      // Luke 24:44 — 3-column layout
+      return `
+        <div style="padding:10px 12px;margin-bottom:6px;background:var(--card-hover);border-radius:8px;${todayStyle}${pastStyle}cursor:pointer;touch-action:manipulation;"
+             onclick="toggleReadingDone(${r.day})">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${isDone ? 'var(--green)' : 'transparent'};">
+              ${isDone ? '<span style="color:#fff;font-size:12px;">✓</span>' : ''}
+            </div>
+            <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--accent);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
+            <div style="margin-left:auto;font-size:10px;color:var(--muted);">Day ${r.day}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:3px;padding-left:28px;${doneStyle}">
+            <div style="font-size:12px;"><span style="color:var(--accent);font-weight:700;font-size:10px;">OT</span> ${r.ot}</div>
+            <div style="font-size:12px;"><span style="color:var(--green);font-weight:700;font-size:10px;">NT</span> ${r.nt}</div>
+            ${r.prayer ? '<div style="font-size:12px;"><span style="color:var(--muted);font-weight:700;font-size:10px;">🙏</span> ' + r.prayer + '</div>' : ''}
+          </div>
         </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--accent);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
-          <div style="font-size:14px;font-weight:600;${doneStyle}">${r.reading}</div>
+      `;
+    } else {
+      // Hamilton — single reading
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--card-hover);border-radius:8px;${todayStyle}${pastStyle}cursor:pointer;touch-action:manipulation;"
+             onclick="toggleReadingDone(${r.day})">
+          <div style="width:24px;height:24px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${isDone ? 'var(--green)' : 'transparent'};">
+            ${isDone ? '<span style="color:#fff;font-size:14px;">✓</span>' : ''}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--accent);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
+            <div style="font-size:14px;font-weight:600;${doneStyle}">${r.reading}</div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);flex-shrink:0;">Day ${r.day}</div>
         </div>
-        <div style="font-size:10px;color:var(--muted);flex-shrink:0;">Day ${r.day}</div>
-      </div>
-    `;
+      `;
+    }
   }).join('');
 }
 
 window.toggleReadingDone = function(day) {
-  const completedKey = 'bible_reading_plan_' + new Date().getFullYear();
+  const plan = getPlanData();
+  const completedKey = 'bible_plan_done_' + plan.key + '_' + new Date().getFullYear();
   const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
   if (completed[day]) {
     delete completed[day];
@@ -583,7 +677,6 @@ window.toggleReadingDone = function(day) {
     completed[day] = true;
   }
   localStorage.setItem(completedKey, JSON.stringify(completed));
-  // Re-render
   renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
 
@@ -824,12 +917,17 @@ async function renderBiblePage() {
       <!-- Reading Plan (toggled by Today's Reading button) -->
       <div id="readingPlanCard" style="display:none;margin:16px 0;">
         <div class="card" style="padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h2 style="font-size:15px;font-weight:700;margin:0;color:var(--text);">God's Glory in Salvation through Judgment Bible Reading Plan</h2>
-            <span style="font-size:12px;color:var(--muted);">Day ${getDayOfYear(new Date())} of 365</span>
+          <!-- Plan Selector -->
+          <div style="display:flex;gap:4px;margin-bottom:12px;background:var(--border);border-radius:8px;padding:3px;">
+            <button class="plan-select-btn" data-plan="hamilton" onclick="switchReadingPlan('hamilton')" style="flex:1;padding:6px 8px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;touch-action:manipulation;transition:all 0.2s;">Hamilton (365d)</button>
+            <button class="plan-select-btn" data-plan="luke2444" onclick="switchReadingPlan('luke2444')" style="flex:1;padding:6px 8px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;touch-action:manipulation;transition:all 0.2s;">Luke 24:44 (262d)</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h2 id="readingPlanTitle" style="font-size:14px;font-weight:700;margin:0;color:var(--text);line-height:1.3;"></h2>
+            <span id="readingPlanDayCount" style="font-size:11px;color:var(--muted);white-space:nowrap;margin-left:8px;"></span>
           </div>
           <div style="background:var(--border);border-radius:8px;height:6px;margin-bottom:16px;overflow:hidden;">
-            <div style="background:var(--accent);height:100%;width:${(getDayOfYear(new Date())/365*100).toFixed(1)}%;border-radius:8px;"></div>
+            <div id="readingPlanBar" style="background:var(--accent);height:100%;border-radius:8px;transition:width 0.3s;"></div>
           </div>
           <div id="readingPlanList"></div>
           <div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">
