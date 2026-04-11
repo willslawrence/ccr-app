@@ -15,6 +15,8 @@ const DOC_CATEGORIES = [
   { key: 'financial',   icon: '💰', label: 'Financial Reports' },
   { key: 'safety',      icon: '👶', label: 'Safety & Policies' },
   { key: 'membership',  icon: '📋', label: 'Membership' },
+  { key: 'kids',        icon: '🧒', label: 'Kids Ministry' },
+  { key: 'records',     icon: '📁', label: 'Records' },
   { key: 'other',       icon: '📄', label: 'Other' }
 ];
 
