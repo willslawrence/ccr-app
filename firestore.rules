@@ -36,6 +36,11 @@ service cloud.firestore {
       match /bibleProgress/{docId} {
         allow read, write: if isAuth() && request.auth.uid == userId;
       }
+
+      // Reading plan progress - users can read/write their own
+      match /readingPlan/{docId} {
+        allow read, write: if isAuth() && request.auth.uid == userId;
+      }
     }
 
     // Books - any authenticated user can read, editors can write

@@ -514,6 +514,7 @@ function calculateGenreStats(data) {
 // Toggle stats panel (global function for onclick handlers)
 let _readingPlanBefore = 1;
 let _readingPlanAfter = 3;
+let _readingPlanCache = null; // Firestore cache for luke2444
 
 function getSelectedPlan() {
   return localStorage.getItem('bible_reading_plan_choice') || 'hamilton';
@@ -527,31 +528,94 @@ function getPlanData() {
   return { key: 'hamilton', name: 'Hamilton Plan', total: BIBLE_READING_PLAN.length, hasColumns: false };
 }
 
+// Load Luke 24:44 progress from Firestore (stored under users/{uid}/readingPlan/data)
+async function loadLuke2444Progress() {
+  if (_readingPlanCache) return _readingPlanCache;
+  const user = firebase.auth().currentUser;
+  if (!user) return { startDate: null, completed: {} };
+  try {
+    const doc = await firebase.firestore().collection('users').doc(user.uid)
+      .collection('readingPlan').doc('data').get();
+    if (doc.exists) {
+      _readingPlanCache = doc.data();
+    } else {
+      _readingPlanCache = { startDate: null, completed: {} };
+    }
+  } catch (e) {
+    console.error('Error loading reading plan:', e);
+    _readingPlanCache = { startDate: null, completed: {} };
+  }
+  return _readingPlanCache;
+}
+
+// Save Luke 24:44 progress to Firestore
+async function saveLuke2444Progress(data) {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
+  _readingPlanCache = data;
+  try {
+    await firebase.firestore().collection('users').doc(user.uid)
+      .collection('readingPlan').doc('data').set(data, { merge: true });
+  } catch (e) {
+    console.error('Error saving reading plan:', e);
+  }
+}
+
+// Get the current day number for Luke 24:44 (relative to user's start date)
+function getLuke2444CurrentDay(startDate) {
+  if (!startDate) return 0;
+  const start = new Date(startDate);
+  start.setHours(0,0,0,0);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.floor((today - start) / 86400000) + 1; // Day 1 = start date
+}
+
 function getPlanReadingsAround(daysBefore, daysAfter) {
   const plan = getPlanData();
-  const d = new Date();
-  const dayOfYear = getDayOfYear(d);
   const results = [];
-  for (let offset = -daysBefore; offset <= daysAfter; offset++) {
-    const idx = dayOfYear - 1 + offset;
-    if (idx >= 0 && idx < plan.total) {
-      const refDate = new Date(d);
-      refDate.setDate(refDate.getDate() + offset);
-      let reading, ot, nt, prayer;
-      if (plan.key === 'luke2444') {
+
+  if (plan.key === 'luke2444') {
+    // Luke 24:44: relative to user's start date
+    const data = _readingPlanCache || { startDate: null, completed: {} };
+    const currentDay = data.startDate ? getLuke2444CurrentDay(data.startDate) : 1;
+    for (let offset = -daysBefore; offset <= daysAfter; offset++) {
+      const dayNum = currentDay + offset;
+      const idx = dayNum - 1;
+      if (idx >= 0 && idx < plan.total) {
         const entry = LUKE2444_PLAN[idx];
-        ot = entry[0]; nt = entry[1]; prayer = entry[2];
-        reading = ot; // fallback
-      } else {
-        reading = BIBLE_READING_PLAN[idx];
+        results.push({
+          day: dayNum,
+          ot: entry[0], nt: entry[1], prayer: entry[2],
+          reading: entry[0],
+          isToday: offset === 0,
+          isPast: offset < 0
+        });
       }
-      results.push({ day: idx + 1, reading, ot, nt, prayer, date: refDate, isToday: offset === 0, isPast: offset < 0 });
+    }
+  } else {
+    // Hamilton: day-of-year based
+    const d = new Date();
+    const dayOfYear = getDayOfYear(d);
+    for (let offset = -daysBefore; offset <= daysAfter; offset++) {
+      const idx = dayOfYear - 1 + offset;
+      if (idx >= 0 && idx < plan.total) {
+        const refDate = new Date(d);
+        refDate.setDate(refDate.getDate() + offset);
+        results.push({
+          day: idx + 1,
+          reading: BIBLE_READING_PLAN[idx],
+          date: refDate,
+          isToday: offset === 0,
+          isPast: offset < 0
+        });
+      }
     }
   }
   return results;
 }
 
-window.toggleReadingPlan = function() {
+window.toggleReadingPlan = async function() {
   const panel = document.getElementById('readingPlanCard');
   if (!panel) return;
   const isHidden = panel.style.display === 'none';
@@ -563,6 +627,16 @@ window.toggleReadingPlan = function() {
     if (stats) stats.style.display = 'none';
     _readingPlanBefore = 1;
     _readingPlanAfter = 3;
+    // Load Firestore data for luke2444
+    await loadLuke2444Progress();
+    // Auto-start if no start date yet
+    const plan = getPlanData();
+    if (plan.key === 'luke2444' && _readingPlanCache && !_readingPlanCache.startDate) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      _readingPlanCache.startDate = today.toISOString().split('T')[0];
+      await saveLuke2444Progress(_readingPlanCache);
+    }
     renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
   }
 };
@@ -579,13 +653,22 @@ window.showPreviousWeek = function() {
   renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
 
-window.switchReadingPlan = function(planKey) {
+window.switchReadingPlan = async function(planKey) {
   localStorage.setItem('bible_reading_plan_choice', planKey);
   _readingPlanBefore = 1;
   _readingPlanAfter = 3;
-  // Reset show-more button
   const btn = document.getElementById('readingPlanNextBtn');
   if (btn) btn.style.display = '';
+  // Load Firestore data if switching to luke2444
+  if (planKey === 'luke2444') {
+    await loadLuke2444Progress();
+    if (_readingPlanCache && !_readingPlanCache.startDate) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      _readingPlanCache.startDate = today.toISOString().split('T')[0];
+      await saveLuke2444Progress(_readingPlanCache);
+    }
+  }
   renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
 
@@ -594,8 +677,15 @@ function renderReadingPlan(daysBefore, daysAfter) {
   if (!container) return;
   const plan = getPlanData();
   const readings = getPlanReadingsAround(daysBefore, daysAfter);
-  const completedKey = 'bible_plan_done_' + plan.key + '_' + new Date().getFullYear();
-  const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
+
+  // Get completed data
+  let completed = {};
+  if (plan.key === 'luke2444') {
+    completed = (_readingPlanCache && _readingPlanCache.completed) || {};
+  } else {
+    const completedKey = 'bible_plan_done_hamilton_' + new Date().getFullYear();
+    completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
+  }
 
   // Update header
   const titleEl = document.getElementById('readingPlanTitle');
@@ -606,13 +696,25 @@ function renderReadingPlan(daysBefore, daysAfter) {
   }
   const dayEl = document.getElementById('readingPlanDayCount');
   if (dayEl) {
-    const dayOfYear = getDayOfYear(new Date());
-    const currentDay = Math.min(dayOfYear, plan.total);
-    dayEl.textContent = 'Day ' + currentDay + ' of ' + plan.total;
+    if (plan.key === 'luke2444') {
+      const currentDay = _readingPlanCache && _readingPlanCache.startDate
+        ? Math.min(getLuke2444CurrentDay(_readingPlanCache.startDate), plan.total)
+        : 1;
+      const doneCount = Object.keys(completed).length;
+      dayEl.textContent = 'Day ' + currentDay + '+ of ' + plan.total + ' (✓' + doneCount + ')';
+    } else {
+      const dayOfYear = getDayOfYear(new Date());
+      dayEl.textContent = 'Day ' + Math.min(dayOfYear, plan.total) + ' of ' + plan.total;
+    }
   }
   const barEl = document.getElementById('readingPlanBar');
   if (barEl) {
-    barEl.style.width = (getDayOfYear(new Date()) / plan.total * 100).toFixed(1) + '%';
+    if (plan.key === 'luke2444') {
+      const doneCount = Object.keys(completed).length;
+      barEl.style.width = (doneCount / plan.total * 100).toFixed(1) + '%';
+    } else {
+      barEl.style.width = (getDayOfYear(new Date()) / plan.total * 100).toFixed(1) + '%';
+    }
   }
 
   // Update plan selector
@@ -623,14 +725,13 @@ function renderReadingPlan(daysBefore, daysAfter) {
   });
 
   container.innerHTML = readings.map(r => {
-    const dateStr = r.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const isDone = completed[r.day];
     const todayStyle = r.isToday ? 'border:2px solid var(--accent);' : '';
     const pastStyle = r.isPast && !isDone ? 'opacity:0.5;' : '';
     const doneStyle = isDone ? 'text-decoration:line-through;opacity:0.6;' : '';
 
     if (plan.hasColumns) {
-      // Luke 24:44 — 3-column layout
+      // Luke 24:44 — 3-column layout, no calendar dates, just Day N+
       return `
         <div style="padding:10px 12px;margin-bottom:6px;background:var(--card-hover);border-radius:8px;${todayStyle}${pastStyle}cursor:pointer;touch-action:manipulation;"
              onclick="toggleReadingDone(${r.day})">
@@ -638,8 +739,7 @@ function renderReadingPlan(daysBefore, daysAfter) {
             <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${isDone ? 'var(--green)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${isDone ? 'var(--green)' : 'transparent'};">
               ${isDone ? '<span style="color:#fff;font-size:12px;">✓</span>' : ''}
             </div>
-            <div style="font-size:11px;color:var(--muted);${r.isToday ? 'font-weight:700;color:var(--accent);' : ''}">${dateStr}${r.isToday ? ' — TODAY' : ''}</div>
-            <div style="margin-left:auto;font-size:10px;color:var(--muted);">Day ${r.day}</div>
+            <div style="font-size:12px;font-weight:600;${r.isToday ? 'color:var(--accent);' : 'color:var(--text);'}">Day ${r.day}+${r.isToday ? ' — TODAY' : ''}</div>
           </div>
           <div style="display:grid;grid-template-columns:1fr;gap:3px;padding-left:28px;${doneStyle}">
             <div style="font-size:12px;"><span style="color:var(--accent);font-weight:700;font-size:10px;">OT</span> ${r.ot}</div>
@@ -649,7 +749,8 @@ function renderReadingPlan(daysBefore, daysAfter) {
         </div>
       `;
     } else {
-      // Hamilton — single reading
+      // Hamilton — single reading with calendar dates
+      const dateStr = r.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       return `
         <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;background:var(--card-hover);border-radius:8px;${todayStyle}${pastStyle}cursor:pointer;touch-action:manipulation;"
              onclick="toggleReadingDone(${r.day})">
@@ -667,17 +768,31 @@ function renderReadingPlan(daysBefore, daysAfter) {
   }).join('');
 }
 
-window.toggleReadingDone = function(day) {
+window.toggleReadingDone = async function(day) {
   const plan = getPlanData();
-  const completedKey = 'bible_plan_done_' + plan.key + '_' + new Date().getFullYear();
-  const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
-  if (completed[day]) {
-    delete completed[day];
+  if (plan.key === 'luke2444') {
+    // Firestore sync
+    if (!_readingPlanCache) _readingPlanCache = { startDate: null, completed: {} };
+    if (!_readingPlanCache.completed) _readingPlanCache.completed = {};
+    if (_readingPlanCache.completed[day]) {
+      delete _readingPlanCache.completed[day];
+    } else {
+      _readingPlanCache.completed[day] = true;
+    }
+    renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
+    await saveLuke2444Progress(_readingPlanCache);
   } else {
-    completed[day] = true;
+    // Hamilton: localStorage
+    const completedKey = 'bible_plan_done_hamilton_' + new Date().getFullYear();
+    const completed = JSON.parse(localStorage.getItem(completedKey) || '{}');
+    if (completed[day]) {
+      delete completed[day];
+    } else {
+      completed[day] = true;
+    }
+    localStorage.setItem(completedKey, JSON.stringify(completed));
+    renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
   }
-  localStorage.setItem(completedKey, JSON.stringify(completed));
-  renderReadingPlan(_readingPlanBefore, _readingPlanAfter);
 };
 
 window.toggleReadingGuide = function() {
