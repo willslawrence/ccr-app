@@ -17,7 +17,7 @@ function renderToolsPage() {
       <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
 
         <!-- Timer Card -->
-        <div class="card" id="timer-card" style="cursor:pointer;transition:transform 0.15s;" onclick="openTimerOverlay()">
+        <div class="card" id="timer-card" style="cursor:pointer;" onclick="openTimerOverlay()">
           <div style="display:flex;align-items:center;gap:14px;">
             <div style="width:52px;height:52px;background:var(--gold-shine);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;">⏱️</div>
             <div style="flex:1;">
@@ -32,18 +32,18 @@ function renderToolsPage() {
     </div>
 
     <!-- Timer Overlay -->
-    <div id="timer-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column;align-items:center;justify-content:center;" id="timer-overlay-inner">
-      <button onclick="closeTimerOverlay()" style="position:fixed;top:16px;right:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(255,255,255,0.5);z-index:1001;">
+    <div id="timer-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column;align-items:center;justify-content:center;">
+      <button id="timer-close-btn" onclick="closeTimerOverlay()" style="position:fixed;top:16px;right:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(255,255,255,0.5);z-index:1003;transition:opacity 0.3s;">
         ✕
       </button>
-      <button id="timer-fs-btn" onclick="timerEnterFullscreen()" style="position:fixed;top:16px;left:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,0.5);z-index:1001;" title="Fullscreen">
+      <button id="timer-fs-btn" onclick="timerEnterFullscreen()" style="position:fixed;top:16px;left:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,0.5);z-index:1003;transition:opacity 0.3s;" title="Fullscreen">
         ⛶
       </button>
       <div id="timer-content" style="display:flex;flex-direction:column;align-items:center;gap:6px;">
         ${renderTimerDisplay()}
       </div>
-      <div id="timer-done-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:1002;">
-        <div style="font-size:clamp(2rem,10vw,5rem);color:#c9a84c;font-family:Georgia,serif;letter-spacing:0.05em;margin-bottom:0.3em;">Starting Now</div>
+      <div id="timer-done-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:1002;opacity:0;transition:opacity 0.7s ease-out;">
+        <div id="timer-done-title" style="font-size:clamp(2rem,10vw,5rem);color:#c9a84c;font-family:Georgia,serif;letter-spacing:0.05em;margin-bottom:0.3em;">Starting Now</div>
         <div id="timer-countup" style="font-size:clamp(1.2rem,6vw,3rem);color:#e84040;font-family:Georgia,serif;letter-spacing:0.1em;">+0:00</div>
       </div>
     </div>
@@ -65,14 +65,14 @@ function renderTimerDisplay() {
   `;
 }
 
-// ── Timer Logic ───────────────────────────────────────────────────────────────
+// ── Timer State ───────────────────────────────────────────────────────────────
 var timerTotal = 5 * 60;
 var timerInterval = null;
 var timerCountup = null;
 var timerCountupTotal = 0;
-var timerCanvas = null;
 var timerParticles = [];
 var timerRaf = null;
+var timerDone = false; // tracks if countdown has finished
 
 function timerGet() {
   return {
@@ -100,18 +100,40 @@ function timerTick() {
   timerRender();
 }
 
-function timerReset(newTotal) {
+function timerResetAndStart(newTotal) {
+  // Stop everything
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (timerCountup) { clearInterval(timerCountup); timerCountup = null; timerCountupTotal = 0; }
-  timerTotal = (newTotal !== undefined) ? newTotal : 5 * 60;
-  timerCanvas = null;
-  timerParticles = [];
   if (timerRaf) { cancelAnimationFrame(timerRaf); timerRaf = null; }
+  timerParticles = [];
+  timerDone = false;
+
+  // Reset total
+  timerTotal = (newTotal !== undefined) ? newTotal : 5 * 60;
+
+  // Hide done screen, show clock
   var doneScreen = document.getElementById('timer-done-screen');
-  if (doneScreen) { doneScreen.style.display = 'none'; }
+  if (doneScreen) {
+    doneScreen.style.display = 'none';
+    doneScreen.style.opacity = '0';
+  }
   var clock = document.getElementById('timer-clock');
-  if (clock) { clock.style.display = 'flex'; }
+  if (clock) { clock.style.display = 'flex'; clock.style.opacity = '1'; }
+
+  // Restore digit opacity
+  ['mt','mo','st','so'].forEach(function(id) {
+    var el = document.getElementById('timer-' + id);
+    if (el) el.style.opacity = '1';
+  });
+  var colon = document.querySelector('.timer-colon');
+  if (colon) colon.style.opacity = '0.45';
+
+  // Remove burst canvas
+  var canvas = document.getElementById('timer-burst-canvas');
+  if (canvas) canvas.remove();
+
   timerRender();
+  timerInterval = setInterval(timerTick, 1000);
 }
 
 function timerTapDigit(field, e) {
@@ -128,9 +150,9 @@ function timerTapDigit(field, e) {
 // ── Keyboard Controls ──────────────────────────────────────────────────────────
 function timerOnKeyDown(e) {
   var key = e.key;
+
   if (key >= '1' && key <= '9') {
-    timerReset(parseInt(key) * 60);
-    if (!timerInterval && timerTotal > 0) timerInterval = setInterval(timerTick, 1000);
+    timerResetAndStart(parseInt(key) * 60);
     return;
   }
   if (key === '0') {
@@ -140,8 +162,16 @@ function timerOnKeyDown(e) {
   if (key === 'ArrowDown') { e.preventDefault(); timerTotal -= 10; timerTotal = Math.max(0, timerTotal); timerRender(); return; }
   if (key === 'ArrowRight') { e.preventDefault(); timerTotal += 60; timerTotal = Math.min(5999, timerTotal); timerRender(); return; }
   if (key === 'ArrowLeft') { e.preventDefault(); timerTotal -= 60; timerTotal = Math.max(0, timerTotal); timerRender(); return; }
-  if (key === ' ') { e.preventDefault(); if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } else if (timerTotal > 0) { timerInterval = setInterval(timerTick, 1000); } return; }
-  if (key === 'r' || key === 'R') { timerReset(); timerInterval = setInterval(timerTick, 1000); return; }
+  if (key === ' ') {
+    e.preventDefault();
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    else if (timerTotal > 0 && !timerDone) { timerInterval = setInterval(timerTick, 1000); }
+    return;
+  }
+  if (key === 'r' || key === 'R') {
+    timerResetAndStart();
+    return;
+  }
 }
 
 // ── Fullscreen ────────────────────────────────────────────────────────────────
@@ -151,8 +181,18 @@ function timerEnterFullscreen() {
   else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 }
 
+function timerUpdateFullscreenUI() {
+  var isFS = !!document.fullscreenElement;
+  var closeBtn = document.getElementById('timer-close-btn');
+  var fsBtn = document.getElementById('timer-fs-btn');
+  if (closeBtn) closeBtn.style.opacity = isFS ? '0' : '1';
+  if (fsBtn) fsBtn.style.opacity = isFS ? '0' : '1';
+}
+
 // ── Canvas Burst ─────────────────────────────────────────────────────────────
 function timerBurst() {
+  timerDone = true;
+
   var ids = ['mt','mo','st','so'];
   ids.forEach(function(id) {
     var el = document.getElementById('timer-' + id);
@@ -161,18 +201,15 @@ function timerBurst() {
   var colon = document.querySelector('.timer-colon');
   if (colon) colon.style.opacity = '0';
 
-  var canvas = document.getElementById('timer-burst-canvas');
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'timer-burst-canvas';
-    canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1001;';
-    document.getElementById('timer-overlay').appendChild(canvas);
-  }
+  // Canvas
+  var canvas = document.createElement('canvas');
+  canvas.id = 'timer-burst-canvas';
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:1001;';
+  document.getElementById('timer-overlay').appendChild(canvas);
   var ctx = canvas.getContext('2d');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  var particles = [];
   var positions = ids.map(function(id) {
     var el = document.getElementById('timer-' + id);
     var r = el.getBoundingClientRect();
@@ -184,18 +221,17 @@ function timerBurst() {
     positions.push({ x: cr.left + cr.width / 2, y: cr.top + cr.height / 2 });
   }
 
+  function Particle(x, y, vx, vy, len, rot, rotSpeed) {
+    this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.len = len; this.rot = rot; this.rotSpeed = rotSpeed; this.alpha = 1;
+  }
+  var realParticles = [];
   for (var i = 0; i < 300; i++) {
     var pos = positions[i % positions.length];
     var angle = Math.random() * Math.PI * 2;
     var speed = 6 + Math.random() * 18;
     var len = 30 + Math.random() * 90;
-    particles.push({ x: pos.x, y: pos.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, len: len, alpha: 1, rot: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.15 });
+    realParticles.push(new Particle(pos.x, pos.y, Math.cos(angle) * speed, Math.sin(angle) * speed, len, Math.random() * Math.PI, (Math.random() - 0.5) * 0.15));
   }
-
-  function Particle(x, y, vx, vy, len, alpha, rot, rotSpeed) {
-    this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.len = len; this.alpha = alpha; this.rot = rot; this.rotSpeed = rotSpeed;
-  }
-  var realParticles = particles.map(function(p) { return new Particle(p.x, p.y, p.vx, p.vy, p.len, p.alpha, p.rot, p.rotSpeed); });
 
   function animateTimerParticles() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -222,13 +258,17 @@ function timerBurst() {
   }
   animateTimerParticles();
 
-  // Show done screen
+  // Show done screen with fade-in
   setTimeout(function() {
     var clock = document.getElementById('timer-clock');
     if (clock) clock.style.display = 'none';
     var doneScreen = document.getElementById('timer-done-screen');
     if (doneScreen) {
       doneScreen.style.display = 'flex';
+      // Fade in
+      requestAnimationFrame(function() {
+        doneScreen.style.opacity = '1';
+      });
       timerCountup = setInterval(function() {
         timerCountupTotal++;
         var m = Math.floor(timerCountupTotal / 60);
@@ -243,10 +283,10 @@ function timerBurst() {
 function openTimerOverlay() {
   var overlay = document.getElementById('timer-overlay');
   overlay.style.display = 'flex';
-  timerReset();
-  timerRender();
-  if (!timerInterval) timerInterval = setInterval(timerTick, 1000);
+  timerResetAndStart();
   document.addEventListener('keydown', timerOnKeyDown);
+  document.addEventListener('fullscreenchange', timerUpdateFullscreenUI);
+  timerUpdateFullscreenUI();
 }
 
 function closeTimerOverlay() {
@@ -256,4 +296,11 @@ function closeTimerOverlay() {
   if (timerCountup) { clearInterval(timerCountup); timerCountup = null; timerCountupTotal = 0; }
   if (timerRaf) { cancelAnimationFrame(timerRaf); timerRaf = null; }
   document.removeEventListener('keydown', timerOnKeyDown);
+  document.removeEventListener('fullscreenchange', timerUpdateFullscreenUI);
+  // Exit fullscreen if active
+  if (document.fullscreenElement) {
+    var el = document.documentElement;
+    if (el.exitFullscreen) el.exitFullscreen();
+    else if (el.webkitExitFullscreen) el.webkitExitFullscreen();
+  }
 }
