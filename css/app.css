@@ -3797,7 +3797,7 @@ input[type="time"] {
 
 /* ── Timer ── */
 .timer-unit {
-  font-size: clamp(3rem, 18vw, 7rem);
+  font-size: clamp(5rem, 30vw, 12rem);
   font-weight: bold;
   color: var(--gold, #c9a84c);
   line-height: 1;
@@ -3813,7 +3813,7 @@ input[type="time"] {
 }
 .timer-unit:active { background: rgba(201,168,76,0.15); }
 .timer-colon {
-  font-size: clamp(3rem, 18vw, 7rem);
+  font-size: clamp(5rem, 30vw, 12rem);
   color: var(--gold, #c9a84c);
   opacity: 0.45;
   line-height: 1;
@@ -3823,7 +3823,8 @@ input[type="time"] {
 #timer-overlay-inner { background: var(--bg); }
 #timer-content { position: relative; z-index: 1002; }
 #timer-burst-canvas { z-index: 1001; }
-#timer-done-screen { background: var(--bg); }
+#timer-done-screen { background: var(--bg); opacity: 0; }
+#timer-done-screen.fade-in { opacity: 1; transition: opacity 0.7s ease-out; }
 #timer-keys-hint { color: var(--muted); }
 
 /* Light theme adjustments for timer */

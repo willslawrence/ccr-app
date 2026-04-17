@@ -44,7 +44,7 @@ function renderToolsPage() {
     </div>
 
     <!-- Timer Overlay -->
-    <div id="timer-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:#000;flex-direction:column;align-items:center;justify-content:center;">
+    <div id="timer-overlay" style="display:none;position:fixed;inset:0;z-index:1000;flex-direction:column;align-items:center;justify-content:center;">
       <button id="timer-close-btn" onclick="closeTimerOverlay()" style="position:fixed;top:16px;right:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(255,255,255,0.5);z-index:1003;transition:opacity 0.3s;">
         ✕
       </button>
@@ -127,7 +127,7 @@ function timerResetAndStart(newTotal) {
   var doneScreen = document.getElementById('timer-done-screen');
   if (doneScreen) {
     doneScreen.style.display = 'none';
-    doneScreen.style.opacity = '0';
+    doneScreen.classList.remove('fade-in');
   }
   var clock = document.getElementById('timer-clock');
   if (clock) { clock.style.display = 'flex'; clock.style.opacity = '1'; }
@@ -279,7 +279,7 @@ function timerBurst() {
       doneScreen.style.display = 'flex';
       // Fade in
       requestAnimationFrame(function() {
-        doneScreen.style.opacity = '1';
+        doneScreen.classList.add('fade-in');
       });
       timerCountup = setInterval(function() {
         timerCountupTotal++;
