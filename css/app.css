@@ -3794,3 +3794,33 @@ input[type="time"] {
   font-family: 'DM Sans', sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ── Timer ── */
+.timer-unit {
+  font-size: clamp(3rem, 18vw, 7rem);
+  font-weight: bold;
+  color: #c9a84c;
+  line-height: 1;
+  font-family: Georgia, serif;
+  min-width: 1.4ch;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.6em 0.3em;
+  display: inline-block;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.timer-unit:active { background: rgba(201,168,76,0.15); }
+.timer-colon {
+  font-size: clamp(3rem, 18vw, 7rem);
+  color: #c9a84c;
+  opacity: 0.45;
+  line-height: 1;
+  padding: 0 4px;
+}
+#timer-overlay { background: #000; }
+#timer-overlay-inner { background: #000; }
+#timer-content { position: relative; z-index: 1002; }
+#timer-burst-canvas { z-index: 1001; }
+#timer-done-screen { background: #000; }

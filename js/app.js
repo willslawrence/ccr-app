@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '3.7';
+const APP_VERSION = '3.8';
 
 // ====================================
 // LAZY SCRIPT LOADER
@@ -27,7 +27,8 @@ const PAGE_SCRIPTS = {
     bible:    ['js/bible-reading-plan.js?v=' + APP_VERSION, 'js/luke2444-plan.js?v=' + APP_VERSION, 'js/bible.js?v=' + APP_VERSION],
     sermons:  ['js/sermons.js?v=' + APP_VERSION],
     vote:     ['js/vote.js?v=' + APP_VERSION],
-    settings: ['js/settings.js?v=' + APP_VERSION]
+    settings: ['js/settings.js?v=' + APP_VERSION],
+    tools:    ['js/tools.js?v=' + APP_VERSION]
 };
 
 async function ensurePageScripts(page) {
@@ -45,7 +46,7 @@ const AppState = {
 };
 
 // Page order for swipe navigation
-const PAGE_ORDER = ['home','prayer','giving','library','bible','sermons','schedule','bulletin','documents','settings'];
+const PAGE_ORDER = ['home','prayer','giving','library','bible','sermons','schedule','bulletin','documents','settings','tools'];
 
 // Router
 function navigateTo(page, slideDirection) {
@@ -205,6 +206,14 @@ async function render() {
       } catch (e) {
         console.error('Settings page error:', e);
         app.innerHTML = '<div class="page"><h1>Settings Error</h1><p>' + e.message + '</p></div>';
+      }
+      break;
+    case 'tools':
+      try {
+        app.innerHTML = renderToolsPage();
+      } catch (e) {
+        console.error('Tools page error:', e);
+        app.innerHTML = '<div class="page"><h1>Tools Error</h1><p>' + e.message + '</p></div>';
       }
       break;
     default:
