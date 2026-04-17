@@ -17,6 +17,18 @@ function renderToolsPage() {
       <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
 
         <!-- Timer Card -->
+        <div class="card" id="vote-card" style="cursor:pointer;" onclick="navigateTo('vote')">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div style="width:52px;height:52px;background:var(--gold-shine);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;">🗳️</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:16px;margin-bottom:2px;">Voting</div>
+              <div style="font-size:13px;color:var(--muted);">Vote on church decisions</div>
+            </div>
+            <div style="color:var(--muted);font-size:20px;">›</div>
+          </div>
+        </div>
+
+        <!-- Timer Card -->
         <div class="card" id="timer-card" style="cursor:pointer;" onclick="openTimerOverlay()">
           <div style="display:flex;align-items:center;gap:14px;">
             <div style="width:52px;height:52px;background:var(--gold-shine);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;">⏱️</div>

@@ -13,7 +13,7 @@ function renderHomePage() {
     { page: 'schedule', icon: '📅', label: 'Schedule',    color: 'var(--orange)' },
     { page: 'bulletin', icon: '📋', label: 'Bulletin',    color: 'var(--red, #c0392b)' },
     { page: 'documents',icon: '📄', label: 'Documents',  color: 'var(--accent)' },
-    { page: 'vote',     icon: '🗳️', label: 'Voting', color: 'var(--gold, #b8860b)' },
+    { page: 'tools',    icon: '🛠️', label: 'Tools',    color: 'var(--accent)' },
     { page: 'settings', icon: '⚙️', label: 'Settings',    color: 'var(--muted)' },
   ];
 
