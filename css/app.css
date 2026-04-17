@@ -3799,7 +3799,7 @@ input[type="time"] {
 .timer-unit {
   font-size: clamp(3rem, 18vw, 7rem);
   font-weight: bold;
-  color: #c9a84c;
+  color: var(--gold, #c9a84c);
   line-height: 1;
   font-family: Georgia, serif;
   min-width: 1.4ch;
@@ -3814,13 +3814,17 @@ input[type="time"] {
 .timer-unit:active { background: rgba(201,168,76,0.15); }
 .timer-colon {
   font-size: clamp(3rem, 18vw, 7rem);
-  color: #c9a84c;
+  color: var(--gold, #c9a84c);
   opacity: 0.45;
   line-height: 1;
   padding: 0 4px;
 }
-#timer-overlay { background: #000; }
-#timer-overlay-inner { background: #000; }
+#timer-overlay { background: var(--bg); }
+#timer-overlay-inner { background: var(--bg); }
 #timer-content { position: relative; z-index: 1002; }
 #timer-burst-canvas { z-index: 1001; }
-#timer-done-screen { background: #000; }
+#timer-done-screen { background: var(--bg); }
+#timer-keys-hint { color: var(--muted); }
+
+/* Light theme adjustments for timer */
+body:not(.dark-theme) .timer-unit:active { background: rgba(184,134,11,0.1); }
