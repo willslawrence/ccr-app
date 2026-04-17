@@ -3823,8 +3823,8 @@ input[type="time"] {
 #timer-overlay-inner { background: var(--bg); }
 #timer-content { position: relative; z-index: 1002; }
 #timer-burst-canvas { z-index: 1001; }
-#timer-done-screen { background: var(--bg); opacity: 0; }
-#timer-done-screen.fade-in { opacity: 1; transition: opacity 0.7s ease-out; }
+#timer-done-screen { background: var(--bg); opacity: 0; pointer-events: none; }
+#timer-done-screen.fade-in { opacity: 1; transition: opacity 0.7s ease-out; pointer-events: none; }
 #timer-keys-hint { color: var(--muted); }
 
 /* Hide FAB and pull-down when timer overlay is open */

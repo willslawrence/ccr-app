@@ -45,10 +45,10 @@ function renderToolsPage() {
 
     <!-- Timer Overlay -->
     <div id="timer-overlay" style="display:none;position:fixed;inset:0;z-index:1000;flex-direction:column;align-items:center;">
-      <button id="timer-close-btn" onclick="closeTimerOverlay()" style="position:fixed;top:16px;right:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(255,255,255,0.5);z-index:1003;transition:opacity 0.3s;">
+      <button id="timer-close-btn" onclick="closeTimerOverlay()" style="position:fixed;top:16px;right:16px;width:44px;height:44px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text);z-index:1003;transition:opacity 0.3s;opacity:1;">
         ✕
       </button>
-      <button id="timer-fs-btn" onclick="timerEnterFullscreen()" style="position:fixed;top:16px;left:16px;width:44px;height:44px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,0.5);z-index:1003;transition:opacity 0.3s;" title="Fullscreen">
+      <button id="timer-fs-btn" onclick="timerEnterFullscreen()" style="position:fixed;top:16px;left:16px;width:44px;height:44px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text);z-index:1003;transition:opacity 0.3s;opacity:1;" title="Fullscreen">
         ⛶
       </button>
       <div id="timer-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:6px;">
@@ -57,8 +57,8 @@ function renderToolsPage() {
       <div id="timer-keys-hint" style="padding:24px;font-size:12px;color:var(--muted);letter-spacing:0.05em;text-align:center;flex-shrink:0;">
         ↑↓ ±10s &nbsp;|&nbsp; ←→ ±1min &nbsp;|&nbsp; 1-9 set min &nbsp;|&nbsp; Space pause &nbsp;|&nbsp; R reset
       </div>
-      <div id="timer-done-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:1002;opacity:0;transition:opacity 0.7s ease-out;">
-        <div id="timer-done-title" style="font-size:clamp(2rem,10vw,5rem);color:#c9a84c;font-family:Georgia,serif;letter-spacing:0.05em;margin-bottom:0.3em;">Starting Now</div>
+      <div id="timer-done-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;position:fixed;inset:0;z-index:1002;">
+        <div id="timer-done-title" style="font-size:clamp(2rem,10vw,5rem);color:var(--gold, #c9a84c);font-family:Georgia,serif;letter-spacing:0.05em;margin-bottom:0.3em;">Starting Now</div>
         <div id="timer-countup" style="font-size:clamp(1.2rem,6vw,3rem);color:#e84040;font-family:Georgia,serif;letter-spacing:0.1em;">+0:00</div>
       </div>
     </div>
@@ -127,6 +127,7 @@ function timerResetAndStart(newTotal) {
   var doneScreen = document.getElementById('timer-done-screen');
   if (doneScreen) {
     doneScreen.style.display = 'none';
+    doneScreen.style.opacity = '';
     doneScreen.classList.remove('fade-in');
   }
   var clock = document.getElementById('timer-clock');
