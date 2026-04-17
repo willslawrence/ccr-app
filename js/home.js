@@ -23,7 +23,7 @@ function renderHomePage() {
     <div class="page home-page">
       <div class="home-header">
         <h1 class="page-title" style="font-size:36px;margin-bottom:4px;">CCR</h1>
-        <p class="page-subtitle" style="margin-bottom:20px;">Community Church App</p>
+        <p class="page-subtitle" style="margin-bottom:20px;">Christ Church R</p>
         <h2 class="home-greeting" style="font-size:22px;margin-bottom:12px;">Hey ${escapeHtml(userName)} 👋</h2>
       </div>
       <div class="home-grid">

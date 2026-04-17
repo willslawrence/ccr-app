@@ -18,7 +18,7 @@ function renderLoginPage() {
     <div class="page" style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
       <div style="max-width:400px;width:100%;text-align:center;">
         <h1 class="page-title" style="font-size:48px;margin-bottom:8px;">CCR</h1>
-        <p class="page-subtitle" style="margin-bottom:40px;">Community Church App</p>
+        <p class="page-subtitle" style="margin-bottom:40px;">Christ Church R</p>
 
         <form id="loginForm" style="text-align:left;">
           <div class="form-group">
