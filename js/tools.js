@@ -295,6 +295,7 @@ function timerBurst() {
 function openTimerOverlay() {
   var overlay = document.getElementById('timer-overlay');
   overlay.style.display = 'flex';
+  document.body.classList.add('timer-open');
   timerResetAndStart();
   document.addEventListener('keydown', timerOnKeyDown);
   document.addEventListener('fullscreenchange', timerUpdateFullscreenUI);
@@ -304,6 +305,7 @@ function openTimerOverlay() {
 function closeTimerOverlay() {
   var overlay = document.getElementById('timer-overlay');
   overlay.style.display = 'none';
+  document.body.classList.remove('timer-open');
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (timerCountup) { clearInterval(timerCountup); timerCountup = null; timerCountupTotal = 0; }
   if (timerRaf) { cancelAnimationFrame(timerRaf); timerRaf = null; }

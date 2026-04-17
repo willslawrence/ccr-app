@@ -3797,7 +3797,7 @@ input[type="time"] {
 
 /* ── Timer ── */
 .timer-unit {
-  font-size: clamp(5rem, 30vw, 12rem);
+  font-size: clamp(3.5rem, 22vw, 9rem);
   font-weight: bold;
   color: var(--gold, #c9a84c);
   line-height: 1;
@@ -3813,7 +3813,7 @@ input[type="time"] {
 }
 .timer-unit:active { background: rgba(201,168,76,0.15); }
 .timer-colon {
-  font-size: clamp(5rem, 30vw, 12rem);
+  font-size: clamp(3.5rem, 22vw, 9rem);
   color: var(--gold, #c9a84c);
   opacity: 0.45;
   line-height: 1;
@@ -3826,6 +3826,14 @@ input[type="time"] {
 #timer-done-screen { background: var(--bg); opacity: 0; }
 #timer-done-screen.fade-in { opacity: 1; transition: opacity 0.7s ease-out; }
 #timer-keys-hint { color: var(--muted); }
+
+/* Hide FAB and pull-down when timer overlay is open */
+body.timer-open .fab-trigger,
+body.timer-open .fab-overlay,
+body.timer-open #pulldown-nav,
+body.timer-open .pulldown-indicator {
+  display: none !important;
+}
 
 /* Light theme adjustments for timer */
 body:not(.dark-theme) .timer-unit:active { background: rgba(184,134,11,0.1); }
