@@ -779,13 +779,6 @@ async function deletePoll(pollId) {
   if (!confirm('Delete this poll? This cannot be undone.')) return;
 
   try {
-    // Delete all votes first
-    const votes = await db.collection('polls').doc(pollId).collection('votes').get();
-    const batch = db.batch();
-    votes.docs.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-
-    // Delete poll
     await db.collection('polls').doc(pollId).delete();
     await loadPolls(true);
     renderActivePolls();
