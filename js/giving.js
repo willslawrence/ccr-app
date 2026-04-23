@@ -389,10 +389,39 @@ function updateLocalChurchCharityData() {
   lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Past 120 days: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.<br>Actual: ' + stats.actualPER + '% to external missions vs ' + stats.expectedPER + '% expected.';
 }
 
+// Compute charity totals from loaded transactions (client-side fallback)
+// Primary: server-side charityTotals from API (computed from ALL 105 transactions)
+// Fallback: sum from loaded transactions (may be partial if Load More not used)
 function getCharityTransactionTotals() {
-  // Charity totals are now computed server-side in Apps Script from ALL transactions
-  // Returns: { "Charity Name": totalYTDAmount, ... }
-  return givingState.charityTotals || {};
+  // Use server computed totals if available and non-empty
+  const server = givingState.charityTotals || {};
+  const serverHasData = Object.keys(server).some(k => server[k] > 0);
+  if (serverHasData) return server;
+
+  // Fallback: compute from loaded transactions
+  const totals = {};
+  if (!window.GIVING_CHARITIES) return {};
+
+  const txList = givingState.transactions || [];
+  GIVING_CHARITIES.forEach(c => {
+    if (c.status !== 'given') return;
+    const nameLower = c.name.toLowerCase();
+    const matchTx = txList.filter(t => {
+      if (!t.date || !t.description) return false;
+      const descLower = t.description.toLowerCase();
+      const allocLower = (t.allocation || '').toLowerCase();
+      // Match by allocation field OR by description keyword
+      return allocLower === nameLower ||
+             allocLower === 'special project' && nameLower.includes('special project') ||
+             descLower.includes(nameLower.split(' ')[0]);
+    });
+    const total = matchTx.reduce((sum, t) => {
+      const amt = Math.abs(t.rawAmount !== undefined ? t.rawAmount : t.amount);
+      return t.type === 'Incoming' ? sum + amt : sum;
+    }, 0);
+    if (total > 0) totals[c.name] = total;
+  });
+  return totals;
 }
 
 // Format amount for display (no currency symbol in transaction list)
