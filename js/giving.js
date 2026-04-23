@@ -13,6 +13,8 @@ let givingState = {
   sheetLoaded: false,
   visibleCount: 20,  // Page size
   txTotal: 0,        // Total count from server
+  txOffset: 20,       // Start at 20 since initial load is 20
+  allLoaded: false,    // True when all transactions loaded
   showAddForm: false,
   editingId: null,
   expandedTransId: null,
@@ -60,7 +62,7 @@ const FUND_TOOLTIPS = {
 async function loadTransactions() {
   if (givingState.transactionsLoaded) return;
   try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=50&offset=0&_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors' });
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=0&_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors' });
     const data = await resp.json();
 
     givingState.metrics = data.metrics || {};
@@ -85,6 +87,43 @@ async function loadTransactions() {
   } catch (error) {
     console.error('Error loading from sheet:', error);
     givingState.transactions = [];
+  }
+}
+
+// Load ALL remaining transactions (for Load More)
+async function loadMoreTransactions() {
+  if (givingState.allLoaded) return;
+  const btn = document.getElementById('loadMoreBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
+  try {
+    // Fetch remaining transactions in one call
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=200&offset=' + givingState.txOffset + '&_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors' });
+    const data = await resp.json();
+    const fresh = (data.transactions || [])
+      .filter(t => t.date && t.description)
+      .map((t, i) => ({
+        ...t,
+        id:        t.date + '_rest_' + i,
+        rawAmount: t.rawAmount !== undefined ? t.rawAmount : t.amount
+      }))
+      .sort((a, b) => {
+        const da = new Date(a.date.split('/').reverse().join('-'));
+        const db = new Date(b.date.split('/').reverse().join('-'));
+        return db - da;
+      });
+
+    givingState.transactions = [...givingState.transactions, ...fresh];
+    givingState.allLoaded = true;
+
+    // Re-render just the transaction list
+    const listEl = document.getElementById('transactionListContainer');
+    if (listEl) { listEl.innerHTML = renderTransactionList(); }
+
+    // Hide Load More button
+    if (btn) { btn.style.display = 'none'; }
+  } catch (err) {
+    console.error('Load more failed:', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Load More'; }
   }
 }
 
@@ -381,48 +420,10 @@ function updateLocalChurchCharityData() {
   lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Past 120 days: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.<br>Actual: ' + stats.actualPER + '% to external missions vs ' + stats.expectedPER + '% expected.';
 }
 
-// Compute charity totals from loaded transactions — always, since Load More was removed
-// This is fully client-side and immune to SW/browser caching of API responses
+// Charity totals from Google Sheet (server-computed, from ALL 105 transactions)
+// Sheet values are set once during initial load — no client-side math
 function getCharityTransactionTotals() {
-  const totals = {};
-  const txList = givingState.transactions || [];
-  if (txList.length === 0) return totals;
-
-  // Known charity keywords — maps to charity name in GIVING_CHARITIES
-  const KEYWORDS = {
-    'Joyful Joseph':    ['joyful joseph', 'joyful joshef'],
-    'Daniel':           ['daniel', 'daniels gift'],
-    'Stan':             ['stan', 'stan and tasha'],
-    'Radical':          ['radical'],
-    'PreBorn':          ['preborn', 'pre-born'],
-    'Align Life':       ['align life', 'align'],
-    'Global Christian':['global christian'],
-    'Help The Persecuted': ['help the persecuted'],
-    'Special Needs':    ['special needs sports'],
-    'Open Doors':       ['open doors'],
-    'Crisis Aid':       ['crisis aid'],
-    'Lifesong':         ['lifesong'],
-    'Send Relief':      ['send relief'],
-    'Special Projects': ['special project'],
-  };
-
-  GIVING_CHARITIES.forEach(charity => {
-    if (charity.status !== 'given') return;
-    const keywords = KEYWORDS[charity.name] || [charity.name.toLowerCase()];
-    const matchTx = txList.filter(t => {
-      if (!t.date || !t.description) return false;
-      const desc = (t.description || '').toLowerCase();
-      const alloc = (t.allocation || '').toLowerCase();
-      return keywords.some(kw => desc.includes(kw) || alloc.includes(kw));
-    });
-    const total = matchTx.reduce((sum, t) => {
-      if (t.type === 'Transfer') return sum;
-      const amt = Math.abs(t.rawAmount !== undefined ? t.rawAmount : t.amount);
-      return t.type === 'Incoming' ? sum + amt : sum - amt;
-    }, 0);
-    if (total > 0) totals[charity.name] = Math.round(total * 100) / 100;
-  });
-  return totals;
+  return givingState.charityTotals || {};
 }
 
 // Format amount for display (no currency symbol in transaction list)
@@ -676,6 +677,7 @@ async function renderGivingPage() {
         <div id="transactionListContainer">
           ${renderTransactionList()}
         </div>
+        ${!givingState.allLoaded ? `<div style="text-align:center;margin:16px 0;"><button class="btn btn-outline" id="loadMoreBtn" onclick="loadMoreTransactions()" style="padding:8px 24px;">Load More (${givingState.txTotal - givingState.txOffset} remaining)</button></div>` : ''}
       </div>
 
       <!-- Charities Tab -->
@@ -1162,7 +1164,7 @@ async function saveTransaction() {
 
     givingState.showAddForm = false;
     givingState.editingId = null;
-    givingState.transactionsLoaded = false; // Force refresh after save
+    // Forcing full reload after save is disruptive — transactions are already saved in the sheet
     document.getElementById('app').innerHTML = await renderGivingPage();
     await initGivingPage();
   } catch (error) {
