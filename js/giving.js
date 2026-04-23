@@ -60,7 +60,7 @@ const FUND_TOOLTIPS = {
 async function loadTransactions() {
   if (givingState.transactionsLoaded) return;
   try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=200&offset=0&_cb=' + Date.now());
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=200&offset=0&_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors' });
     const data = await resp.json();
 
     givingState.metrics = data.metrics || {};
@@ -381,37 +381,46 @@ function updateLocalChurchCharityData() {
   lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Past 120 days: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.<br>Actual: ' + stats.actualPER + '% to external missions vs ' + stats.expectedPER + '% expected.';
 }
 
-// Compute charity totals from loaded transactions (client-side fallback)
-// Primary: server-side charityTotals from API (computed from ALL 105 transactions)
-// Fallback: sum from loaded transactions (may be partial if Load More not used)
+// Compute charity totals from loaded transactions — always, since Load More was removed
+// This is fully client-side and immune to SW/browser caching of API responses
 function getCharityTransactionTotals() {
-  // Use server computed totals if available and non-empty
-  const server = givingState.charityTotals || {};
-  const serverHasData = Object.keys(server).some(k => server[k] > 0);
-  if (serverHasData) return server;
-
-  // Fallback: compute from loaded transactions
   const totals = {};
-  if (!window.GIVING_CHARITIES) return {};
-
   const txList = givingState.transactions || [];
-  GIVING_CHARITIES.forEach(c => {
-    if (c.status !== 'given') return;
-    const nameLower = c.name.toLowerCase();
+  if (txList.length === 0) return totals;
+
+  // Known charity keywords — maps to charity name in GIVING_CHARITIES
+  const KEYWORDS = {
+    'Joyful Joseph':    ['joyful joseph', 'joyful joshef'],
+    'Daniel':           ['daniel', 'daniels gift'],
+    'Stan':             ['stan', 'stan and tasha'],
+    'Radical':          ['radical'],
+    'PreBorn':          ['preborn', 'pre-born'],
+    'Align Life':       ['align life', 'align'],
+    'Global Christian':['global christian'],
+    'Help The Persecuted': ['help the persecuted'],
+    'Special Needs':    ['special needs sports'],
+    'Open Doors':       ['open doors'],
+    'Crisis Aid':       ['crisis aid'],
+    'Lifesong':         ['lifesong'],
+    'Send Relief':      ['send relief'],
+    'Special Projects': ['special project'],
+  };
+
+  GIVING_CHARITIES.forEach(charity => {
+    if (charity.status !== 'given') return;
+    const keywords = KEYWORDS[charity.name] || [charity.name.toLowerCase()];
     const matchTx = txList.filter(t => {
       if (!t.date || !t.description) return false;
-      const descLower = t.description.toLowerCase();
-      const allocLower = (t.allocation || '').toLowerCase();
-      // Match by allocation field OR by description keyword
-      return allocLower === nameLower ||
-             allocLower === 'special project' && nameLower.includes('special project') ||
-             descLower.includes(nameLower.split(' ')[0]);
+      const desc = (t.description || '').toLowerCase();
+      const alloc = (t.allocation || '').toLowerCase();
+      return keywords.some(kw => desc.includes(kw) || alloc.includes(kw));
     });
     const total = matchTx.reduce((sum, t) => {
+      if (t.type === 'Transfer') return sum;
       const amt = Math.abs(t.rawAmount !== undefined ? t.rawAmount : t.amount);
-      return t.type === 'Incoming' ? sum + amt : sum;
+      return t.type === 'Incoming' ? sum + amt : sum - amt;
     }, 0);
-    if (total > 0) totals[c.name] = total;
+    if (total > 0) totals[charity.name] = Math.round(total * 100) / 100;
   });
   return totals;
 }
@@ -1150,7 +1159,7 @@ async function saveTransaction() {
     // Write to Google Sheet via Apps Script POST
     try {
       const payload = { ...transactionData };
-      const resp = await fetch(GIVING_SCRIPT_URL + '?_cb=' + Date.now(), {
+      const resp = await fetch(GIVING_SCRIPT_URL + '?_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors',
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
