@@ -66,7 +66,11 @@ async function loadTransactions(forceRefresh = false) {
     givingState.allocations = data.allocations || [];
     givingState.transactions = (data.transactions || [])
       .filter(t => t.date && t.description) // skip blank rows
-      .map((t, i) => ({ ...t, id: t.date + '_' + i })) // synthetic id for UI state
+      .map((t, i) => ({
+        ...t,
+        id:        t.date + '_' + i,           // synthetic id for UI state
+        rawAmount: t.amountRaw !== undefined ? t.amountRaw : t.amount  // signed: negative = outgoing
+      }))
       .sort((a, b) => {
         const da = new Date(a.date.split('/').reverse().join('-'));
         const db = new Date(b.date.split('/').reverse().join('-'));
@@ -122,11 +126,13 @@ function calculateFundBalances() {
         });
       }
     } else {
+      // Use rawAmount (negative for outgoing, positive for incoming) for direct allocations
+      const amt = trans.rawAmount !== undefined ? trans.rawAmount : trans.amount;
       const fundMatch = trans.allocation.match(/^(LC1|LC2|PC1|PC2|HH1|HH2)/);
       if (fundMatch) {
-        balances[fundMatch[1]] += trans.amount;
+        balances[fundMatch[1]] += amt;
       } else if (trans.allocation === 'Special Project') {
-        balances['SP'] += trans.amount;
+        balances['SP'] += amt;
       }
     }
   });
@@ -156,14 +162,13 @@ function calculateTotals() {
 // Calculate PER metrics — last 120 days (for PER cards)
 // Uses Google Sheet pre-calculated values when available, falls back to client-side computation
 function calculatePERStats() {
-  // If metrics from sheet are available, use the sheet's pre-calculated averages
+  // If metrics from sheet are available, use the sheet's pre-calculated values
   if (givingState.metrics) {
     return {
       totalIn: givingState.metrics.totalIn || 0,
       totalOut: Math.abs(givingState.metrics.totalOut || 0),
       balance: (givingState.metrics.totalIn || 0) - Math.abs(givingState.metrics.totalOut || 0),
-      programRatioActual: 0,
-      programRatioExpected: 0
+      programRatioExpected: givingState.metrics.perExpected || 0
     };
   }
   // Fallback: compute from transactions (legacy path)
@@ -189,7 +194,7 @@ function calculatePERStats() {
   const totalAllocated = Object.values(alloc).reduce((s, v) => s + v, 0);
   const externalAllocated = totalAllocated - (alloc['LC1'] || 0);
   const programRatioExpected = totalAllocated > 0 ? (externalAllocated / totalAllocated) * 100 : 0;
-  return { totalIn, totalOut, balance: totalIn - totalOut, programRatioActual, programRatioExpected };
+  return { totalIn, totalOut, balance: totalIn - totalOut, programRatioExpected };
 }
 
 // Calculate total given from transactions (outgoing, excluding transfers, LC1 and LC2)
@@ -418,8 +423,12 @@ function renderTransactionList() {
             <div class="card-meta" style="font-size:11px;">${formatDate(trans.date)} · ${trans.allocation}</div>
             <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(trans.description)}</div>
           </div>
-          <div class="mono" style="font-size:15px;font-weight:700;color:${trans.amount > 0 ? 'var(--green)' : 'var(--red)'};white-space:nowrap;margin-left:8px;">
-            ${trans.amount > 0 ? '+' : '-'}${formatAmount(trans.amount)}
+          <div class="mono" style="font-size:15px;font-weight:700;color:${
+            trans.type === 'Transfer' ? 'var(--muted)' :
+            (trans.rawAmount < 0 || trans.amount < 0) ? 'var(--red)' :
+            'var(--green)'
+          };white-space:nowrap;margin-left:8px;">
+            ${trans.type === 'Transfer' ? '' : (trans.rawAmount < 0 || trans.amount < 0 ? '-' : '+')}${formatAmount(Math.abs(trans.rawAmount !== undefined ? trans.rawAmount : trans.amount))}
           </div>
         </div>
         ${isExpanded ? `
@@ -500,14 +509,10 @@ async function renderGivingPage() {
           </div>
         </div>
 
-        <!-- PER Cards -->
+        <!-- Program Expense Ratio — single card, from sheet metric -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-          <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of money that has gone to charities compared to all spending.')">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PER Actual</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--green);">${perStats.programRatioActual.toFixed(1)}%</div>
-          </div>
           <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of tithe thats earmarked for missions and charities but not yet given.')">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">PER Expected</div>
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Program Expense Ratio</div>
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
           </div>
         </div>
