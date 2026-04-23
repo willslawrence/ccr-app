@@ -19,7 +19,7 @@ let givingState = {
 };
 
 // ── Google Sheets / Apps Script ────────────────────────────────────────────
-const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0YXXQtKVFhyfKK7s9AY3Vi7EIgF9cW3MPHObRUc3LiWopSj-zDLD44Is8hxDNXoTrXA/exec';
+const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwvYXtB0xUz0oLXCm33LTNpt7PHkS0XThpV5PC4d4sve2W1i2LyHumiW4JbCBd0aUXNpA/exec';
 
 // Fund fractions for "All" allocations
 const FUND_FRACTIONS = {
@@ -513,7 +513,7 @@ async function renderGivingPage() {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
           <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of tithe thats earmarked for missions and charities but not yet given.')">
             <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Program Expense Ratio</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">${perStats.programRatioExpected.toFixed(1)}%</div>
+            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">${(perStats.programRatioExpected * 100).toFixed(1)}%</div>
           </div>
         </div>
 
@@ -536,25 +536,25 @@ async function renderGivingPage() {
 
         ${isAdmin() || isEditor() ? `
           <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-outline" id="givingRefreshBtn" title="Refresh from sheet" style="padding:6px 10px;font-size:12px;">🔄</button>
             <button class="btn btn-primary" id="addTransactionBtn">+ Add Transaction</button>
-            <button class="btn btn-outline" id="giveTitheBtn" style="border-color:var(--green);color:var(--green);">+ Tithe</button>
-            <button class="btn btn-outline" id="givingRefreshBtn" title="Refresh from sheet" style="padding:6px 10px;font-size:12px;margin-left:auto;">🔄</button>
+            <button class="btn btn-primary" id="giveTitheBtn">+ Tithe</button>
           </div>
         ` : ''}
 
         <!-- Tithe Giving Tooltip -->
         <div id="titheTooltip" style="display:none;position:relative;margin-bottom:20px;">
           <div class="card" style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;">
-            <div style="font-weight:700;font-size:13px;margin-bottom:12px;color:var(--accent);">💰 Give / Tithe</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:12px;color:var(--accent);text-align:center;">Giving Method Options</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <a href="https://revolut.me/willfly2" target="_blank" rel="noopener" class="btn btn-outline" style="text-align:left;justify-content:flex-start;color:var(--green);border-color:var(--green);">
-                🔵 Revolut <span style="margin-left:auto;font-size:11px;opacity:0.7;">Preferred</span>
+              <a href="https://revolut.me/willfly2" target="_blank" rel="noopener" style="display:block;background:#111;color:#fff;text-align:center;padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">
+                Revolut <span style="font-size:11px;opacity:0.7;margin-left:6px;">Preferred</span>
               </a>
-              <a href="https://venmo.com/u/Willslawrence" target="_blank" rel="noopener" class="btn btn-outline" style="text-align:left;justify-content:flex-start;color:#0084ff;border-color:#0084ff;">
-                💙 Venmo
+              <a href="https://venmo.com/u/Willslawrence" target="_blank" rel="noopener" style="display:block;background:#0084ff;color:#fff;text-align:center;padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;text-decoration:none;">
+                Venmo
               </a>
-              <a href="#" onclick="alert('Please contact the treasurer for the IBAN number.');return false;" class="btn btn-outline" style="text-align:left;justify-content:flex-start;">
-                🏦 Local Bank Transfer
+              <a href="#" onclick="alert('Please contact the treasurer for the IBAN number.');return false;" class="btn btn-outline" style="text-align:center;display:block;">
+                Local Bank Transfer
               </a>
             </div>
           </div>
