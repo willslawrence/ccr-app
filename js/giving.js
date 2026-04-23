@@ -124,6 +124,26 @@ function calculateIncomingAllocations() {
 }
 
 function calculateFundBalances() {
+  // When sheet allocations are available (from server-side computation), use them directly
+  if (givingState.allocations && givingState.allocations.length > 0) {
+    const balances = { 'LC1': 0, 'LC2': 0, 'PC1': 0, 'PC2': 0, 'HH1': 0, 'HH2': 0, 'SP': 0 };
+    givingState.allocations.forEach(a => {
+      // Map sheet name to code: "LC1 - Church Needs" → "LC1"
+      const code = (a.name || '').split(' - ')[0].trim();
+      if (code in balances) balances[code] = a.amount;
+    });
+    // Special Projects may not be in allocations — compute from transactions if missing
+    if (balances.SP === 0) {
+      givingState.transactions.forEach(trans => {
+        if (trans.allocation === 'Special Project' && trans.type === 'Incoming') {
+          balances.SP += trans.amount;
+        }
+      });
+    }
+    return balances;
+  }
+
+  // Fallback: client-side computation (only when sheet data unavailable)
   const balances = {
     'LC1': 0, 'LC2': 0, 'PC1': 0, 'PC2': 0, 'HH1': 0, 'HH2': 0, 'SP': 0
   };
@@ -540,7 +560,7 @@ async function renderGivingPage() {
             <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this, '${(FUND_TOOLTIPS[fund]||'').replace(/'/g, "\\'")}')">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
               <div style="font-size:12px;font-weight:600;color:var(--green);">
-                ${fund === 'MC' ? '<span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> 400' : (balance >= 0 ? '' : '-') + formatAmount(balance, true)}
+                ${fund === 'MC' ? '<span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> 400' : formatAmount(balance, true)}
               </div>
             </div>
           `).join('')}
@@ -980,8 +1000,7 @@ function loadMoreTransactions() {
       givingState.txOffset += fresh.length;
       givingState.txTotal   = data.totalCount || givingState.txTotal;
       // Re-render the whole tab
-      document.getElementById('app').innerHTML = renderGivingPage();
-      initGivingPage();
+      await initGivingPage();
     })
     .catch(err => {
       console.error('Load more failed:', err);
