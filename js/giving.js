@@ -12,12 +12,10 @@ let givingState = {
   allocations: [],   // Google Sheet allocations table
   sheetLoaded: false,
   visibleCount: 20,  // Page size
-  txOffset: 0,
   txTotal: 0,        // Total count from server
   showAddForm: false,
   editingId: null,
   expandedTransId: null,
-  transactionsLoaded: false,
   submitting: false  // Guard against double-submit
 };
 
@@ -59,10 +57,10 @@ const FUND_TOOLTIPS = {
 };
 
 // Load transactions + summary metrics from Google Apps Script
-async function loadTransactions(forceRefresh = false) {
-  if (givingState.transactionsLoaded && !forceRefresh) return;
+async function loadTransactions() {
+  if (givingState.transactionsLoaded) return;
   try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=0&_cb=' + Date.now());
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=200&offset=0&_cb=' + Date.now());
     const data = await resp.json();
 
     givingState.metrics = data.metrics || {};
@@ -81,13 +79,7 @@ async function loadTransactions(forceRefresh = false) {
         return db - da;
       });
 
-  // On first load (not Load More): replace. On Load More: append.
-  if (forceRefresh || givingState.txOffset === 0) {
-    givingState.transactions = fresh;
-  } else {
-    givingState.transactions = [...givingState.transactions, ...fresh];
-  }
-  givingState.txOffset += fresh.length;
+  givingState.transactions = fresh;
   givingState.txTotal   = data.totalCount || givingState.transactions.length;
   givingState.transactionsLoaded = true;
   } catch (error) {
@@ -675,7 +667,6 @@ async function renderGivingPage() {
         <div id="transactionListContainer">
           ${renderTransactionList()}
         </div>
-        ${(givingState.txOffset < givingState.txTotal) ? `<div style="text-align:center;margin:16px 0;"><button class="btn btn-outline" id="loadMoreBtn" onclick="loadMoreTransactions()" style="padding:8px 24px;">Load More (${givingState.txTotal - givingState.txOffset} remaining)</button></div>` : ''}
       </div>
 
       <!-- Charities Tab -->
@@ -981,44 +972,6 @@ function closeCharityModal() {
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCharityModal(); });
 
 // Initialize Giving page
-async function loadMoreTransactions() {
-  if (givingState.txOffset >= givingState.txTotal) return; // no more
-  const btn = document.getElementById('loadMoreBtn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
-  try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=' + givingState.txOffset + '&_cb=' + Date.now());
-    const data = await resp.json();
-    const fresh = (data.transactions || [])
-      .filter(t => t.date && t.description)
-      .map((t, i) => ({
-        ...t,
-        id:        t.date + '_' + givingState.txOffset + '_' + i,
-        rawAmount: t.amountRaw !== undefined ? t.amountRaw : t.amount
-      }));
-    givingState.transactions = [...givingState.transactions, ...fresh];
-    givingState.txOffset += fresh.length;
-    givingState.txTotal   = data.totalCount || givingState.txTotal;
-    // Update just the transaction list + Load More button (no full re-render)
-    const listEl = document.getElementById('transactionListContainer');
-    if (listEl) {
-      listEl.innerHTML = renderTransactionList();
-    }
-    // Sync Load More button state
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
-    if (loadMoreBtn) {
-      const remaining = givingState.txTotal - givingState.txOffset;
-      if (remaining <= 0) {
-        loadMoreBtn.style.display = 'none';
-      } else {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load More (' + remaining + ' remaining)';
-      }
-    }
-  } catch (err) {
-    console.error('Load more failed:', err);
-    if (btn) { btn.disabled = false; btn.textContent = 'Load More'; }
-  }
-}
 
 async function initGivingPage() {
   await loadTransactions();
@@ -1067,10 +1020,8 @@ async function initGivingPage() {
     refreshBtn.addEventListener('click', async () => {
       refreshBtn.textContent = '⏳';
       refreshBtn.disabled = true;
-      givingState.txOffset = 0;
       givingState.transactionsLoaded = false;
       document.getElementById('app').innerHTML = await renderGivingPage();
-      await initGivingPage();
       refreshBtn.textContent = '🔄';
       refreshBtn.disabled = false;
     });
