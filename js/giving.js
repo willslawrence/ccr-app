@@ -1,18 +1,25 @@
 /* ====================================
    GIVING PAGE
-   Two tabs: Transactions + Charities
+   Data source: Google Sheets via Apps Script (GET=read, POST=write)
+   Fallback: Firestore for direct app entries
    ==================================== */
 
 let currentGivingTab = 'transactions'; // Default to transactions
 let activeGivingCat = 'all'; // Category filter for charities
 let givingState = {
   transactions: [],
+  metrics: null,      // Google Sheet summary metrics
+  allocations: [],   // Google Sheet allocations table
+  sheetLoaded: false,
   showAddForm: false,
   editingId: null,
   expandedTransId: null,
   transactionsLoaded: false,
   submitting: false  // Guard against double-submit
 };
+
+// ── Google Sheets / Apps Script ────────────────────────────────────────────
+const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHEzF5hkLONMcvV5ql52befkir5Rrojp0nmYZhaGl7eVtSYHjnEiYR_reE77Z3iY41tg/exec';
 
 // Fund fractions for "All" allocations
 const FUND_FRACTIONS = {
@@ -48,30 +55,26 @@ const FUND_TOOLTIPS = {
   'MC': 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.'
 };
 
-// Load transactions from Firestore (cached — only fetches once per session)
+// Load transactions + summary metrics from Google Apps Script
 async function loadTransactions(forceRefresh = false) {
   if (givingState.transactionsLoaded && !forceRefresh) return;
   try {
-    const snapshot = await db.collection('transactions').orderBy('date', 'desc').get();
-    givingState.transactions = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const ts = data.date instanceof firebase.firestore.Timestamp
-        ? data.date.toDate()
-        : new Date(data.date);
-      return {
-        id: doc.id,
-        ...data,
-        date: data.date instanceof firebase.firestore.Timestamp
-          ? data.date.toDate().toISOString().split('T')[0]
-          : data.date,
-        _sortTime: ts.getTime(),
-        createdAt: data.createdAt instanceof firebase.firestore.Timestamp
-          ? data.createdAt.toDate().toISOString()
-          : data.createdAt
-      };
-    }).sort((a, b) => b._sortTime - a._sortTime); // Force newest-first client-side
+    const resp = await fetch(GIVING_SCRIPT_URL);
+    const data = await resp.json();
+
+    givingState.metrics = data.metrics || {};
+    givingState.allocations = data.allocations || [];
+    givingState.transactions = (data.transactions || [])
+      .filter(t => t.date && t.description) // skip blank rows
+      .map((t, i) => ({ ...t, id: t.date + '_' + i })) // synthetic id for UI state
+      .sort((a, b) => {
+        const da = new Date(a.date.split('/').reverse().join('-'));
+        const db = new Date(b.date.split('/').reverse().join('-'));
+        return db - da;
+      });
+    givingState.transactionsLoaded = true;
   } catch (error) {
-    console.error('Error loading transactions:', error);
+    console.error('Error loading from sheet:', error);
     givingState.transactions = [];
   }
 }
@@ -151,7 +154,19 @@ function calculateTotals() {
 }
 
 // Calculate PER metrics — last 120 days (for PER cards)
+// Uses Google Sheet pre-calculated values when available, falls back to client-side computation
 function calculatePERStats() {
+  // If metrics from sheet are available, use the sheet's pre-calculated averages
+  if (givingState.metrics) {
+    return {
+      totalIn: givingState.metrics.totalIn || 0,
+      totalOut: Math.abs(givingState.metrics.totalOut || 0),
+      balance: (givingState.metrics.totalIn || 0) - Math.abs(givingState.metrics.totalOut || 0),
+      programRatioActual: 0,
+      programRatioExpected: 0
+    };
+  }
+  // Fallback: compute from transactions (legacy path)
   const { cutoff } = getLast120Days();
   const nonTransfers = givingState.transactions.filter(t => {
     if (t.allocation === 'Transfer within CCR') return false;
@@ -159,39 +174,21 @@ function calculatePERStats() {
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     return d >= cutoff;
   });
-
-  const totalIn = nonTransfers
-    .filter(t => t.type === 'Incoming')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalOut = Math.abs(nonTransfers
-    .filter(t => t.type === 'Outgoing')
-    .reduce((sum, t) => sum + t.amount, 0));
-
-  // PER ACTUAL
+  const totalIn = nonTransfers.filter(t => t.type === 'Incoming').reduce((sum, t) => sum + t.amount, 0);
+  const totalOut = Math.abs(nonTransfers.filter(t => t.type === 'Outgoing').reduce((sum, t) => sum + t.amount, 0));
   const outgoing = nonTransfers.filter(t => t.type === 'Outgoing');
-  const lc1Spending = Math.abs(outgoing
-    .filter(t => t.allocation && t.allocation.startsWith('LC1'))
-    .reduce((sum, t) => sum + t.amount, 0));
+  const lc1Spending = Math.abs(outgoing.filter(t => t.allocation && t.allocation.startsWith('LC1')).reduce((sum, t) => sum + t.amount, 0));
   const totalSpending = Math.abs(outgoing.reduce((sum, t) => sum + t.amount, 0));
   const externalSpending = totalSpending - lc1Spending;
   const programRatioActual = totalSpending > 0 ? (externalSpending / totalSpending) * 100 : 0;
-
-  // PER EXPECTED
   const alloc = { LC1: 0, LC2: 0, PC1: 0, PC2: 0, HH1: 0, HH2: 0, SP: 0 };
   nonTransfers.filter(t => t.type === 'Incoming').forEach(t => {
-    if (t.allocation === 'All') {
-      Object.keys(FUND_FRACTIONS).forEach(f => { alloc[f] += t.amount * FUND_FRACTIONS[f]; });
-    } else {
-      const match = t.allocation.match(/^(LC1|LC2|PC1|PC2|HH1|HH2)/);
-      if (match) alloc[match[1]] += t.amount;
-      else if (t.allocation === 'Special Project') alloc['SP'] += t.amount;
-    }
+    if (t.allocation === 'All') Object.keys(FUND_FRACTIONS).forEach(f => { alloc[f] += t.amount * FUND_FRACTIONS[f]; });
+    else { const match = t.allocation.match(/^(LC1|LC2|PC1|PC2|HH1|HH2)/); if (match) alloc[match[1]] += t.amount; else if (t.allocation === 'Special Project') alloc['SP'] += t.amount; }
   });
   const totalAllocated = Object.values(alloc).reduce((s, v) => s + v, 0);
   const externalAllocated = totalAllocated - (alloc['LC1'] || 0);
   const programRatioExpected = totalAllocated > 0 ? (externalAllocated / totalAllocated) * 100 : 0;
-
   return { totalIn, totalOut, balance: totalIn - totalOut, programRatioActual, programRatioExpected };
 }
 
@@ -233,6 +230,11 @@ function getLast4Months() {
 
 // Monthly tithe average — allocation="All" with "Tithe" in description, past 120 days
 function getMonthlyTitheAverage() {
+  // Use Google Sheet pre-calculated average if available
+  if (givingState.metrics && givingState.metrics.monthlyTitheAvg !== undefined) {
+    return { total: givingState.metrics.monthlyTitheAvg, average: givingState.metrics.monthlyTitheAvg };
+  }
+  // Fallback: compute from transactions
   const { cutoff } = getLast120Days();
   let total = 0;
   givingState.transactions.forEach(t => {
@@ -241,12 +243,17 @@ function getMonthlyTitheAverage() {
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     if (d >= cutoff) total += t.amount;
   });
-  const avg = total / 4; // 120 days = 4 x 30-day months
+  const avg = total / 4;
   return { total, average: avg };
 }
 
 // Monthly LC1 expense average — LC1 outgoing expenses, past 120 days
 function getMonthlyLC1ExpenseAverage() {
+  // Use Google Sheet pre-calculated average if available
+  if (givingState.metrics && givingState.metrics.monthlyLC1Avg !== undefined) {
+    return { total: givingState.metrics.monthlyLC1Avg, average: givingState.metrics.monthlyLC1Avg };
+  }
+  // Fallback: compute from transactions
   const { cutoff } = getLast120Days();
   let total = 0;
   givingState.transactions.forEach(t => {
@@ -255,12 +262,17 @@ function getMonthlyLC1ExpenseAverage() {
     const d = typeof t.date.toDate === 'function' ? t.date.toDate() : new Date(t.date);
     if (d >= cutoff) total += Math.abs(t.amount);
   });
-  const avg = total / 4; // 120 days = 4 x 30-day months
+  const avg = total / 4;
   return { total, average: avg };
 }
 
 // Ready-to-give = non-LC1 fund balances (LC2 + PC1 + PC2 + HH1 + HH2 + SP)
 function getReadyToGiveFunds() {
+  // Use Google Sheet pre-calculated value if available
+  if (givingState.metrics && givingState.metrics.readyToGive !== undefined) {
+    return givingState.metrics.readyToGive;
+  }
+  // Fallback: compute from transactions
   const balances = calculateFundBalances();
   return (balances.LC2 || 0) + (balances.PC1 || 0) + (balances.PC2 || 0) +
          (balances.HH1 || 0) + (balances.HH2 || 0) + (balances.SP || 0);
@@ -1052,21 +1064,20 @@ async function saveTransaction() {
       receiptUrl
     };
 
-    if (givingState.editingId) {
-      // Edit existing
-      await db.collection('transactions').doc(givingState.editingId).update({
-        ...transactionData,
-        updatedAt: firebase.firestore.Timestamp.now()
+    // Write to Google Sheet via Apps Script POST
+    try {
+      const payload = { ...transactionData };
+      const resp = await fetch(GIVING_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-    } else {
-      // Add new
-      await db.collection('transactions').add({
-        ...transactionData,
-        createdAt: firebase.firestore.Timestamp.now()
-      });
-
-      // Send push notification to admins for new transactions (non-blocking)
-      try { if (typeof sendPushNotification === 'function') await sendPushNotification('transaction', '💰 New Transaction', description, 'admin'); } catch(e){ console.warn('Push failed:',e.message); }
+      const result = await resp.json();
+      if (!result.success) throw new Error(result.error || 'Sheet write failed');
+    } catch (sheetErr) {
+      console.error('Error writing to sheet:', sheetErr);
+      alert('Failed to save to Google Sheet. Please try again.');
+      return;
     }
 
     givingState.showAddForm = false;
@@ -1126,20 +1137,10 @@ function editTransaction(id) {
   document.getElementById('addTransactionForm').scrollIntoView({ behavior: 'smooth' });
 }
 
-// Delete transaction
+// Delete transaction — requires direct edit in Google Sheet
+// App is read-only for transactions; edit/delete in the sheet directly
 async function deleteTransaction(id) {
-  if (!isAdmin()) return;
-  if (!confirm('Delete this transaction?')) return;
-
-  try {
-    await db.collection('transactions').doc(id).delete();
-    givingState.transactionsLoaded = false; // Force refresh after delete
-    document.getElementById('app').innerHTML = await renderGivingPage();
-    await initGivingPage();
-  } catch (error) {
-    console.error('Error deleting transaction:', error);
-    alert('Error deleting transaction. Please try again.');
-  }
+  alert('To delete a transaction, please edit the Google Sheet directly and remove the row.');
 }
 // Tooltip system for info cards
 let tooltipTimer = null;
