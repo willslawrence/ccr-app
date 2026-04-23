@@ -535,9 +535,10 @@ async function renderGivingPage() {
         </div>
 
         ${isAdmin() || isEditor() ? `
-          <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
             <button class="btn btn-primary" id="addTransactionBtn">+ Add Transaction</button>
             <button class="btn btn-outline" id="giveTitheBtn" style="border-color:var(--green);color:var(--green);">+ Tithe</button>
+            <button class="btn btn-outline" id="givingRefreshBtn" title="Refresh from sheet" style="padding:6px 10px;font-size:12px;margin-left:auto;">🔄</button>
           </div>
         ` : ''}
 
@@ -986,6 +987,20 @@ async function initGivingPage() {
       if (tooltip) {
         tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
       }
+    });
+  }
+
+  // Refresh button — force reload from Google Sheet
+  const refreshBtn = document.getElementById('givingRefreshBtn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.textContent = '⏳';
+      refreshBtn.disabled = true;
+      givingState.transactionsLoaded = false; // force loadTransactions() to re-fetch
+      document.getElementById('app').innerHTML = await renderGivingPage();
+      await initGivingPage();
+      refreshBtn.textContent = '🔄';
+      refreshBtn.disabled = false;
     });
   }
   // Close tithe tooltip when clicking outside
