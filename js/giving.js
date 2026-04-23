@@ -530,8 +530,29 @@ async function renderGivingPage() {
         </div>
 
         ${isAdmin() || isEditor() ? `
-          <button class="btn btn-primary" id="addTransactionBtn" style="margin-bottom:20px;">+ Add Transaction</button>
+          <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="addTransactionBtn">+ Add Transaction</button>
+            <button class="btn btn-outline" id="giveTitheBtn" style="border-color:var(--green);color:var(--green);">+ Tithe</button>
+          </div>
         ` : ''}
+
+        <!-- Tithe Giving Tooltip -->
+        <div id="titheTooltip" style="display:none;position:relative;margin-bottom:20px;">
+          <div class="card" style="background:var(--surface);border:1px solid var(--border);padding:16px 20px;">
+            <div style="font-weight:700;font-size:13px;margin-bottom:12px;color:var(--accent);">💰 Give / Tithe</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <a href="https://revolut.me/willfly2" target="_blank" rel="noopener" class="btn btn-outline" style="text-align:left;justify-content:flex-start;color:var(--green);border-color:var(--green);">
+                🔵 Revolut <span style="margin-left:auto;font-size:11px;opacity:0.7;">Preferred</span>
+              </a>
+              <a href="https://venmo.com/u/Willslawrence" target="_blank" rel="noopener" class="btn btn-outline" style="text-align:left;justify-content:flex-start;color:#0084ff;border-color:#0084ff;">
+                💙 Venmo
+              </a>
+              <a href="#" onclick="alert('Please contact the treasurer for the IBAN number.');return false;" class="btn btn-outline" style="text-align:left;justify-content:flex-start;">
+                🏦 Local Bank Transfer
+              </a>
+            </div>
+          </div>
+        </div>
 
         <!-- Add/Edit Transaction Form -->
         <div id="addTransactionForm" style="display:none;margin-bottom:24px;">
@@ -951,6 +972,25 @@ async function initGivingPage() {
       document.getElementById('transDesc').focus();
     });
   }
+
+  // Give Tithe button — show tooltip with giving methods
+  const giveTitheBtn = document.getElementById('giveTitheBtn');
+  if (giveTitheBtn) {
+    giveTitheBtn.addEventListener('click', () => {
+      const tooltip = document.getElementById('titheTooltip');
+      if (tooltip) {
+        tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+      }
+    });
+  }
+  // Close tithe tooltip when clicking outside
+  document.addEventListener('click', (e) => {
+    const tooltip = document.getElementById('titheTooltip');
+    const btn = document.getElementById('giveTitheBtn');
+    if (tooltip && !tooltip.contains(e.target) && !btn?.contains(e.target)) {
+      tooltip.style.display = 'none';
+    }
+  });
 
   // Cancel button
   const cancelBtn = document.getElementById('cancelTransBtn');
