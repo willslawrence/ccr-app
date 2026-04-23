@@ -22,7 +22,7 @@ let givingState = {
 };
 
 // ── Google Sheets / Apps Script ────────────────────────────────────────────
-const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzwiKyD7BheFEMpXsNiGA6zbe_fE5aZwSAUfbpyzHpezOtlupWTiqmqNK7FFF1awlYC/exec';
+const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqiBuiUnVs9RqKfE0iWQ7jD_jULLGVntYt897_AUSLyZ0-j-x5VAFb1yhClionvBy7hg/exec';
 
 // Fund fractions for "All" allocations
 const FUND_FRACTIONS = {
@@ -67,6 +67,7 @@ async function loadTransactions(forceRefresh = false) {
 
     givingState.metrics = data.metrics || {};
     givingState.allocations = data.allocations || [];
+    givingState.charityTotals = data.charityTotals || {};
     const fresh = (data.transactions || [])
       .filter(t => t.date && t.description) // skip blank rows
       .map((t, i) => ({
@@ -231,9 +232,10 @@ function calculatePERStats() {
 
 // Calculate total given from transactions (outgoing, excluding transfers, LC1 and LC2)
 function getTotalGiven() {
-  return Math.abs(givingState.transactions
-    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR' && !t.allocation.startsWith('LC1') && !t.allocation.startsWith('LC2'))
-    .reduce((sum, t) => sum + t.amount, 0));
+  // Total given = sum of all server-computed charity totals (server has ALL transactions)
+  // Use Math.abs to handle any negative values stored in charityTotals
+  const ct = givingState.charityTotals || {};
+  return Object.values(ct).reduce((sum, v) => sum + Math.abs(v), 0);
 }
 
 // Get the last N days of transaction data (rolling window)
@@ -387,70 +389,10 @@ function updateLocalChurchCharityData() {
   lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Past 120 days: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.<br>Actual: ' + stats.actualPER + '% to external missions vs ' + stats.expectedPER + '% expected.';
 }
 
-// Map allocation codes to charity names (for allocations that are fund codes only)
-const ALLOCATION_TO_CHARITY = {
-  'LC2': 'Joyful Joseph',                  // LC2 = Ministry of the Word
-  'PC2': null,                             // PC2 = Church Planting — mixed, use description
-  'HH1': null,                             // HH1 = Orphans — mixed, use description
-  'HH2': 'Open Doors International',        // HH2 = Persecuted Church
-  'PC1': null,                             // PC1 = Global — mixed, use description
-};
-// Fallback: when allocation code alone can't identify the charity, fall back to description matching
-const DESCRIPTION_TO_CHARITY = {
-  'Hope Village':       'Special Needs Sports Ministry',
-  'Stan and Tasha':    'Stan and Tasha',
-  'Radical':           'Radical',
-  'Crisis Aid':        'Crisis Aid International',
-  'Lifesong':         'Lifesong for Orphans',
-  'Send Relief':       'Send Relief',
-  'Open Doors':        'Open Doors International',
-  'Global Christian': 'Global Christian Relief',
-  'Help The Persecuted':'Help The Persecuted',
-  'PreBorn':           'PreBorn!',
-  'Joyful Joseph':     'Joyful Joseph',
-  'Kenyan Mother':     'Special Projects',
-  'Projector':         'Special Projects',
-  "Daniel's Gift":     "Daniel's Gift",
-  'Daniels Gift':      "Daniel's Gift",
-  'Vibrating Ball':   "Daniel's Gift",
-};
-
 function getCharityTransactionTotals() {
-  const totals = {};
-
-  givingState.transactions
-    .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR')
-    .forEach(t => {
-      const alloc = t.allocation || '';
-      const desc  = t.description || '';
-      let charityName = null;
-
-      // 1. Exact allocation match (when allocation IS the charity name)
-      // These are "Special Project" allocations that name the actual charity
-      if (alloc === 'Special Project') {
-        // Fall through to description matching
-      } else {
-        // Try allocation code → charity lookup
-        const code = alloc.split(' - ')[0].trim(); // "PC2 - Church Planting" → "PC2"
-        charityName = ALLOCATION_TO_CHARITY[code] || null;
-      }
-
-      // 2. Description fallback for mixed allocations (PC2, HH1, PC1)
-      if (!charityName) {
-        for (const [key, name] of Object.entries(DESCRIPTION_TO_CHARITY)) {
-          if (desc.toLowerCase().includes(key.toLowerCase())) {
-            charityName = name;
-            break;
-          }
-        }
-      }
-
-      if (charityName) {
-        totals[charityName] = (totals[charityName] || 0) + Math.abs(t.amount);
-      }
-    });
-
-  return totals;
+  // Charity totals are now computed server-side in Apps Script from ALL transactions
+  // Returns: { "Charity Name": totalYTDAmount, ... }
+  return givingState.charityTotals || {};
 }
 
 // Format amount for display (no currency symbol in transaction list)
@@ -524,7 +466,7 @@ async function renderGivingPage() {
   const charityTotals = getCharityTransactionTotals();
   const titheStats = getMonthlyTitheAverage();
   const lc1Stats = getMonthlyLC1ExpenseAverage();
-  const readyToGive = getReadyToGiveFunds();
+  const readyToGive = givingState.metrics.readyToGive || 0;
   updateLocalChurchCharityData();
 
   return `
@@ -713,7 +655,7 @@ async function renderGivingPage() {
         <!-- Total Given Summary -->
         <div class="card giving-summary">
           <h3>Total Given</h3>
-          <div class="giving-total"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${totalGiven.toLocaleString()}</div>
+          <div class="giving-total"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> ${Math.abs(totalGiven).toLocaleString()}</div>
           <p style="color: var(--muted); font-size: 14px; margin-top: 8px;">
             Across ${(GIVING_CHARITIES || []).filter(c => c.status === 'given').length} charities and ministries
           </p>
