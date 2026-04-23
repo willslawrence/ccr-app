@@ -11,6 +11,7 @@ let givingState = {
   metrics: null,      // Google Sheet summary metrics
   allocations: [],   // Google Sheet allocations table
   sheetLoaded: false,
+  visibleCount: 20,  // Show 20 transactions initially
   showAddForm: false,
   editingId: null,
   expandedTransId: null,
@@ -414,7 +415,9 @@ function renderTransactionList() {
       </div>
     `;
   }
-  return givingState.transactions.map(trans => {
+  const visible = givingState.transactions.slice(0, givingState.visibleCount);
+  const hasMore = givingState.transactions.length > givingState.visibleCount;
+  return visible.map(trans => {
     const isExpanded = givingState.expandedTransId === trans.id;
     return `
       <div class="card card-clickable" style="margin-bottom:8px;padding:10px 12px;" onclick="toggleTransaction('${trans.id}')">
@@ -457,6 +460,7 @@ function renderTransactionList() {
 
 async function renderGivingPage() {
   await loadTransactions();
+  const hasMore = givingState.transactions.length > givingState.visibleCount;
   const totals = calculateTotals();
   const perStats = calculatePERStats();
   const fundBalances = calculateFundBalances();
@@ -509,11 +513,11 @@ async function renderGivingPage() {
           </div>
         </div>
 
-        <!-- Program Expense Ratio — single card, from sheet metric -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-          <div class="card info-card" style="padding:10px 8px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percent of tithe thats earmarked for missions and charities but not yet given.')">
-            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Program Expense Ratio</div>
-            <div class="mono" style="font-size:15px;font-weight:700;color:var(--accent);">${(perStats.programRatioExpected * 100).toFixed(1)}%</div>
+        <!-- Program Expense Ratio — centered, large, black -->
+        <div style="display:flex;justify-content:center;margin-bottom:12px;">
+          <div class="card info-card" style="padding:14px 40px;cursor:pointer;text-align:center;" onclick="showCardTooltip(this, 'Percentage of tithe that is earmarked to giving externally.')">
+            <div class="text-muted" style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Program Expense Ratio</div>
+            <div class="mono" style="font-size:22px;font-weight:700;color:#000;">${(perStats.programRatioExpected * 100).toFixed(1)}%</div>
           </div>
         </div>
 
@@ -641,9 +645,10 @@ async function renderGivingPage() {
         </div>
 
         <!-- Transaction List -->
-        <div id="transactionList">
+        <div id="transactionListContainer">
           ${renderTransactionList()}
         </div>
+        ${hasMore ? `<div style="text-align:center;margin:16px 0;"><button class="btn btn-outline" onclick="loadMoreTransactions()" style="padding:8px 24px;">Load More (${givingState.transactions.length - givingState.visibleCount} remaining)</button></div>` : ''}
       </div>
 
       <!-- Charities Tab -->
@@ -949,6 +954,14 @@ function closeCharityModal() {
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCharityModal(); });
 
 // Initialize Giving page
+function loadMoreTransactions() {
+  givingState.visibleCount += 20;
+  const listEl = document.getElementById('transactionListContainer');
+  if (listEl) {
+    listEl.innerHTML = renderTransactionList();
+  }
+}
+
 async function initGivingPage() {
   await loadTransactions();
 
