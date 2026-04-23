@@ -387,38 +387,66 @@ function updateLocalChurchCharityData() {
   lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Past 120 days: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.<br>Actual: ' + stats.actualPER + '% to external missions vs ' + stats.expectedPER + '% expected.';
 }
 
+// Map allocation codes to charity names (for allocations that are fund codes only)
+const ALLOCATION_TO_CHARITY = {
+  'LC2': 'Joyful Joseph',                  // LC2 = Ministry of the Word
+  'PC2': null,                             // PC2 = Church Planting — mixed, use description
+  'HH1': null,                             // HH1 = Orphans — mixed, use description
+  'HH2': 'Open Doors International',        // HH2 = Persecuted Church
+  'PC1': null,                             // PC1 = Global — mixed, use description
+};
+// Fallback: when allocation code alone can't identify the charity, fall back to description matching
+const DESCRIPTION_TO_CHARITY = {
+  'Hope Village':       'Special Needs Sports Ministry',
+  'Stan and Tasha':    'Stan and Tasha',
+  'Radical':           'Radical',
+  'Crisis Aid':        'Crisis Aid International',
+  'Lifesong':         'Lifesong for Orphans',
+  'Send Relief':       'Send Relief',
+  'Open Doors':        'Open Doors International',
+  'Global Christian': 'Global Christian Relief',
+  'Help The Persecuted':'Help The Persecuted',
+  'PreBorn':           'PreBorn!',
+  'Joyful Joseph':     'Joyful Joseph',
+  'Kenyan Mother':     'Special Projects',
+  'Projector':         'Special Projects',
+  "Daniel's Gift":     "Daniel's Gift",
+  'Daniels Gift':      "Daniel's Gift",
+  'Vibrating Ball':   "Daniel's Gift",
+};
+
 function getCharityTransactionTotals() {
   const totals = {};
-  const charityMap = {
-    'Hope Village': 'Special Needs Sports Ministry',
-    'Special Needs Sports': 'Special Needs Sports Ministry',
-    'Stan and Tasha': 'Stan and Tasha',
-    'Radical': 'Radical',
-    'Crisis Aid': 'Crisis Aid International',
-    'Lifesong': 'Lifesong for Orphans',
-    'Send Relief': 'Send Relief',
-    'Open Doors': 'Open Doors International',
-    'Global Christian': 'Global Christian Relief',
-    'Help The Persecuted': 'Help The Persecuted',
-    'PreBorn': 'PreBorn!',
-    'Joyful Joseph': 'Joyful Joseph',
-    'Joyful Joshef': 'Joyful Joseph',
-    'Daniels Gift': "Daniel's Gift",
-    "Daniel's Gift": "Daniel's Gift",
-    'Vibrating Ball': "Daniel's Gift",
-    'Kenyan Mother': 'Special Projects',
-    'Projector': 'Special Projects',
-  };
 
   givingState.transactions
     .filter(t => t.type === 'Outgoing' && t.allocation !== 'Transfer within CCR')
     .forEach(t => {
-      const desc = t.description;
-      for (const [key, charityName] of Object.entries(charityMap)) {
-        if (desc.toLowerCase().includes(key.toLowerCase())) {
-          totals[charityName] = (totals[charityName] || 0) + Math.abs(t.amount);
-          return;
+      const alloc = t.allocation || '';
+      const desc  = t.description || '';
+      let charityName = null;
+
+      // 1. Exact allocation match (when allocation IS the charity name)
+      // These are "Special Project" allocations that name the actual charity
+      if (alloc === 'Special Project') {
+        // Fall through to description matching
+      } else {
+        // Try allocation code → charity lookup
+        const code = alloc.split(' - ')[0].trim(); // "PC2 - Church Planting" → "PC2"
+        charityName = ALLOCATION_TO_CHARITY[code] || null;
+      }
+
+      // 2. Description fallback for mixed allocations (PC2, HH1, PC1)
+      if (!charityName) {
+        for (const [key, name] of Object.entries(DESCRIPTION_TO_CHARITY)) {
+          if (desc.toLowerCase().includes(key.toLowerCase())) {
+            charityName = name;
+            break;
+          }
         }
+      }
+
+      if (charityName) {
+        totals[charityName] = (totals[charityName] || 0) + Math.abs(t.amount);
       }
     });
 
@@ -518,7 +546,7 @@ async function renderGivingPage() {
         <div style="display:flex;justify-content:center;margin-bottom:12px;text-align:center;">
           <div class="card info-card" style="padding:14px 32px;text-align:center;cursor:pointer;" onclick="showCardTooltip(this, 'Total Church Funds')">
             <div class="text-muted" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Balance</div>
-            <div class="mono" style="font-size:22px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(totals.balance).toLocaleString()}</div>
+            <div class="mono" style="font-size:22px;font-weight:700;color:var(--accent);"><span style="font-size:0.6em;opacity:0.5;font-weight:500">SAR</span> ${Math.round(givingState.metrics.netBalance || 0).toLocaleString()}</div>
           </div>
         </div>
 
