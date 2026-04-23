@@ -1,0 +1,153 @@
+/**
+ * CCR Giving Sheet — Apps Script
+ * Sheet: https://docs.google.com/spreadsheets/d/1A0bVh-P5nGvp2O2wPsMmCck7Gnn3ZAL6biHhOOm5s7E/edit
+ * 
+ * Deploy: Extensions → Apps Script → paste this → Deploy → New Deployment →
+ *         Select type: Web App → Anyone can read → Deploy → Copy URL
+ * 
+ * Update SHEET_ID and SHEET_NAME to match your sheet.
+ */
+
+// ── Google Sheets / Apps Script — Giving Data ──────────────────────────────
+const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHEzF5hkLONMcvV5ql52befkir5Rrojp0nmYZhaGl7eVtSYHjnEiYR_reE77Z3iY41tg/exec';
+
+function doGet(e) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheets()[0]; // First tab
+
+  // ── Summary metrics (rows 1–22) ─────────────────────────────────────────
+  const metrics = {
+    date:       sheet.getRange('A1').getValue(),
+    netBalance: parseCurrency(sheet.getRange('C2').getValue()),
+    totalIn:    parseCurrency(sheet.getRange('C3').getValue()),
+    totalOut:   parseCurrency(sheet.getRange('C4').getValue()),
+    readyToGive:sheet.getRange('C5').getValue(),
+    perActual:  parseCurrency(sheet.getRange('C6').getValue()),
+    perExpected: sheet.getRange('C7').getValue(),
+    monthlyTitheAvg: sheet.getRange('B8').getValue(),
+    monthlyLC1Avg:   sheet.getRange('C9').getValue(),
+    pendingTransfer: sheet.getRange('C11').getValue(),
+    pendingReimb:    sheet.getRange('C12').getValue(),
+    pettyCash:   sheet.getRange('C13').getValue(),
+  };
+
+  // ── Allocations table (rows 7–22, cols D-G) ─────────────────────────────
+  const allocRows = sheet.getRange('D7:G22').getValues();
+  const allocations = allocRows
+    .filter(r => r[0] && r[0].toString().trim() !== '')
+    .map(r => ({
+      name:        r[0].toString().trim(),
+      amount:      parseCurrency(r[1]),
+      code:        r[2] ? r[2].toString().trim() : '',
+      fraction:    r[3] ? r[3].toString().trim() : ''
+    }));
+
+  // ── Transactions (row 24 onward) ─────────────────────────────────────────
+  const lastRow = Math.max(
+    sheet.getRange('A:A').getLastRow(),
+    sheet.getRange('D:D').getLastRow()
+  );
+  if (lastRow < 24) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ metrics, allocations, transactions: [] }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const txRows = sheet.getRange(24, 1, lastRow - 23, 9).getValues();
+  const transactions = txRows
+    .filter(r => r[0] && r[0].toString().trim() !== '')
+    .map(r => {
+      const amtRaw = parseCurrency(r[4]);
+      const typeRaw = r[5] ? r[5].toString().trim().toLowerCase() : '';
+      return {
+        date:        r[0] instanceof Date ? formatDate(r[0]) : r[0],
+        donor:       r[1] ? r[1].toString().trim() : '',
+        receiptId:   r[2] ? r[2].toString().trim() : '',
+        description: r[3] ? r[3].toString().trim() : '',
+        amount:      Math.abs(amtRaw),
+        amountRaw:   amtRaw,
+        type:        typeRaw.includes('incoming') ? 'Incoming'
+                  : typeRaw.includes('transfer') ? 'Transfer'
+                  : 'Outgoing',
+        via:         r[6] ? r[6].toString().trim() : '',
+        allocation:  r[7] ? r[7].toString().trim() : '',
+        status:      r[8] ? r[8].toString().trim() : 'Pending'
+      };
+    });
+
+  const result = { metrics, allocations, transactions };
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── POST: append a new transaction at row 24 ──────────────────────────────
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+
+    const date        = payload.date        || '';
+    const donor       = payload.donor       || '';
+    const receiptId   = payload.receiptId   || '';
+    const description = payload.description|| '';
+    const amount     = payload.amount      || 0;
+    const type       = payload.type        || 'Incoming';
+    const via        = payload.via         || '';
+    const allocation = payload.allocation   || 'All';
+    const status     = payload.status      || 'Pending';
+    const receiptUrl = payload.receiptUrl || '';
+
+    // Format amount for sheet — negative for Outgoing, wrapped parens
+    const absAmt = Math.abs(Number(amount));
+    const formattedAmt = type === 'Outgoing'
+      ? `(${absAmt.toLocaleString('en-US', { minimumFractionDigits: 2 })})`
+      : absAmt.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    const ss    = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheets()[0];
+
+    const newRow = [
+      date,           // A: Date
+      donor,          // B: Donor
+      receiptId,      // C: Receipt ID
+      description,    // D: Description
+      formattedAmt,   // E: Amount (string — sheet formats it)
+      type,           // F: Type
+      via,            // G: Via
+      allocation,     // H: Church Allocations
+      status,        // I: Status
+      receiptUrl     // J: Receipt URL (extra column for linking images)
+    ];
+
+    sheet.appendRow(newRow);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true, row: newRow }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function parseCurrency(val) {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const str = val.toString().trim();
+  if (str === '') return 0;
+  // Handles: (1,234.56) → -1234.56  |  1,234.56 → 1234.56
+  const negative = str.startsWith('(') || str.startsWith('(');
+  const num = parseFloat(str.replace(/[^0-9.]/g, ''));
+  return negative ? -num : num;
+}
+
+function formatDate(d) {
+  if (!(d instanceof Date)) return d;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${m}/${day}/${y}`;
+}

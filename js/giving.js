@@ -982,30 +982,28 @@ function closeCharityModal() {
 document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeCharityModal(); });
 
 // Initialize Giving page
-function loadMoreTransactions() {
+async function loadMoreTransactions() {
   if (givingState.txOffset >= givingState.txTotal) return; // no more
   const btn = document.getElementById('loadMoreBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
-  fetch(GIVING_SCRIPT_URL + '?limit=20&offset=' + givingState.txOffset)
-    .then(r => r.json())
-    .then(data => {
-      const fresh = (data.transactions || [])
-        .filter(t => t.date && t.description)
-        .map((t, i) => ({
-          ...t,
-          id:        t.date + '_' + givingState.txOffset + '_' + i,
-          rawAmount: t.amountRaw !== undefined ? t.amountRaw : t.amount
-        }));
-      givingState.transactions = [...givingState.transactions, ...fresh];
-      givingState.txOffset += fresh.length;
-      givingState.txTotal   = data.totalCount || givingState.txTotal;
-      // Re-render the whole tab
-      await initGivingPage();
-    })
-    .catch(err => {
-      console.error('Load more failed:', err);
-      if (btn) { btn.disabled = false; btn.textContent = 'Load More'; }
-    });
+  try {
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=' + givingState.txOffset);
+    const data = await resp.json();
+    const fresh = (data.transactions || [])
+      .filter(t => t.date && t.description)
+      .map((t, i) => ({
+        ...t,
+        id:        t.date + '_' + givingState.txOffset + '_' + i,
+        rawAmount: t.amountRaw !== undefined ? t.amountRaw : t.amount
+      }));
+    givingState.transactions = [...givingState.transactions, ...fresh];
+    givingState.txOffset += fresh.length;
+    givingState.txTotal   = data.totalCount || givingState.txTotal;
+    await initGivingPage();
+  } catch (err) {
+    console.error('Load more failed:', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Load More'; }
+  }
 }
 
 async function initGivingPage() {

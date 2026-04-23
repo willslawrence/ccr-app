@@ -2,7 +2,7 @@
    CCR APP - MAIN ROUTER & FAB NAV
    ==================================== */
 
-const APP_VERSION = '4.0';
+const APP_VERSION = '4.1';
 
 // ====================================
 // LAZY SCRIPT LOADER
@@ -54,29 +54,8 @@ function navigateTo(page, slideDirection) {
   AppState.currentPage = page;
   window.currentPage = page;
 
-  // Slide animation
-  const appEl = document.getElementById('app');
-  if (slideDirection && appEl) {
-    appEl.classList.remove('slide-left', 'slide-right');
-    void appEl.offsetWidth; // force reflow
-    appEl.classList.add(slideDirection === 'left' ? 'slide-left' : 'slide-right');
-    appEl.addEventListener('animationend', () => {
-      appEl.classList.remove('slide-left', 'slide-right');
-    }, { once: true });
-  } else if (!slideDirection && oldPage !== page) {
-    // Auto-detect direction for non-swipe navigations
-    const oldIdx = PAGE_ORDER.indexOf(oldPage);
-    const newIdx = PAGE_ORDER.indexOf(page);
-    if (oldIdx !== -1 && newIdx !== -1 && appEl) {
-      const dir = newIdx > oldIdx ? 'slide-left' : 'slide-right';
-      appEl.classList.remove('slide-left', 'slide-right');
-      void appEl.offsetWidth;
-      appEl.classList.add(dir);
-      appEl.addEventListener('animationend', () => {
-        appEl.classList.remove('slide-left', 'slide-right');
-      }, { once: true });
-    }
-  }
+  // Navigation — instant, no animation (avoids jiggling)
+  // Future: add smooth fade transition if needed
 
   render();
   updateFABHighlight(page);
@@ -482,84 +461,7 @@ function initVersionModal() {
     });
   }
 }
-
-// ====================================
-// PULL-DOWN NAVIGATION
-// ====================================
-(function() {
-  const pulldownNav = document.getElementById('pulldown-nav');
-  if (!pulldownNav) return;
-
-  // Add backdrop
-  const backdrop = document.createElement('div');
-  backdrop.className = 'pulldown-backdrop';
-  document.body.appendChild(backdrop);
-
-  let touchStartY = 0;
-  let touchStartX = 0;
-  let isPulling = false;
-
-  function openPulldown() {
-    pulldownNav.classList.add('active');
-    backdrop.classList.add('active');
-    // Highlight current page
-    const currentPage = window.currentPage || 'home';
-    pulldownNav.querySelectorAll('.pulldown-item').forEach(btn => {
-      btn.classList.toggle('current', btn.dataset.page === currentPage);
-    });
-  }
-
-  function closePulldown() {
-    pulldownNav.classList.remove('active');
-    backdrop.classList.remove('active');
-  }
-
-  // Touch: pull down from top of page
-  document.addEventListener('touchstart', function(e) {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    touchStartY = e.touches[0].clientY;
-    touchStartX = e.touches[0].clientX;
-    // Only trigger when near top of page and touching top 60px of screen
-    isPulling = scrollTop < 10 && touchStartY < 60;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', function(e) {
-    if (!isPulling) return;
-    const dy = e.touches[0].clientY - touchStartY;
-    const dx = Math.abs(e.touches[0].clientX - touchStartX);
-    // Must swipe more down than sideways, at least 40px
-    if (dy > 40 && dy > dx * 1.5 && !pulldownNav.classList.contains('active')) {
-      openPulldown();
-      isPulling = false;
-    }
-  }, { passive: true });
-
-  // Close on backdrop tap
-  backdrop.addEventListener('click', closePulldown);
-
-  // Close on swipe up within nav
-  let navTouchStartY = 0;
-  pulldownNav.addEventListener('touchstart', function(e) {
-    navTouchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  pulldownNav.addEventListener('touchmove', function(e) {
-    const dy = e.touches[0].clientY - navTouchStartY;
-    if (dy < -30) {
-      closePulldown();
-    }
-  }, { passive: true });
-
-  // Navigate on item click
-  pulldownNav.addEventListener('click', function(e) {
-    const btn = e.target.closest('.pulldown-item');
-    if (!btn) return;
-    const page = btn.dataset.page;
-    closePulldown();
-    if (typeof navigateTo === 'function') {
-      navigateTo(page);
-    }
-  });
-})();
+// Pull-down nav REMOVED in v4.1
 
 // Listen for service worker navigation messages (from notification clicks)
 if ('serviceWorker' in navigator) {
