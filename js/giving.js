@@ -60,7 +60,7 @@ const FUND_TOOLTIPS = {
 async function loadTransactions() {
   if (givingState.transactionsLoaded) return;
   try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=200&offset=0&_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors' });
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=50&offset=0&_cb=' + Date.now(), { cache: 'no-cache', mode: 'cors' });
     const data = await resp.json();
 
     givingState.metrics = data.metrics || {};
@@ -568,7 +568,7 @@ async function renderGivingPage() {
 
         ${isAdmin() || isEditor() ? `
           <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
-            <button class="btn btn-outline" id="givingRefreshBtn" title="Refresh from sheet" style="padding:6px 10px;font-size:12px;">🔄</button>
+
             <button class="btn btn-primary" id="addTransactionBtn">+ Add Transaction</button>
             <button class="btn btn-primary" id="giveTitheBtn">+ Tithe</button>
           </div>
@@ -1023,18 +1023,6 @@ async function initGivingPage() {
     });
   }
 
-  // Refresh button — force reload from Google Sheet
-  const refreshBtn = document.getElementById('givingRefreshBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', async () => {
-      refreshBtn.textContent = '⏳';
-      refreshBtn.disabled = true;
-      givingState.transactionsLoaded = false;
-      document.getElementById('app').innerHTML = await renderGivingPage();
-      refreshBtn.textContent = '🔄';
-      refreshBtn.disabled = false;
-    });
-  }
   // Close tithe tooltip when clicking outside
   document.addEventListener('click', (e) => {
     const tooltip = document.getElementById('titheTooltip');
@@ -1190,7 +1178,7 @@ async function saveTransaction() {
 function toggleTransaction(id) {
   givingState.expandedTransId = givingState.expandedTransId === id ? null : id;
   // Re-render only the transaction list, not the whole page
-  const listEl = document.getElementById('transactionList');
+  const listEl = document.getElementById('transactionListContainer');
   if (listEl) {
     listEl.innerHTML = renderTransactionList();
   }
