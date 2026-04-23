@@ -1,0 +1,179 @@
+/**
+ * CCR Giving Sheet — Apps Script
+ * Sheet: https://docs.google.com/spreadsheets/d/1A0bVh-P5nGvp2O2wPsMmCck7Gnn3ZAL6biHhOOm5s7E/edit
+ *
+ * Deploy: Extensions → Apps Script → paste this → Deploy → New Deployment →
+ *         Select type: Web App → Anyone can read → Deploy → Copy URL
+ */
+
+const SHEET_ID = '1A0bVh-P5nGvp2O2wPsMmCck7Gnn3ZAL6biHhOOm5s7E';
+
+function doGet(e) {
+  const ss    = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheets()[0];
+
+  // ── Scan cols A-E for dynamic label-based metric lookup ─────────────────
+  const maxRows = Math.max(sheet.getRange('A:A').getLastRow(), 50);
+  const colA    = sheet.getRange(1, 1, maxRows, 1).getValues().flat(); // col A
+  const colB    = sheet.getRange(1, 2, maxRows, 1).getValues().flat(); // col B
+  const colC    = sheet.getRange(1, 3, maxRows, 1).getValues().flat(); // col C
+  const colD    = sheet.getRange(1, 4, maxRows, 1).getValues().flat(); // col D
+  const colE    = sheet.getRange(1, 5, maxRows, 1).getValues().flat(); // col E
+  const colF    = sheet.getRange(1, 6, maxRows, 1).getValues().flat(); // col F
+
+  // Label → col C lookup (label in col A, value in col C of same row)
+  const getNum = (label) => {
+    for (let idx = 0; idx < maxRows; idx++) {
+      if (colA[idx] && colA[idx].toString().trim() === label) {
+        const v = colC[idx];
+        return parseCurrency(v);
+      }
+    }
+    return 0;
+  };
+
+  // Monthly Tithe Avg: label in A10, value in A11 (one row below)
+  const getMonthlyTitheAvg = () => {
+    for (let idx = 0; idx < maxRows - 1; idx++) {
+      if (colA[idx] && colA[idx].toString().trim() === 'Monthly Tithe Avg') {
+        const v = colA[idx + 1]; // value is in A of next row
+        return parseCurrency(v);
+      }
+    }
+    return 0;
+  };
+
+  // PER ratio: label "Program Expense Ratio" is in A7, value "65%" is in A8 (same row).
+  // Cell may be stored as 0.65 (number) or "65%" (string) depending on formatting.
+  const getPerExpected = () => {
+    for (let idx = 0; idx < maxRows; idx++) {
+      const a = colA[idx];
+      if (!a) continue;
+      const s = a.toString().trim();
+      if (s.endsWith('%')) return parseFloat(s) / 100; // "65%" → 0.65
+      if (typeof a === 'number' && a > 0 && a < 1) return a; // 0.65 as number
+    }
+    return 0;
+  };
+
+  const metrics = {
+    date:             new Date().toLocaleDateString(),
+    netBalance:       getNum('Net Balance'),
+    totalIn:          getNum('Total Incoming Tithe'),
+    totalOut:         getNum('Total Outgoing Donation/Expenses'),
+    readyToGive:      getNum('Ready to Give'),
+    perExpected:      getPerExpected(),
+    monthlyTitheAvg:  getMonthlyTitheAvg(),
+    monthlyLC1Avg:    getNum('Monthly LC1 Expense'),
+    pendingTransfer:  parseCurrency(colC[17]),  // C18 = 1,500
+    pendingReimb:     parseCurrency(colA[19]),  // A20 = 0
+    pettyCash:        parseCurrency(colC[19]),  // C20 = 5609
+  };
+
+  // ── Allocations table (col C = amount, col D = name, col E = fraction) ─
+  // Amounts are in col C (same row as fund name in col D). Apps Script
+  // getRange returns columns in order regardless of range start, so
+  // getRange('C7:F16') gives [C, D, E, F] per row.
+  const ALLOC_SECTION_HEADERS = ['Local Church', 'Partnering Church', 'Helping the Hurting'];
+  const allocRaw = sheet.getRange('C7:F16').getValues();
+  const allocations = allocRaw
+    .filter(r => {
+      const name = (r[1] || '').toString().trim(); // col D = fund name
+      const amt  = parseCurrency(r[0]);            // col C = amount (index 0 of C:F range)
+      return name !== '' && !ALLOC_SECTION_HEADERS.includes(name) && amt !== 0;
+    })
+    .map(r => ({
+      name:     (r[1] || '').toString().trim(), // col D
+      amount:   parseCurrency(r[0]),              // col C
+      code:     '',
+      fraction: (r[2] || '').toString().trim()  // col E
+    }));
+
+  // ── Transactions (row 24 onward, cols A-I) ──────────────────────────────
+  const lastRow = Math.max(sheet.getLastRow(), 24);
+  if (lastRow < 24) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ metrics, allocations, transactions: [] }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const txRows = sheet.getRange(24, 1, Math.max(0, lastRow - 23), 10).getValues();
+  const transactions = txRows
+    .filter(r => r[0] && r[0] instanceof Date)
+    .map(r => {
+      const amtRaw  = parseCurrency(r[4]);
+      const typeRaw = r[5] ? r[5].toString().trim().toLowerCase() : '';
+      return {
+        date:        formatDate(r[0]),
+        donor:       r[1] ? r[1].toString().trim() : '',
+        receiptId:   r[2] ? r[2].toString().trim() : '',
+        description: r[3] ? r[3].toString().trim() : '',
+        amount:      Math.abs(amtRaw),
+        amountRaw:   amtRaw,
+        type:        typeRaw.includes('incoming') ? 'Incoming'
+                   : typeRaw.includes('transfer') ? 'Transfer'
+                   : 'Outgoing',
+        via:         r[6] ? r[6].toString().trim() : '',
+        allocation:  r[7] ? r[7].toString().trim() : '',
+        status:      r[8] ? r[8].toString().trim() : 'Pending',
+        receiptUrl:  r[9] ? r[9].toString().trim() : ''
+      };
+    });
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ metrics, allocations, transactions }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ── POST: append a new transaction ───────────────────────────────────────
+function doPost(e) {
+  try {
+    const p = JSON.parse(e.postData.contents);
+    const amount = Math.abs(Number(p.amount) || 0);
+    const formattedAmt = p.type === 'Outgoing'
+      ? '(' + amount.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ')'
+      : amount.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+    const ss    = SpreadsheetApp.openById(SHEET_ID);
+    const sheet = ss.getSheets()[0];
+    const lastRow = Math.max(sheet.getLastRow() + 1, 24);
+
+    sheet.getRange(lastRow, 1, 1, 10).setValues([[
+      p.date        || '',
+      p.donor       || '',
+      p.receiptId   || '',
+      p.description || '',
+      formattedAmt,
+      p.type       || 'Incoming',
+      p.via        || '',
+      p.allocation || 'All',
+      p.status     || 'Pending',
+      p.receiptUrl || ''
+    ]]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────
+function parseCurrency(val) {
+  if (typeof val === 'number') return val;
+  if (val === null || val === undefined || val.toString().trim() === '') return 0;
+  const str = val.toString().trim();
+  const negative = str.startsWith('(') || str.startsWith('-');
+  const num = parseFloat(str.replace(/[^0-9.]/g, ''));
+  return isNaN(num) ? 0 : (negative ? -num : num);
+}
+
+function formatDate(d) {
+  if (!(d instanceof Date)) return String(d);
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return m + '/' + day + '/' + y;
+}

@@ -19,7 +19,7 @@ let givingState = {
 };
 
 // ── Google Sheets / Apps Script ────────────────────────────────────────────
-const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzHEzF5hkLONMcvV5ql52befkir5Rrojp0nmYZhaGl7eVtSYHjnEiYR_reE77Z3iY41tg/exec';
+const GIVING_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw0YXXQtKVFhyfKK7s9AY3Vi7EIgF9cW3MPHObRUc3LiWopSj-zDLD44Is8hxDNXoTrXA/exec';
 
 // Fund fractions for "All" allocations
 const FUND_FRACTIONS = {
