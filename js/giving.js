@@ -54,7 +54,7 @@ const FUND_TOOLTIPS = {
   'PC2': '1/6 of tithes. Evangelism, Bible studies, missionaries. E.g. Stan and Tasha, Radical.',
   'HH1': '1/6 of tithes. Those in need, aid, crisis. E.g. Crisis Aid, Lifesong for Orphans, Send Relief.',
   'HH2': '1/6 of tithes. Christians facing persecution. E.g. Open Doors International.',
-  'SP': 'You decide — designated giving for specific ad hoc needs. E.g. Kenyan Mother support, projector, illnesses.',
+  'SP': 'You Tithe, You decide — designated giving for specific needs. E.g. Illnesses, Projector project fund, etc',
   'MC': 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.'
 };
 
