@@ -164,14 +164,8 @@ function calculateFundBalances() {
       const code = (a.name || '').split(' - ')[0].trim();
       if (code in balances) balances[code] = a.amount;
     });
-    // Special Projects may not be in allocations — compute from transactions if missing
-    if (balances.SP === 0) {
-      givingState.transactions.forEach(trans => {
-        if (trans.allocation === 'Special Project' && trans.type === 'Incoming') {
-          balances.SP += trans.amount;
-        }
-      });
-    }
+    // Special Projects balance: use sheet value from metrics (C18 in Reporting sheet)
+    balances.SP = givingState.metrics.specialProjectsBalance || 0;
     return balances;
   }
 
@@ -201,6 +195,10 @@ function calculateFundBalances() {
     }
   });
 
+  // Special Projects: always use sheet value from metrics if available
+  if (givingState.metrics && givingState.metrics.specialProjectsBalance !== undefined) {
+    balances.SP = givingState.metrics.specialProjectsBalance;
+  }
   return balances;
 }
 
@@ -420,8 +418,8 @@ function updateLocalChurchCharityData() {
   lc.fullDescription = 'Our local church. No fundraising costs. ' + stats.expectedPER + '% of all funds are earmarked for external programs and missions beyond the local body — this includes money already given and money still allocated to be spent.<br><br>Past 120 days: SAR ' + incomeStr + ' received, SAR ' + expenseStr + ' spent.<br>Actual: ' + stats.actualPER + '% to external missions vs ' + stats.expectedPER + '% expected.';
 }
 
-// Charity totals from Google Sheet (server-computed, from ALL 105 transactions)
-// Sheet values are set once during initial load — no client-side math
+// Charity YTD amounts — computed by Apps Script from ALL transactions and written to Charities sheet
+// The API returns charityTotals from the Charities sheet (always up-to-date)
 function getCharityTransactionTotals() {
   return givingState.charityTotals || {};
 }
