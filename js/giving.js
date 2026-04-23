@@ -62,7 +62,7 @@ const FUND_TOOLTIPS = {
 async function loadTransactions(forceRefresh = false) {
   if (givingState.transactionsLoaded && !forceRefresh) return;
   try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=0');
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=0&_cb=' + Date.now());
     const data = await resp.json();
 
     givingState.metrics = data.metrics || {};
@@ -957,7 +957,7 @@ async function loadMoreTransactions() {
   const btn = document.getElementById('loadMoreBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
   try {
-    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=' + givingState.txOffset);
+    const resp = await fetch(GIVING_SCRIPT_URL + '?limit=20&offset=' + givingState.txOffset + '&_cb=' + Date.now());
     const data = await resp.json();
     const fresh = (data.transactions || [])
       .filter(t => t.date && t.description)
@@ -969,7 +969,22 @@ async function loadMoreTransactions() {
     givingState.transactions = [...givingState.transactions, ...fresh];
     givingState.txOffset += fresh.length;
     givingState.txTotal   = data.totalCount || givingState.txTotal;
-    await initGivingPage();
+    // Update just the transaction list + Load More button (no full re-render)
+    const listEl = document.getElementById('transactionListContainer');
+    if (listEl) {
+      listEl.innerHTML = renderTransactionList();
+    }
+    // Sync Load More button state
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+      const remaining = givingState.txTotal - givingState.txOffset;
+      if (remaining <= 0) {
+        loadMoreBtn.style.display = 'none';
+      } else {
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Load More (' + remaining + ' remaining)';
+      }
+    }
   } catch (err) {
     console.error('Load more failed:', err);
     if (btn) { btn.disabled = false; btn.textContent = 'Load More'; }
@@ -1155,7 +1170,7 @@ async function saveTransaction() {
     // Write to Google Sheet via Apps Script POST
     try {
       const payload = { ...transactionData };
-      const resp = await fetch(GIVING_SCRIPT_URL, {
+      const resp = await fetch(GIVING_SCRIPT_URL + '?_cb=' + Date.now(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
