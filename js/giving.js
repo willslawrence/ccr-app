@@ -83,6 +83,7 @@ async function loadTransactions() {
 
   givingState.transactions = fresh;
   givingState.txTotal   = data.totalCount || givingState.transactions.length;
+  givingState.sheetLoaded = true;
   givingState.transactionsLoaded = true;
   } catch (error) {
     console.error('Error loading from sheet:', error);
@@ -487,6 +488,13 @@ function renderTransactionList() {
 }
 
 async function renderGivingPage() {
+  if (!givingState.sheetLoaded) {
+    return `<div class="page giving-page">
+      <div style="display:flex;justify-content:center;align-items:center;min-height:60vh;">
+        <div class="spinner" style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      </div>
+    </div>`;
+  }
   await loadTransactions();
   const totals = calculateTotals();
   const perStats = calculatePERStats();
