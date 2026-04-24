@@ -1010,7 +1010,9 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close
 // Initialize Giving page
 
 async function initGivingPage() {
+  // Kick off data fetch, populate UI once it resolves
   await loadTransactions();
+  populateGivingData();
 
   // Tab switching — toggle visibility instead of full re-render
   document.querySelectorAll('button[data-tab]').forEach(btn => {
@@ -1026,6 +1028,35 @@ async function initGivingPage() {
       });
     });
   });
+
+  function populateGivingData() {
+    const m = givingState.metrics || {};
+    const fb = calculateFundBalances();
+    const perStats = calculatePERStats();
+    const titheStats = getMonthlyTitheAverage();
+    const lc1Stats = getMonthlyLC1ExpenseAverage();
+    const readyToGive = m.readyToGive || 0;
+
+    const loader = document.getElementById('givingLoader');
+    if (loader) loader.style.display = 'none';
+
+    const el = id => document.getElementById(id);
+    const setText = (id, val) => { const e = el(id); if (e) e.textContent = val; };
+    const setHTML = (id, val) => { const e = el(id); if (e) e.innerHTML = val; };
+
+    setText('givingNetBalance', Math.round(m.netBalance || 0).toLocaleString());
+    setText('givingTitheAvg', Math.round(titheStats.average).toLocaleString());
+    setText('givingLC1Avg', Math.round(lc1Stats.average).toLocaleString());
+    setText('givingReadyToGive', Math.round(readyToGive).toLocaleString());
+    setHTML('givingPER', (perStats.programRatioExpected * 100).toFixed(1) + '%');
+    setText('givingFundLC1', formatAmount(fb.LC1, true));
+    setText('givingFundLC2', formatAmount(fb.LC2, true));
+    setText('givingFundPC1', formatAmount(fb.PC1, true));
+    setText('givingFundPC2', formatAmount(fb.PC2, true));
+    setText('givingFundHH1', formatAmount(fb.HH1, true));
+    setText('givingFundHH2', formatAmount(fb.HH2, true));
+    setText('givingFundSP', formatAmount(fb.SP, true));
+  }
 
   // Add transaction button
   const addBtn = document.getElementById('addTransactionBtn');
