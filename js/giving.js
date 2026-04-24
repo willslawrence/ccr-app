@@ -553,16 +553,35 @@ async function renderGivingPage() {
           <span id="cardTooltipText"></span>
         </div>
 
-        <!-- Fund Balances Grid — 3 columns -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:16px;">
-          ${Object.entries({...fundBalances, MC: 0}).map(([fund, balance]) => `
-            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this, '${(FUND_TOOLTIPS[fund]||'').replace(/'/g, "\\'")}')">
+        <!-- Fund Balances Grid — restructured layout -->
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+          <!-- Row 1: LC1 | PC1 | HH1 -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            ${['LC1','PC1','HH1'].map(fund => `
+            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this,'${(FUND_TOOLTIPS[fund]||'').replace(/'/g,"\'")}')">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
-              <div style="font-size:12px;font-weight:600;color:var(--green);">
-                ${fund === 'MC' ? '<span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> 400' : formatAmount(balance, true)}
-              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--green);">${formatAmount(fundBalances[fund],true)}</div>
+            </div>`).join('')}
+          </div>
+          <!-- Row 2: LC2 | PC2 | HH2 -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            ${['LC2','PC2','HH2'].map(fund => `
+            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this,'${(FUND_TOOLTIPS[fund]||'').replace(/'/g,"\'")}')">
+              <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES[fund]}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--green);">${formatAmount(fundBalances[fund],true)}</div>
+            </div>`).join('')}
+          </div>
+          <!-- Row 3: SP (2 cols) | MC (1 col) -->
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:6px;">
+            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this,'${(FUND_TOOLTIPS['SP']||'').replace(/'/g,"\'")}')">
+              <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES['SP']}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--green);">${formatAmount(fundBalances['SP'],true)}</div>
             </div>
-          `).join('')}
+            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;">
+              <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">Member Care</div>
+              <div style="font-size:12px;font-weight:600;color:var(--green);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> 400</div>
+            </div>
+          </div>
         </div>
 
         ${isAdmin() || isEditor() ? `
