@@ -94,8 +94,8 @@ const TOTAL_CHAPTERS = OT_CHAPTERS + NT_CHAPTERS;
 // Genre definitions for stats panel
 const BIBLE_GENRES = [
   { name: 'Law of Moses (Torah)', color: '#C05535', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
-  { name: 'Prophets (Nevi\'im)', color: '#28827A', books: ['Joshua','Judges','1 Samuel','2 Samuel','1 Kings','2 Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
   { name: 'Psalms/Writings (Ketuvim)', color: '#A83878', books: ['Psalms','Proverbs','Job','Ruth','Song of Solomon','Ecclesiastes','Lamentations','Esther','Daniel','Ezra','Nehemiah','1 Chronicles','2 Chronicles'] },
+  { name: 'Prophets (Nevi\'im)', color: '#28827A', books: ['Joshua','Judges','1 Samuel','2 Samuel','1 Kings','2 Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
   { name: 'Gospel Accounts and Acts', color: '#38885A', books: ['Matthew','Mark','Luke','John','Acts'] },
   { name: 'Letters from the Apostles', color: '#3E68B8', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
   { name: 'The Revelation', color: '#6A42A8', books: ['Revelation'] },
@@ -940,14 +940,14 @@ function getTargetYearLabel(data) {
 // Bible section definitions
 const OT_SECTIONS = [
   { name: 'Law of Moses (Torah)', icon: '📜', books: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy'] },
-  { name: 'Prophets (Nevi\'im)', icon: '🔥', books: ['Joshua','Judges','1 Samuel','2 Samuel','1 Kings','2 Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
   { name: 'Psalms/Writings (Ketuvim)', icon: '🎵', books: ['Psalms','Proverbs','Job','Ruth','Song of Solomon','Ecclesiastes','Lamentations','Esther','Daniel','Ezra','Nehemiah','1 Chronicles','2 Chronicles'] },
+  { name: 'Prophets (Nevai\'im)', icon: '🔥', books: ['Joshua','Judges','1 Samuel','2 Samuel','1 Kings','2 Kings','Isaiah','Jeremiah','Ezekiel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi'] },
 ];
 
 const NT_SECTIONS = [
   { name: 'Gospel Accounts and Acts', icon: '✝️', books: ['Matthew','Mark','Luke','John','Acts'] },
   { name: 'Letters from the Apostles', icon: '✉️', books: ['Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude'] },
-  { name: 'The Revelation', icon: '🔮', books: ['Revelation'] },
+  { name: 'The Revelation', icon: '💬', books: ['Revelation'] },
 ];
 
 // Render a single book within a section
