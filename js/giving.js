@@ -48,12 +48,12 @@ const FUND_NAMES = {
 };
 
 const FUND_TOOLTIPS = {
-  'LC1': '1/4 of tithes. Church overhead — istarahas, food, supplies.',
-  'LC2': '1/12 of tithes. Ministry of the Word — preaching and teaching resources. E.g. Joyful Joseph.',
-  'PC1': '1/6 of tithes. Other churches or their church members local or global. E.g. Daniels Gift.',
-  'PC2': '1/6 of tithes. Evangelism, Bible studies, missionaries. E.g. Stan and Tasha, Radical.',
-  'HH1': '1/6 of tithes. Those in need, aid, crisis. E.g. Crisis Aid, Lifesong for Orphans, Send Relief.',
-  'HH2': '1/6 of tithes. Christians facing persecution. E.g. Open Doors International.',
+  'LC1': 'Hospitality, people in need. 1/4 of tithes. Romans 12:13',
+  'LC2': 'Elders, Overseers, Shepherds... those in ministry. 1/12 of tithes. 1 Cor 9:14',
+  'PC1': 'Assisting with financial needs that arise due to poverty, war. 2 Cor 9:6-15',
+  'PC2': 'Evangelism, Bible studies, missionaries. 1/6 of tithes. 3 John 5-8',
+  'HH1': 'Those in need. Isaiah 1:17. 1/6 of tithes',
+  'HH2': 'Christians facing persecution. 1/6 of tithes. Hebrews 10:34-36',
   'SP': 'You Tithe, You decide — designated giving for specific needs. E.g. Illnesses, Projector project fund, etc',
   'MC': 'Church member needs — taxis, baby gifts, emergencies. Part of LC1. Budget: SAR 400/month.'
 };
