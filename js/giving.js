@@ -491,7 +491,7 @@ async function renderGivingPage() {
   // Show skeleton immediately while data loads in background
   if (!givingState.sheetLoaded) {
     return `<div class="page giving-page" id="givingPageRoot">
-      <div id="givingLoader" style="display:flex;align-items:center;justify-content:center;padding:16px 0;gap:10px;">
+      <div id="givingLoader" style="display:flex;align-items:center;justify-content:center;padding:32px 0;gap:12px;">
         <div class="spinner" style="width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
         <span style="font-size:13px;color:var(--muted);">Loading...</span>
       </div>
@@ -588,19 +588,18 @@ async function renderGivingPage() {
               <div style="font-size:12px;font-weight:600;color:var(--green);">${formatAmount(fundBalances[fund],true)}</div>
             </div>`).join('')}
           </div>
-          <!-- Row 3: SP (2 cols) | MC (1 col) -->
-          <div style="display:grid;grid-template-columns:2fr 1fr;gap:6px;">
+          <!-- Row 3: MC (1 col) | SP (2 cols) -->
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;">
+            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;">
+              <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">Member Care</div>
+              <div style="font-size:12px;font-weight:600;color:var(--green);">SAR 400</div>
+            </div>
             <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;" onclick="showCardTooltip(this,'${(FUND_TOOLTIPS['SP']||'').replace(/'/g,"\'")}')">
               <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">${FUND_NAMES['SP']}</div>
               <div style="font-size:12px;font-weight:600;color:var(--green);">${formatAmount(fundBalances['SP'],true)}</div>
             </div>
-            <div class="info-card" style="padding:6px 8px;background:var(--card-hover);border-radius:4px;cursor:pointer;">
-              <div style="font-size:9px;color:var(--muted);margin-bottom:1px;">Member Care</div>
-              <div style="font-size:12px;font-weight:600;color:var(--green);"><span style="font-size:0.65em;opacity:0.5;font-weight:500">SAR</span> 400</div>
-            </div>
           </div>
         </div>
-
         ${isAdmin() || isEditor() ? `
           <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
 
