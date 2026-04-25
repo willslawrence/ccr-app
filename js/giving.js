@@ -490,17 +490,10 @@ function renderTransactionList() {
 async function renderGivingPage() {
   // Show skeleton immediately while data loads in background
   if (!givingState.sheetLoaded) {
-    return `<div class="page giving-page" id="givingPageRoot">
-      <div id="givingLoader" style="display:flex;align-items:center;justify-content:center;padding:32px 0;gap:12px;">
-        <div class="spinner" style="width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-        <span style="font-size:13px;color:var(--muted);">Loading...</span>
-      </div>
-      <div class="page-sticky-banner">
-        <h1 class="page-title">💰 Giving</h1>
-        <div class="btn-group" style="margin-bottom:0;">
-          <button class="btn \${currentGivingTab === 'transactions' ? 'btn-primary' : 'btn-outline'}" data-tab="transactions">📊 Transactions</button>
-          <button class="btn \${currentGivingTab === 'charities' ? 'btn-primary' : 'btn-outline'}" data-tab="charities">💰 Charities</button>
-        </div>
+    return `<div class="page giving-page" style="min-height:100vh;">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:80px;gap:16px;">
+        <div class="spinner" style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <span style="font-size:13px;color:var(--muted);letter-spacing:0.3px;">Loading...</span>
       </div>
     </div>`;
   }
@@ -1022,11 +1015,8 @@ async function initGivingPage() {
   await loadTransactions();
 
   // Data is now loaded — replace skeleton with real content
-  const root = document.getElementById('givingPageRoot');
-  if (root) {
-    root.innerHTML = await renderGivingPage();
-    populateGivingData();
-  }
+  document.getElementById('app').innerHTML = await renderGivingPage();
+  populateGivingData();
 
   // Tab switching — toggle visibility instead of full re-render
   document.querySelectorAll('button[data-tab]').forEach(btn => {
@@ -1050,9 +1040,6 @@ async function initGivingPage() {
     const titheStats = getMonthlyTitheAverage();
     const lc1Stats = getMonthlyLC1ExpenseAverage();
     const readyToGive = m.readyToGive || 0;
-
-    const loader = document.getElementById('givingLoader');
-    if (loader) loader.style.display = 'none';
 
     const el = id => document.getElementById(id);
     const setText = (id, val) => { const e = el(id); if (e) e.textContent = val; };
