@@ -1188,7 +1188,7 @@ async function renderBiblePage() {
 
       <!-- New Testament Card -->
       <div id="bible-nt-section">
-        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">✝️ New Testament <span id="bible-nt-header-count" style="font-size:13px;color:var(--muted);font-weight:500;">${ntRead}/${NT_CHAPTERS}</span></h2>
+        <h2 style="font-size:18px;font-weight:700;margin:20px 0 12px;display:flex;align-items:center;gap:8px;">📜 New Testament <span id="bible-nt-header-count" style="font-size:13px;color:var(--muted);font-weight:500;">${ntRead}/${NT_CHAPTERS}</span></h2>
         <div class="card" style="margin-bottom:16px;padding:0;overflow:hidden;">
           ${renderTestamentBooks(NT_BOOKS, data, NT_SECTIONS)}
         </div>
